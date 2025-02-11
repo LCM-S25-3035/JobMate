@@ -230,6 +230,7 @@ def scrape_job_listings(driver, keyword, providence):
                     # Extraer la descripción del trabajo
                     soup = BeautifulSoup(driver.page_source, 'html.parser')
                     try:
+                        #job_description = driver.find_element(By.CLASS_NAME, 'JobDetails_jobDescription__uW_fK').text.strip()
                         job_description = soup.find('div', class_='JobDetails_jobDescription__uW_fK').text.strip()
                     except Exception:
                         job_description = "N/A"
@@ -252,8 +253,8 @@ def scrape_job_listings(driver, keyword, providence):
 
                 # Save the data as backup
                 jobs_df = pd.DataFrame(jobs_data)
-                jobs_df= jobs_df.drop_duplicates()
-                jobs_df.to_csv(f'src\data_gathering\glassdoor_jobs_backup{keyword}{providence}.csv', index=False, encoding='utf-8-sig')
+                jobs_df.drop_duplicates(inplace=True)
+                jobs_df.to_csv(f'glassdoor_jobs_backup{keyword}{providence}.csv', index=False, encoding='utf-8-sig')
 
                 print("Data saved to 'glassdoor_jobs_backup.csv'.")
 
@@ -278,8 +279,8 @@ def scrape_job_listings(driver, keyword, providence):
 
     # Saved Data Into a CSV file
     df = pd.DataFrame(jobs_data)
-    df = df.drop_duplicates()
-    df.to_csv(f"src\data_gathering\glassdoor_jobs_{keyword}{providence}.csv", index=False, encoding='utf-8-sig')
+    df.drop_duplicates(inplace=True)
+    df.to_csv(f"glassdoor_jobs_{keyword}{providence}.csv", index=False, encoding='utf-8-sig')
     print(f'Scraping complete. Data saved to f"glassdoor_jobs_{keyword}{providence}.csv".')
 
 
@@ -293,14 +294,14 @@ if __name__ == "__main__":
     driver = webdriver.Chrome(service=service, options=options)
     keys =[]
     providence = []
-    with open("src/data_gathering/keywords.txt", 'r') as file1:
+    with open("keywords.txt", 'r') as file1:
         for line in file1:
             keys.append(line.strip())
             print(line.strip())
 
     print(keys)
 
-    with open("src/data_gathering/providence.txt", 'r') as file2:
+    with open("providence.txt", 'r') as file2:
         for line in file2:
             providence.append(line.strip())
             print(line.strip())
@@ -330,7 +331,7 @@ if __name__ == "__main__":
         data_final = data_final[~data_final.duplicated(keep='first')]
         data_final.shape
 
-        data_final.to_csv("src\data_gathering\Jobs-Data_Scraped.csv", index=False)
+        data_final.to_csv("Jobs-Data_Scraped.csv", index=False)
 
 
     

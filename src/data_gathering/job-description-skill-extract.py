@@ -134,6 +134,7 @@ df[["keywordss","Must-have Skills", "Nice-to-have Skills", "Experience Level", "
     df["Job Description"].apply(lambda desc: pd.Series(process_job_description(desc)))
 )
 
+
 # Save the updated dataset
 df.to_csv(output_file, index=False, encoding="utf-8")
 

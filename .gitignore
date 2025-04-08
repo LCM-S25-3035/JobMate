@@ -1,3 +1,15 @@
+# Ignore virtual environment directory
+venv/
+
+# Ignore airflow-docker directory
+airflow-docker/
+# Ignore __pycache__ directories
+__pycache__/
+
+# Ignore .env file
+.env
+
+
 # Byte-compiled / cache files
 __pycache__/
 *.py[cod]

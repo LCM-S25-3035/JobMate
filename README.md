@@ -14,6 +14,7 @@ AutoApply is a resume/job matching and analysis platform powered by AI. It proce
 ## Prerequisites
 - [Docker](https://www.docker.com/get-started) and [Docker Compose](https://docs.docker.com/compose/install/)
 - (Optional) Python 3.9+ for local development
+- Get Google Gemini API Key (https://ai.google.dev/gemini-api/docs/api-key)
 
 ---
 

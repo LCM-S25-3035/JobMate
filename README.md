@@ -24,6 +24,8 @@ git clone <your-repo-url>
 cd AutoApply
 ```
 
+git clone -b dev https://github.com/LCM-S25-3035/JobMate.git
+
 ---
 
 ## 2. Create Environment Variables

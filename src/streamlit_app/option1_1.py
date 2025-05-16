@@ -3,6 +3,7 @@ import streamlit as st
 from utils import extract_cv_information, extract_job_posting_information,resume_education_info_personal,resume_delete_experience_not_related, validate_with_gemini, ats_score_evaluation_pre,export_match_and_missing_skills
 import json
 import time
+import os
 
 def run():
     st.markdown("<h1 style='text-align: center; font-size: 50px;'>Tailor my resume for a specific job opportunity</h1>", unsafe_allow_html=True)
@@ -19,33 +20,86 @@ def run():
     uploaded_job = st.file_uploader("Please upload your PDF Job Description", type=["pdf"])
 
     if ((uploaded_cv is not None) and (uploaded_job is not None)):
-        extract_cv_information(uploaded_cv)
-        extract_job_posting_information(uploaded_job)
-        ats_score_evaluation_pre()
-        export_match_and_missing_skills()
-        resume_education_info_personal()
-        resume_delete_experience_not_related()
+        try:
+            # Get the absolute path to the project root
+            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+            st.write(f"Project root: {project_root}")
+            
+            # Create resume directory if it doesn't exist
+            resume_dir = os.path.join(project_root, "resume")
+            os.makedirs(resume_dir, exist_ok=True)
+            st.write(f"Resume directory: {resume_dir}")
+            
+            # Save uploaded files
+            cv_path = os.path.join(resume_dir, "uploaded_cv.pdf")
+            job_path = os.path.join(resume_dir, "uploaded_job.pdf")
+            
+            with open(cv_path, "wb") as f:
+                f.write(uploaded_cv.getbuffer())
+            with open(job_path, "wb") as f:
+                f.write(uploaded_job.getbuffer())
+            
+            st.write("Files saved successfully")
+            
+            # Process the files
+            st.write("Processing CV...")
+            extract_cv_information(uploaded_cv)
+            st.write("Processing job posting...")
+            extract_job_posting_information(uploaded_job)
+            st.write("Evaluating ATS score...")
+            ats_score_evaluation_pre()
+            st.write("Exporting skills...")
+            export_match_and_missing_skills()
+            st.write("Processing education info...")
+            resume_education_info_personal()
+            st.write("Filtering experience...")
+            resume_delete_experience_not_related()
 
-        # Check if all achievements are empty
-        # Load the resume data
-        file_path = "resume/resume_delete_experience_not_relate.json"
-        with open(file_path, "r", encoding="utf-8") as file_load:
-            filter_to_continue = json.load(file_load)
+            # Check if all achievements are empty
+            file_path = os.path.join(resume_dir, "resume_delete_experience_not_relate.json")
+            st.write(f"Looking for file at: {file_path}")
+            
+            if not os.path.exists(file_path):
+                st.error(f"Error: Could not find the processed resume file at {file_path}")
+                st.write("Directory contents:")
+                for file in os.listdir(resume_dir):
+                    st.write(f"- {file}")
+                return
+                
+            try:
+                with open(file_path, "r", encoding="utf-8") as file_load:
+                    filter_to_continue = json.load(file_load)
+            except json.JSONDecodeError as e:
+                st.error(f"Error reading JSON file: {str(e)}")
+                st.write("Directory contents:")
+                for file in os.listdir(resume_dir):
+                    st.write(f"- {file}")
+                return
 
-        if all(not experience["achievement"] for experience in filter_to_continue["work_experience"]):
-            print("entro line 46")
-            st.warning(
-                "⚠️ Sorry, none of your experiences match the job posting. "
-                "We recommend rewriting your achievements to better highlight relevant skills and trying again. "
-                "Click below to return to the home page."
-            )
-            if st.button("🏠 Back to Home"):
-                st.session_state.page = "Home"
-                if "app_initialized" in st.session_state:
-                    del st.session_state.app_initialized
-                st.rerun()
-        
-        else:
+            if not filter_to_continue.get("work_experience"):
+                st.warning(
+                    "⚠️ No work experience found in the processed resume. "
+                    "Please check your resume format and try again."
+                )
+                if st.button("🏠 Back to Home"):
+                    st.session_state.page = "Home"
+                    if "app_initialized" in st.session_state:
+                        del st.session_state.app_initialized
+                    st.rerun()
+                return
+
+            if all(not experience.get("achievement") for experience in filter_to_continue["work_experience"]):
+                st.warning(
+                    "⚠️ Sorry, none of your experiences match the job posting. "
+                    "We recommend rewriting your achievements to better highlight relevant skills and trying again. "
+                    "Click below to return to the home page."
+                )
+                if st.button("🏠 Back to Home"):
+                    st.session_state.page = "Home"
+                    if "app_initialized" in st.session_state:
+                        del st.session_state.app_initialized
+                    st.rerun()
+                return
             
             # Initialize session state if it doesn't exist
             if "achievements_pass" not in st.session_state:
@@ -54,30 +108,35 @@ def run():
             if "achievements_do_not_pass" not in st.session_state:
                 st.session_state.achievements_do_not_pass = []
 
-            # Load the resume data
-            file_path = "resume/resume_delete_experience_not_relate.json"
-
-            with open(file_path, "r", encoding="utf-8") as file_load:
-                resume_data = json.load(file_load)
-
-            work_experience = resume_data.get("work_experience", [])
+            work_experience = filter_to_continue.get("work_experience", [])
 
             st.write(f"## Evaluating work experience")
          
             # Process achievements and validate them
             for job in work_experience:
-                st.write(f"### Evaluating achievements for: {job['job_title']} in {job['company']}")
+                st.write(f"### Evaluating achievements for: {job.get('job_title', 'Unknown')} in {job.get('company', 'Unknown')}")
                 
-                for achievement in job["achievement"]:
-                    is_valid, feedback = validate_with_gemini(job['job_title'], achievement)
+                for achievement in job.get("achievement", []):
+                    is_valid, feedback = validate_with_gemini(job.get('job_title', ''), achievement)
 
                     if is_valid:
                         st.session_state.achievements_pass.append(
-                            {"job_title": job['job_title'], "achievement": achievement, "company":job['company'], "key":job['key'] }
+                            {
+                                "job_title": job.get('job_title', ''),
+                                "achievement": achievement,
+                                "company": job.get('company', ''),
+                                "key": job.get('key', '')
+                            }
                         )
                     else:
                         st.session_state.achievements_do_not_pass.append(
-                            {"job_title": job['job_title'], "achievement": achievement, "feedback": feedback,  "company":job['company'], "key":job['key']}
+                            {
+                                "job_title": job.get('job_title', ''),
+                                "achievement": achievement,
+                                "feedback": feedback,
+                                "company": job.get('company', ''),
+                                "key": job.get('key', '')
+                            }
                         )
                     time.sleep(0.2)
 
@@ -85,3 +144,10 @@ def run():
             if st.button("View Compatibility Analysis"):
                 st.write(st.session_state.page)
                 st.rerun()
+                
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}")
+            st.error(f"Current working directory: {os.getcwd()}")
+            st.error(f"Resume directory: {resume_dir}")
+            import traceback
+            st.error(f"Traceback: {traceback.format_exc()}")

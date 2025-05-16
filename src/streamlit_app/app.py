@@ -21,19 +21,22 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-def delete_folders():
-    "Delete the 'resume' and 'output' folders if they exist."
-    folders_to_delete = ["resume", "output"]
-
-    for folder in folders_to_delete:
-        if os.path.exists(folder):
-            shutil.rmtree(folder)
-            print(f"Deleted folder: {folder}")
-        os.makedirs(folder, exist_ok=True)
+def ensure_folders_exist():
+    """Ensure that required folders exist."""
+    # Get the absolute path to the project root
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+    
+    # Define the folders to create
+    folders = ["resume", "output", "data", "parquet"]
+    
+    for folder in folders:
+        folder_path = os.path.join(project_root, folder)
+        os.makedirs(folder_path, exist_ok=True)
+        print(f"Ensured folder exists: {folder_path}")
 
 if "app_initialized" not in st.session_state:
     st.session_state.app_initialized = True  
-    delete_folders()
+    ensure_folders_exist()
 
 
 # Initialize session state

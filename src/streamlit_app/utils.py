@@ -7,16 +7,51 @@ from io import BytesIO
 import re
 import string
 import time
+import os
+from datetime import datetime
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from docx import Document
+from docx.shared import Pt, Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.enum.style import WD_STYLE_TYPE
+from pymongo import MongoClient
+# Configure Gemini API
+your_api_key = os.getenv('GEMINI_API_KEY')
+if not your_api_key:
+    raise ValueError("GEMINI_API_KEY environment variable is not set")
 
-your_api_key = st.secrets["api_keys"]["GEMINI_API_KEY"]
+genai.configure(api_key=your_api_key)
 model_gemini = "models/gemini-2.0-flash"
 clean_json = "```json\n"
+
+def get_project_root():
+    """Get the absolute path to the project root directory."""
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+
+def get_resume_dir():
+    """Get the absolute path to the resume directory."""
+    resume_dir = os.path.join(get_project_root(), "resume")
+    os.makedirs(resume_dir, exist_ok=True)
+    return resume_dir
+
+def save_resume_json(resume_json):
+    MONGODB_URI = st.secrets["database"]["MONGODB_URI"]
+    MONGODB_DB = st.secrets["database"]["MONGODB_DB"]
+    MONGODB_COLLECTION = st.secrets["database"]["MONGODB_COLLECTION"]
+
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB]
+    collection = db[MONGODB_COLLECTION]
+    collection.insert_one(resume_json)
 
 def extract_keywords_with_gemini():
 
     with open("resume/resume.json", "r", encoding="utf-8") as file:
         resume_json = json.load(file)
-
+    save_resume_json(resume_json)
     validation_prompt = f"""You are a resume keyword extractor.
 
 Given the following resume content, extract up to 25 relevant keywords that best represent this candidate's profile. Each keyword should be 1 to 3 words long, and focus on:
@@ -203,10 +238,10 @@ def ats_score_evaluation_pre():
     6. **Do NOT infer** technologies, skills, or synonyms not explicitly mentioned in the job posting.
     7. A skill only counts as matched if it appears clearly in the resume (in the skills section, summary, or experience).
     8. Be precise with terms:
-    - “GitHub Actions” may match “GitHub CI/CD” if clearly implied.
-    - “AWS Lambda” ≠ “Lambda”. AWS services must be explicitly named.
-    - Distinguish between “GitHub” (version control) and “GitHub Actions” (CI/CD).
-    9. Even if the ATS score is high, always include a **“recommendations”** section with:
+    - "GitHub Actions" may match "GitHub CI/CD" if clearly implied.
+    - "AWS Lambda" ≠ "Lambda". AWS services must be explicitly named.
+    - Distinguish between "GitHub" (version control) and "GitHub Actions" (CI/CD).
+    9. Even if the ATS score is high, always include a **"recommendations"** section with:
     - Suggestions for improvement.
     - Gaps or partial matches.
     - Phrasing tips for clearer alignment.
@@ -217,7 +252,7 @@ def ats_score_evaluation_pre():
 
     - Convert all terms to lowercase.
     - Remove special characters (parentheses, commas, etc.).
-    - Do not group terms (e.g., use “AWS Lambda”, “AWS SNS”, not “AWS (Lambda, SNS)”).
+    - Do not group terms (e.g., use "AWS Lambda", "AWS SNS", not "AWS (Lambda, SNS)").
     - Do not duplicate items.
     - Match only if the context in the resume supports it clearly.
 
@@ -358,7 +393,7 @@ def ats_score_evaluation_post():
     previous_missing_context = f"""
     ======= CONTEXT: ITEMS PREVIOUSLY MISSING =======
     Please re-evaluate the following missing items. 
-    IMPORTANT: Do NOT mark a skill or keyword as “matched” unless it is clearly and explicitly present in the resume text (summary, skills, or experience). Do NOT infer based on related terms or assumptions. Re-evaluate previously missing items strictly.
+    IMPORTANT: Do NOT mark a skill or keyword as "matched" unless it is clearly and explicitly present in the resume text (summary, skills, or experience). Do NOT infer based on related terms or assumptions. Re-evaluate previously missing items strictly.
 
     Previously missing technical skills: {ats_pre.get("missing_technical_skills", [])}
     Previously missing soft skills: {ats_pre.get("missing_soft_skills", [])}
@@ -383,11 +418,11 @@ def ats_score_evaluation_post():
         - "GitHub Actions" may match "GitHub CI/CD" if clearly implied.
         - AWS-specific services must be explicitly named (e.g., "AWS Lambda" ≠ just "Lambda").
         - Clearly distinguish between general terms like "GitHub" (version control) and specific tools like "GitHub Actions" (CI/CD).
-        5. Even if the ATS score is high, **always include a “Recommendations” section**. These should:
+        5. Even if the ATS score is high, **always include a "Recommendations" section**. These should:
         - Highlight areas that could be improved or better emphasized.
         - Indicate any gaps or partial matches in experience or responsibilities.
         - Suggest improvements in phrasing or contextualization (e.g., how to frame "client-facing" experience).
-        6. If something is only partially covered (e.g., “responsibility alignment: partial”), explain why.
+        6. If something is only partially covered (e.g., "responsibility alignment: partial"), explain why.
 
 
         ## Matching Rules (Strict and Normalized):
@@ -684,8 +719,7 @@ def resume_skills():
 
 
 def resume_education_info_personal():
-
-    input_filepath = f"resume/resume.json"
+    input_filepath = os.path.join(get_resume_dir(), "resume.json")
     with open(input_filepath, "r", encoding="utf-8") as file_load:
        original_cv = json.load(file_load)
     
@@ -694,8 +728,7 @@ def resume_education_info_personal():
         "education": original_cv.get("education", {})
     }
 
-
-    output_filepath = f"resume/resume_education_info_personal.json"
+    output_filepath = os.path.join(get_resume_dir(), "resume_education_info_personal.json")
     with open(output_filepath, "w", encoding="utf-8") as file_save:
         json.dump(output_file, file_save, ensure_ascii=False, indent=4)
         print(f"Output saved to '{output_filepath}'.")
@@ -751,7 +784,7 @@ def resume_promt_summary():
     - Focus on highlighting relevant experience, skills, and qualifications.
     - Ensure clarity, coherence, and alignment with the job offer.
     - The response must be in JSON format only, without any explanations or additional text.
-    - Rewrite the professional summary to align with the job posting’s focus on contributing to projects that support long-term sustainability and global investment strategies. Use clear, action-oriented language, and highlight relevant skills or experience that demonstrate the candidate’s ability to contribute to sustainable initiatives or global impact.
+    - Rewrite the professional summary to align with the job posting's focus on contributing to projects that support long-term sustainability and global investment strategies. Use clear, action-oriented language, and highlight relevant skills or experience that demonstrate the candidate's ability to contribute to sustainable initiatives or global impact.
 
     **Output Format:**
     {
@@ -777,45 +810,87 @@ def resume_promt_summary():
 
 
 def resume_delete_experience_not_related():
+    try:
+        input_filepath = os.path.join(get_resume_dir(), "resume.json")
+        with open(input_filepath, "r", encoding="utf-8") as file_load:
+            resume = json.load(file_load)
+        
+        job_experience = {"work_experience": resume.get("work_experience", [])}
+        
+        input_filepath = os.path.join(get_resume_dir(), "job_posting.json")
+        with open(input_filepath, "r", encoding="utf-8") as file_load:
+            job_offer = json.load(file_load)
+        
+        system_instructions = """
+        You are an HR specialist skilled in processing and analyzing resumes. Your task is to analyze each achievement in the work experience section and remove those that are not relevant to the given job offer.
 
-    input_filepath = f"resume/resume.json"
-    with open(input_filepath, "r", encoding="utf-8") as file_load:
-       resume = json.load(file_load)
-    
-    job_experience = {"work_experience":resume.get("work_experience", {})}
-    
-    input_filepath = f"resume/job_posting.json"
-    with open(input_filepath, "r", encoding="utf-8") as file_load:
-       job_offer = json.load(file_load)
-    
-    system_instructions = """
-    You are an HR specialist skilled in processing and analyzing resumes. Your task is to analyze each achievement in the work experience section and remove those that are not relevant to the given job offer.
+        **Instructions:**
+        - Use only the information available in the resume. Do not infer or add any details that are not explicitly mentioned.
+        - Evaluate each achievement individually and determine if the experience and skills it describes align with the job posting.
+        - Remove achievements that are not relevant to the job offer.
+        - Maintain the original JSON format, ensuring that only the non-relevant achievements are removed.
+        - Do not provide any explanations or extra text, only return the modified JSON.
 
-    **Instructions:**
-    - Use only the information available in the resume. Do not infer or add any details that are not explicitly mentioned.
-    - Evaluate each achievement individually and determine if the experience and skills it describes align with the job posting.
-    - Remove achievements that are not relevant to the job offer.
-    - Maintain the original JSON format, ensuring that only the non-relevant achievements are removed.
-    - Do not provide any explanations or extra text, only return the modified JSON.
+        **Output Format:**
+        {
+            "work_experience": [
+                {
+                    "job_title": "string",
+                    "company": "string",
+                    "location": "string",
+                    "start_date": "string",
+                    "end_date": "string",
+                    "key": "string",
+                    "achievement": ["string"]
+                }
+            ]
+        }
+        """
 
-    **Output Format:**
-    (Same as input, but with non-relevant achievements removed)
-    """
+        genai.configure(api_key=your_api_key)
+        model = genai.GenerativeModel(
+            model_gemini,
+            system_instruction=system_instructions,
+            generation_config={
+                "temperature": 0.0,
+                "top_p": 1.0,
+                "top_k": 1,
+                "max_output_tokens": 1024
+            }
+        )
 
-    genai.configure(api_key = your_api_key)
-    model = genai.GenerativeModel(
-    model_gemini,
-    system_instruction=system_instructions,
-    )
-
-    response = model.generate_content(f"The work experience seccion to analyze is {job_experience} and the job offer is {job_offer}")
-    cleaned_response = response.text.strip(clean_json).strip("```").replace("\n", "")
-    json_file = json.loads(cleaned_response)
-    # Save the result to the output file
-    output_filepath = f"resume/resume_delete_experience_not_relate.json"
-    with open(output_filepath, "w", encoding="utf-8") as file_save:
-        json.dump(json_file, file_save, ensure_ascii=False, indent=4)
-        print(f"Output saved to '{output_filepath}'.")
+        response = model.generate_content(f"The work experience section to analyze is {job_experience} and the job offer is {job_offer}")
+        
+        # Clean and parse the response
+        response_text = response.text.strip()
+        if response_text.startswith("```"):
+            response_text = response_text.split("```")[1]
+            if response_text.startswith("json"):
+                response_text = response_text[4:]
+        response_text = response_text.strip()
+        
+        try:
+            json_file = json.loads(response_text)
+        except json.JSONDecodeError as e:
+            print(f"Error parsing JSON response: {e}")
+            print(f"Raw response: {response_text}")
+            # Fallback to original work experience if JSON parsing fails
+            json_file = job_experience
+        
+        # Save the result to the output file
+        output_filepath = os.path.join(get_resume_dir(), "resume_delete_experience_not_relate.json")
+        with open(output_filepath, "w", encoding="utf-8") as file_save:
+            json.dump(json_file, file_save, ensure_ascii=False, indent=4)
+            print(f"Output saved to '{output_filepath}'")
+            
+    except Exception as e:
+        print(f"Error in resume_delete_experience_not_related: {str(e)}")
+        # Create a minimal valid JSON structure if something goes wrong
+        fallback_json = {"work_experience": []}
+        output_filepath = os.path.join(get_resume_dir(), "resume_delete_experience_not_relate.json")
+        with open(output_filepath, "w", encoding="utf-8") as file_save:
+            json.dump(fallback_json, file_save, ensure_ascii=False, indent=4)
+            print(f"Created fallback file at '{output_filepath}'")
 
 
 def customize_cv() -> dict:
@@ -1018,10 +1093,12 @@ def extract_cv_information(uploaded_pdf):
 
     json_file = json.loads(cleaned_response)
     # Save the result to the output file
-    output_filepath = "resume/resume.json"
+    output_filepath = os.path.join(get_resume_dir(), "resume.json")
     with open(output_filepath, "w", encoding="utf-8") as file_save:
         json.dump(json_file, file_save, ensure_ascii=False, indent=4)
         print(f"Output saved to '{output_filepath}'.")
+
+    save_resume_json(json_file)
 
 def extract_job_posting_information(uploaded_job):
     # Read the PDF content using pypdf
@@ -1143,8 +1220,21 @@ def extract_job_posting_information(uploaded_job):
     response = model.generate_content(f"The job posting to analyze is {pdf_text}")
     cleaned_response = response.text.strip(clean_json).strip("```").replace("\n", "")
 
-    json_file = json.loads(cleaned_response)
-    output_filepath = f"resume/job_posting.json"
+    # Defensive check for empty response
+    if not cleaned_response:
+        print("cleaned_response is empty!")
+        st.error("O resultado do processamento do job está vazio. Verifique o upload ou tente novamente.")
+        return None
+
+    try:
+        json_file = json.loads(cleaned_response)
+    except json.JSONDecodeError as e:
+        print(f"JSON decode error: {e}")
+        print(f"cleaned_response: {cleaned_response}")
+        st.error("Erro ao processar o job description. O formato retornado não é JSON válido.")
+        return None
+
+    output_filepath = os.path.join(get_resume_dir(), "job_posting.json")
     with open(output_filepath, "w", encoding="utf-8") as file_save:
         json.dump(json_file, file_save, ensure_ascii=False, indent=4)
         print(f"Output saved to '{output_filepath}'.")
@@ -1270,7 +1360,7 @@ def extract_job_posting_information_from_str(uploaded_job):
 
     json_file = json.loads(cleaned_response)
 
-    output_filepath = f"resume/job_posting.json"
+    output_filepath = os.path.join(get_resume_dir(), "job_posting.json")
     with open(output_filepath, "w", encoding="utf-8") as file_save:
         json.dump(json_file, file_save, ensure_ascii=False, indent=4)
         print(f"Output saved to '{output_filepath}'.")
@@ -1368,17 +1458,6 @@ def skills_missing():
 # Reference
 # (OpenAI, ChatGPT o1, first prompt, 2025): I have this template in Word, this Json, both have the same keys, guide me to make a code that reeplace the information in the template with the info in Json
 # (Claude, 3.5 Sonnet, last prompt, 2025): The template is not filling completly good, help me to correct the format
-
-import re
-import json
-import os
-from docx import Document
-from docx.shared import Pt, Inches
-from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
-from docx.enum.style import WD_STYLE_TYPE
-from docx.oxml.ns import qn
-from docx.oxml import OxmlElement
-# from docx2pdf import convert
 
 def split_into_sentences(text):
     print("split_into_sentences line", 839)

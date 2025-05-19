@@ -1,0 +1,63 @@
+# Byte-compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment & secrets
+.env
+.env.*
+*.env
+*.secret
+
+# OS & IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Output artifacts
+output/
+*.docx
+*.pdf
+
+# Uploaded user files
+resume/*.pdf
+resume/*.docx
+resume/*.json
+!resume/template/         # ✅ allow templates
+!resume/template/*
+
+# Docker artifacts
+*.pid
+*.pid.lock
+
+# Python virtual envs
+.venv/
+venv/
+ENV/
+env/
+
+# Optional - built models, temporary scratch
+*.pkl
+*.h5
+*.keras
+
+# Node/npm fallback
+node_modules/
+
+# Ignore Airflow metadata
+airflow.db
+*.airflow/
+
+# Ignore coverage/test artifacts
+.coverage
+htmlcov/
+pytest_cache/

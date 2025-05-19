@@ -5,7 +5,7 @@ import google.generativeai as genai
 from io import BytesIO
 import numpy as np
 import re
-from utils import get_resume_dir, join_all_resume_json, generate_cv,resume_promt_summary,ats_score_evaluation_post
+from utils import get_project_root, get_resume_dir, join_all_resume_json, generate_cv,resume_promt_summary,ats_score_evaluation_post
 import os
 
 var_back_to_job_seleccion = "⬅️ Back to Job Selection"
@@ -66,7 +66,7 @@ def run():
 
     user_name = data.get('personal_information', {}).get('name', 'Unknown').strip()
     user_name = " ".join(user_name.title().split())
-    output_path = f"output/{user_name}_customization.docx" 
+    output_path = os.path.join(get_project_root(), "output", f"{user_name}_customization.docx") # update output file path
 
     # Check if customized cv is generated 
     if not os.path.exists(output_path):

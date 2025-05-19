@@ -51,16 +51,6 @@ def run():
             # Process the files
             st.write("Processing CV...")
             extract_cv_information(uploaded_cv)
-            resume_path = os.path.join(resume_dir, "resume.json")
-            if os.path.exists(resume_path):
-                st.success(f"resume.json exists at: {resume_path}")
-                st.write("Resume folder contents:")
-                for f in os.listdir(resume_dir):
-                    st.write("•", f)
-            else:
-                st.error(f"resume.json was NOT created at: {resume_path}")
-                st.stop()
-
             st.write("Processing job posting...")
             extract_job_posting_information(uploaded_job)
             st.write("Evaluating ATS score...")

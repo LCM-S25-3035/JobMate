@@ -49,7 +49,8 @@ def save_resume_json(resume_json):
 
 def extract_keywords_with_gemini():
 
-    with open("resume/resume.json", "r", encoding="utf-8") as file:
+    resume_path = os.path.join(get_resume_dir(), "resume.json")
+    with open(resume_path, "r", encoding="utf-8") as file:
         resume_json = json.load(file)
     save_resume_json(resume_json)
     validation_prompt = f"""You are a resume keyword extractor.
@@ -169,7 +170,7 @@ def key_words_match_jobs_resume(
 
 def export_match_and_missing_skills():
 
-    ats_result_path="resume/ats_score_evaluation_pre.json"
+    ats_result_path = os.path.join(get_resume_dir(), "ats_score_evaluation_pre.json")
     with open(ats_result_path, "r", encoding="utf-8") as file:
         ats_result = json.load(file)
 
@@ -183,8 +184,8 @@ def export_match_and_missing_skills():
         "soft_skills": ats_result.get("missing_soft_skills", [])
     }
 
-    match_path = "resume/resume_match_skills.json"
-    missing_path = "resume/resume_missing_skills.json"
+    match_path = os.path.join(get_resume_dir(), "resume_match_skills.json")
+    missing_path = os.path.join(get_resume_dir(), "resume_missing_skills.json")
 
     with open(match_path, "w", encoding="utf-8") as file:
         json.dump(match_skills, file, indent=4, ensure_ascii=False)
@@ -197,10 +198,14 @@ def export_match_and_missing_skills():
 
 def ats_score_evaluation_pre():
 
-    with open("resume/resume.json", "r", encoding="utf-8") as file:
+    # Fixed file path for extracted resume details resume.json file
+    resume_path = os.path.join(get_resume_dir(), "resume.json")
+    with open(resume_path, "r", encoding="utf-8") as file:
         resume = json.load(file)
 
-    with open("resume/job_posting.json", "r", encoding="utf-8") as file:
+    # Fixed file path for extracted job details job_posting.json file
+    jd_path = os.path.join(get_resume_dir(), "job_posting.json")
+    with open(jd_path, "r", encoding="utf-8") as file:
         job_posting = json.load(file)
 
     job_title = job_posting["job_title"]
@@ -345,7 +350,7 @@ def ats_score_evaluation_pre():
         print(response_clean)
         return
 
-    output_filepath = f"resume/ats_score_evaluation_pre.json"
+    output_filepath = os.path.join(get_resume_dir(), "ats_score_evaluation_pre.json")
     with open(output_filepath, "w", encoding="utf-8") as file:
         json.dump(result_json, file, ensure_ascii=False, indent=4)
         print(f"✅ Output saved to '{output_filepath}'")
@@ -353,13 +358,13 @@ def ats_score_evaluation_pre():
 def ats_score_evaluation_post():
 
     # Load files
-    with open("resume/resume_final_to_word.json", "r", encoding="utf-8") as file:
+    with open(os.path.join(get_resume_dir(), "resume_final_to_word.json"), "r", ...) as file:
         resume = json.load(file)
 
-    with open("resume/ats_score_evaluation_pre.json", "r", encoding="utf-8") as file:
+    with open(os.path.join(get_resume_dir(), "ats_score_evaluation_pre.json"), "r", ...) as file:
         ats_pre = json.load(file)
 
-    with open("resume/job_posting.json", "r", encoding="utf-8") as file:
+    with open(os.path.join(get_resume_dir(), "job_posting.json"), "r", ...) as file:
         job_posting = json.load(file)
 
     # Extract fields
@@ -518,7 +523,7 @@ def ats_score_evaluation_post():
         print(response_clean)
         return
 
-    output_filepath = f"resume/ats_score_evaluation_post.json"
+    output_filepath = os.path.join(get_resume_dir(), "ats_score_evaluation_post.json")
     with open(output_filepath, "w", encoding="utf-8") as file:
         json.dump(result_json, file, ensure_ascii=False, indent=4)
         print(f"✅ Output saved to '{output_filepath}'")
@@ -570,22 +575,22 @@ def jaccard_similarity(set1, set2):
     return intersection / union
 
 def join_all_resume_json():
-    input_filepath = "resume/resume_education_info_personal.json"
+    input_filepath = os.path.join(get_resume_dir(), "resume_education_info_personal.json")
     with open(input_filepath, "r", encoding="utf-8") as file_load:
        education_personal = json.load(file_load)
 
-    input_filepath = "resume/resume_summary.json"
+    input_filepath = os.path.join(get_resume_dir(), "resume_summary.json")
     with open(input_filepath, "r", encoding="utf-8") as file_load:
        summary = json.load(file_load)
 
-    input_filepath = "resume/resume_match_skills.json"
+    input_filepath = os.path.join(get_resume_dir(), "resume_match_skills.json")
     with open(input_filepath, "r", encoding="utf-8") as file_load:
        skills_json = json.load(file_load)
 
     # Create a set to avoid duplicates
     combined_skills = set(skills_json["technical_skills"] + skills_json["soft_skills"])
 
-    input_filepath = "resume/resume_user_answers.json"
+    input_filepath = os.path.join(get_resume_dir(), "resume_user_answers.json")
     if os.path.exists(input_filepath):
         with open(input_filepath, "r", encoding="utf-8") as file_load:
             user_answers = json.load(file_load)
@@ -601,7 +606,7 @@ def join_all_resume_json():
     # Convert the set to a list and structure it in the new JSON
     final_skills_json = {"skills": list(combined_skills)}
 
-    input_filepath = "resume/resume_final_experience.json"
+    input_filepath = os.path.join(get_resume_dir(), "resume_final_experience.json")
     with open(input_filepath, "r", encoding="utf-8") as file_load:
        final_experience = json.load(file_load)
 
@@ -614,7 +619,7 @@ def join_all_resume_json():
     }
 
     # Save the updated JSON file
-    output_file = "resume/resume_final_to_word.json"
+    output_file = os.path.join(get_resume_dir(), "resume_final_to_word.json")
     with open(output_file, "w", encoding="utf-8") as file:
         json.dump(final_resume_json , file, indent=4, ensure_ascii=False)
 
@@ -676,12 +681,12 @@ def validate_with_gemini(skill, detail):
 
 
 def resume_skills():
-    input_filepath = f"resume/resume.json"
+    input_filepath = os.path.join(get_resume_dir(), "resume.json")
 
     with open(input_filepath, "r", encoding="utf-8") as file_load:
        cv_data = json.load(file_load)
 
-    input_filepath = f"resume/job_posting.json"
+    input_filepath =os.path.join(get_resume_dir(), "job_posting.json")
 
     with open(input_filepath, "r", encoding="utf-8") as file_load:
        job_data = json.load(file_load)
@@ -708,14 +713,15 @@ def resume_skills():
         "soft_skills": match_soft_skills
     }
 
-    with open("resume/resume_missing_skills.json", "w") as file:
-        json.dump(missing_skills, file, indent=4)
-    print("Skills missing saved in 'resume/resume_missing_skills.json'.")
+    missing_skills_path = os.path.join(get_resume_dir(), "resume_missing_skills.json")
+    with open(missing_skills_path, "w", encoding="utf-8") as file:
+        json.dump(missing_skills, file, indent=4, ensure_ascii=False)
+    print(F"Skills missing saved in {missing_skills_path}")
 
-    with open("resume/resume_match_skills.json", "w") as file:
-        json.dump(match_skills, file, indent=4)
-    print("Skills missing saved in 'resume/resume_match_skills.json'.")
-
+    match_skills_path = os.path.join(get_resume_dir(), "resume_match_skills.json")
+    with open(match_skills_path, "w", encoding="utf-8") as file:
+        json.dump(match_skills, file, indent=4, ensure_ascii=False)
+    print(f"Skills match saved at: {match_skills_path}")
 
 
 def resume_education_info_personal():
@@ -735,31 +741,31 @@ def resume_education_info_personal():
 
 def resume_promt_summary():
 
-    input_filepath = f"resume/resume.json"
+    input_filepath = os.path.join(get_resume_dir(), "resume.json")
     with open(input_filepath, "r", encoding="utf-8") as file_load:
        resume = json.load(file_load)
     old_summary = resume["professional_summary"]
     education = resume["education"]
     year_experience = resume["years_of_experience"]
     
-    input_filepath = f"resume/resume_updated.json"
+    input_filepath = os.path.join(get_resume_dir(), "resume_updated.json")
     with open(input_filepath, "r", encoding="utf-8") as file_load:
        resume = json.load(file_load)
     experience_updated = resume
 
     # Create final skills json 
-    input_filepath = f"resume/job_posting.json"
+    input_filepath = os.path.join(get_resume_dir(), "job_posting.json")
     with open(input_filepath, "r", encoding="utf-8") as file_load:
        job_offer = json.load(file_load)
     
-    input_filepath = "resume/resume_match_skills.json"
+    input_filepath = os.path.join(get_resume_dir(), "resume_match_skills.json")
     with open(input_filepath, "r", encoding="utf-8") as file_load:
        skills_json = json.load(file_load)
 
     # Create a set to avoid duplicates
     combined_skills = set(skills_json["technical_skills"] + skills_json["soft_skills"])
 
-    input_filepath = "resume/resume_user_answers.json"
+    input_filepath = os.path.join(get_resume_dir(), "resume_user_answers.json")
     if os.path.exists(input_filepath):
         with open(input_filepath, "r", encoding="utf-8") as file_load:
             user_answers = json.load(file_load)
@@ -803,7 +809,7 @@ def resume_promt_summary():
 
     json_file = json.loads(cleaned_response)
 
-    output_filepath = f"resume/resume_summary.json"
+    output_filepath = os.path.join(get_resume_dir(), "resume_summary.json")
     with open(output_filepath, "w", encoding="utf-8") as file_save:
         json.dump(json_file, file_save, ensure_ascii=False, indent=4)
         print(f"Output saved to '{output_filepath}'.")
@@ -909,12 +915,12 @@ def customize_cv() -> dict:
     """
 
 
-    input_filepath = f"resume/resume.json"
+    input_filepath = os.path.join(get_resume_dir(), "resume.json")
     with open(input_filepath, "r", encoding="utf-8") as file_load:
         original_cv = json.load(file_load)
 
 
-    input_filepath = f"resume/job_posting.json"
+    input_filepath = os.path.join(get_resume_dir(), "job_posting.json")
     with open(input_filepath, "r", encoding="utf-8") as file_load:
         job_description = json.load(file_load)\
     
@@ -968,7 +974,7 @@ def customize_cv() -> dict:
 
     json_file = json.loads(cleaned_response)
 
-    output_filepath = f"resume/resume_customization.json"
+    output_filepath = os.path.join(get_resume_dir(), "resume_customization.json")
     with open(output_filepath, "w", encoding="utf-8") as file_save:
         json.dump(json_file, file_save, ensure_ascii=False, indent=4)
         print(f"Output saved to '{output_filepath}'.")
@@ -1091,7 +1097,17 @@ def extract_cv_information(uploaded_pdf):
     response = model.generate_content(f"The resume to analyze is {pdf_text}")
     cleaned_response = response.text.strip(clean_json).strip("```").replace("\n", "")
 
-    json_file = json.loads(cleaned_response)
+    # # Debug to show gemini response
+    # st.write("Gemini response preview:")
+    # st.code(cleaned_response[:500])
+
+    try:
+        json_file = json.loads(cleaned_response)
+    except json.JSONDecodeError as e:
+        st.error("Gemini response is not valid JSON.")
+        st.code(cleaned_response)
+        raise e
+
     # Save the result to the output file
     output_filepath = os.path.join(get_resume_dir(), "resume.json")
     with open(output_filepath, "w", encoding="utf-8") as file_save:
@@ -1663,8 +1679,8 @@ class CVGenerator:
         self.doc.save(output_path)
             
 def generate_cv():
-    json_file_path = f"resume/resume_final_to_word.json"
-    template_path = f"template/template1.docx"
+    json_file_path = os.path.join(get_resume_dir(), "resume_final_to_word.json")
+    template_path = os.path.join(get_resume_dir(), "template/template1.docx")
     """Generate CV from JSON data"""
     try:
         with open(json_file_path, 'r', encoding='utf-8') as file:

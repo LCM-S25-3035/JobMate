@@ -120,6 +120,7 @@ services:
       - ./src:/app
       - ./data:/app/data
       - ./resume:/resume # fixed the resume path 
+      - ./output:/output # added the output path for final customizaed resume
       - ./parquet:/app/parquet
     environment:
       - MONGODB_URI=mongodb://airflow:airflow@mongodb:27017/autoapply?authSource=admin

@@ -358,13 +358,13 @@ def ats_score_evaluation_pre():
 def ats_score_evaluation_post():
 
     # Load files
-    with open(os.path.join(get_resume_dir(), "resume_final_to_word.json"), "r", ...) as file:
+    with open(os.path.join(get_resume_dir(), "resume_final_to_word.json"), "r", encoding="utf-8") as file:
         resume = json.load(file)
 
-    with open(os.path.join(get_resume_dir(), "ats_score_evaluation_pre.json"), "r", ...) as file:
+    with open(os.path.join(get_resume_dir(), "ats_score_evaluation_pre.json"), "r", encoding="utf-8") as file:
         ats_pre = json.load(file)
 
-    with open(os.path.join(get_resume_dir(), "job_posting.json"), "r", ...) as file:
+    with open(os.path.join(get_resume_dir(), "job_posting.json"), "r", encoding="utf-8") as file:
         job_posting = json.load(file)
 
     # Extract fields
@@ -805,9 +805,21 @@ def resume_promt_summary():
     )
 
     response = model.generate_content(f"The old resume to analyze is {old_summary} the education is {education}, the years of experience is {year_experience}, the new experience updated is {experience_updated}, and the updated skills are {final_skills_json},  and the job offer is {job_offer}")
-    cleaned_response = response.text.strip(clean_json).strip("```").replace("\n", "")
-
-    json_file = json.loads(cleaned_response)
+    # cleaned_response = response.text.strip(clean_json).strip("```").replace("\n", "")
+    # bug fix on gemini response
+    raw_response = response.text.strip()
+    if raw_response.startswith("```"):
+        raw_response = re.sub(r"^```(json)?", "", raw_response)
+        raw_response = raw_response.rstrip("```").strip()
+    cleaned_response = re.sub(r"[\x00-\x1F\x7F]", "", raw_response)
+    # catch error
+    try: 
+        json_file = json.loads(cleaned_response)
+    except json.JSONDecodeError as e: 
+        print("Invalid JSON from Gemini")
+        print("Error:", str(e)) 
+        print("Raw Output Sample:", cleaned_response[:500])
+        raise e
 
     output_filepath = os.path.join(get_resume_dir(), "resume_summary.json")
     with open(output_filepath, "w", encoding="utf-8") as file_save:
@@ -970,10 +982,22 @@ def customize_cv() -> dict:
     )
     response = model.generate_content(prompt)
 
-    cleaned_response = response.text.strip(clean_json).strip("```").replace("\n", "")
-
-    json_file = json.loads(cleaned_response)
-
+    # cleaned_response = response.text.strip(clean_json).strip("```").replace("\n", "")
+    # bug fix on gemini response
+    raw_response = response.text.strip()
+    if raw_response.startswith("```"):
+        raw_response = re.sub(r"^```(json)?", "", raw_response)
+        raw_response = raw_response.rstrip("```").strip()
+    cleaned_response = re.sub(r"[\x00-\x1F\x7F]", "", raw_response)
+    # catch error
+    try: 
+        json_file = json.loads(cleaned_response)
+    except json.JSONDecodeError as e: 
+        print("Invalid JSON from Gemini")
+        print("Error:", str(e)) 
+        print("Raw Output Sample:", cleaned_response[:500])
+        raise e
+    
     output_filepath = os.path.join(get_resume_dir(), "resume_customization.json")
     with open(output_filepath, "w", encoding="utf-8") as file_save:
         json.dump(json_file, file_save, ensure_ascii=False, indent=4)
@@ -1095,18 +1119,26 @@ def extract_cv_information(uploaded_pdf):
     )
 
     response = model.generate_content(f"The resume to analyze is {pdf_text}")
-    cleaned_response = response.text.strip(clean_json).strip("```").replace("\n", "")
+    # cleaned_response = response.text.strip(clean_json).strip("```").replace("\n", "")
+    # bug fix on gemini response
+    raw_response = response.text.strip()
+    if raw_response.startswith("```"):
+        raw_response = re.sub(r"^```(json)?", "", raw_response)
+        raw_response = raw_response.rstrip("```").strip()
+    cleaned_response = re.sub(r"[\x00-\x1F\x7F]", "", raw_response)
+    # catch error
+    try: 
+        json_file = json.loads(cleaned_response)
+    except json.JSONDecodeError as e: 
+        print("Invalid JSON from Gemini")
+        print("Error:", str(e)) 
+        print("Raw Output Sample:", cleaned_response[:500])
+        raise e
 
     # # Debug to show gemini response
     # st.write("Gemini response preview:")
     # st.code(cleaned_response[:500])
 
-    try:
-        json_file = json.loads(cleaned_response)
-    except json.JSONDecodeError as e:
-        st.error("Gemini response is not valid JSON.")
-        st.code(cleaned_response)
-        raise e
 
     # Save the result to the output file
     output_filepath = os.path.join(get_resume_dir(), "resume.json")
@@ -1234,7 +1266,13 @@ def extract_job_posting_information(uploaded_job):
     )
 
     response = model.generate_content(f"The job posting to analyze is {pdf_text}")
-    cleaned_response = response.text.strip(clean_json).strip("```").replace("\n", "")
+    # cleaned_response = response.text.strip(clean_json).strip("```").replace("\n", "")
+    # bug fix on gemini response
+    raw_response = response.text.strip()
+    if raw_response.startswith("```"):
+        raw_response = re.sub(r"^```(json)?", "", raw_response)
+        raw_response = raw_response.rstrip("```").strip()
+    cleaned_response = re.sub(r"[\x00-\x1F\x7F]", "", raw_response)
 
     # Defensive check for empty response
     if not cleaned_response:
@@ -1679,32 +1717,52 @@ class CVGenerator:
         self.doc.save(output_path)
             
 def generate_cv():
-    json_file_path = os.path.join(get_resume_dir(), "resume_final_to_word.json")
-    template_path = os.path.join(get_resume_dir(), "template/template1.docx")
+    json_file_path = os.path.join(get_resume_dir(), "resume_final_to_word.json") # Fix json file path
+    template_path = os.path.join(get_resume_dir(), "template", "template1.docx") # Fix template path
+
+    output_dir = os.path.join(get_project_root(), "output")
+    os.makedirs(output_dir, exist_ok=True) # create output directory if doesn't exist
+
     """Generate CV from JSON data"""
     try:
+        # Load resume JSON
         with open(json_file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
         
+        # Extract and clean user name
         user_name = data.get('personal_information', {}).get('name', 'Unknown').strip()
         user_name = " ".join(user_name.title().split())
-        output_path = f"output/{user_name}_customization.docx"  
+        output_path = os.path.join(output_dir, f"{user_name}_customization.docx") # update ouptput file path 
+        print("Generating CV to:", output_path) # debug
+        print("User name:", user_name) # debug
 
-       # Create and save the Word version
-        generator = CVGenerator(template_path)
-        generator.fill_cv(data)
-        generator.save(output_path)
-        print(f"Word CV generated successfully: {output_path}")
-        
-        # Convert the Word file to PDF
-        # pdf_output = os.path.splitext(output_path)[0] + ".pdf"
-        # convert(output_path, pdf_output)
-        # print(f"PDF CV generated successfully: {pdf_output}")
-        
-        return True
+        # Check if template exists
+        if not os.path.exists(template_path):
+            print("Template file not found:", template_path)
+            return False
+
+        try: 
+            # Create and save the Word version
+            generator = CVGenerator(template_path)
+            generator.fill_cv(data)
+            generator.save(output_path)
+        except Exception as e:
+            print("Error during CV generation:", str(e))
+            return False
+    
+        if os.path.exists(output_path):
+            print(f"Word CV generated successfully: {output_path}")
+            return True
+        else:
+            print("Executed generator.save() but file not found afterwards.")
+            return False
+            # Convert the Word file to PDF
+            # pdf_output = os.path.splitext(output_path)[0] + ".pdf"
+            # convert(output_path, pdf_output)
+            # print(f"PDF CV generated successfully: {pdf_output}")
         
     except Exception as e:
-        print(f"Error generating CV: {str(e)}")
+        print("Error generating CV:", str(e))
         return False
 
     

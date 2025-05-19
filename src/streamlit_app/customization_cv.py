@@ -5,23 +5,21 @@ import google.generativeai as genai
 from io import BytesIO
 import numpy as np
 import re
-from utils import join_all_resume_json, generate_cv,resume_promt_summary,ats_score_evaluation_post
+from utils import get_resume_dir, join_all_resume_json, generate_cv,resume_promt_summary,ats_score_evaluation_post
 import os
-
-
 
 var_back_to_job_seleccion = "⬅️ Back to Job Selection"
 
 def run():
     st.markdown("<h1 style='text-align: center; font-size: 50px;'>Customization CV - Download CV</h1>", unsafe_allow_html=True)
     
-    input_filepath = "resume/resume_updated.json"
-    with open(input_filepath, "r", encoding="utf-8") as file_load:
+    updated_resume_path = os.path.join(get_resume_dir(), "resume_updated.json")
+    with open(updated_resume_path, "r", encoding="utf-8") as file_load:
         resume_update = json.load(file_load)
 
-    input_filepath = "resume/resume_user_answers.json"
-    if os.path.exists(input_filepath):
-        with open(input_filepath, "r", encoding="utf-8") as file_load:
+    user_answers_path  = os.path.join(get_resume_dir(), "resume_user_answers.json")
+    if os.path.exists(user_answers_path ):
+        with open(user_answers_path , "r", encoding="utf-8") as file_load:
             user_answers_list = json.load(file_load)
     else:
         user_answers_list = []
@@ -37,12 +35,13 @@ def run():
         
         user_answers[job_key].append(achievement) 
 
-    if not user_answers:
-        output_filepath = "resume/resume_final_experience.json"
-        with open(output_filepath, "w", encoding="utf-8") as file:
-            json.dump(resume_update, file, indent=4)
-    else:
+    # Update file path
+    resume_final_path = os.path.join(get_resume_dir(), "resume_final_experience.json")
 
+    if not user_answers:
+        with open(resume_final_path, "w", encoding="utf-8") as file:
+            json.dump(resume_update, file, indent=4, ensure_ascii=False)
+    else:
         for experience in resume_update["work_experience"]:
             job_key = experience["key"]
 
@@ -54,31 +53,36 @@ def run():
                     if achievement not in experience["achievement"]:
                         experience["achievement"].append(achievement)
 
-        with open("resume/resume_final_experience.json", "w", encoding="utf-8") as file:
-            json.dump(resume_update, file, indent=4)
+        with open(resume_final_path, "w", encoding="utf-8") as file:
+            json.dump(resume_update, file, indent=4, ensure_ascii=False)
     
     resume_promt_summary()
     join_all_resume_json()
     generate_cv()
 
-    json_file_path = f"resume/resume_final_to_word.json"
-    with open(json_file_path, 'r', encoding='utf-8') as file:
+    resume_word_path = os.path.join(get_resume_dir(), "resume_final_to_word.json")
+    with open(resume_word_path, 'r', encoding='utf-8') as file:
         data = json.load(file)
 
     user_name = data.get('personal_information', {}).get('name', 'Unknown').strip()
     user_name = " ".join(user_name.title().split())
     output_path = f"output/{user_name}_customization.docx" 
 
+    # Check if customized cv is generated 
+    if not os.path.exists(output_path):
+        st.error(f"Fail to generate Customized Word CV at: {output_path}")
+        st.stop()
+
     ats_score_evaluation_post()
     
     st.write(f"## Your customization was complete")
 
-    input_filepath = "resume/ats_score_evaluation_pre.json"
-    with open(input_filepath, "r", encoding="utf-8") as file_load:
+    ats_pre_path = os.path.join(get_resume_dir(), "ats_score_evaluation_pre.json")
+    with open(ats_pre_path, "r", encoding="utf-8") as file_load:
         evaluation_pre = json.load(file_load)
 
-    input_filepath = "resume/ats_score_evaluation_post.json"
-    with open(input_filepath, "r", encoding="utf-8") as file_load:
+    ats_post_path  = os.path.join(get_resume_dir(), "ats_score_evaluation_post.json")
+    with open(ats_post_path , "r", encoding="utf-8") as file_load:
         evaluation_post = json.load(file_load)
 
     st.write(f"### Your ATS score Before: {evaluation_pre['ats_score']}")

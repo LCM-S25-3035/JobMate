@@ -5,8 +5,9 @@ import google.generativeai as genai
 from io import BytesIO
 import numpy as np
 import re
-from utils import validate_with_gemini
+from utils import get_resume_dir, validate_with_gemini
 import time
+import os
 
 var_back_to_job_seleccion = "⬅️ Back to Job Selection"
 
@@ -44,8 +45,8 @@ def run():
                 key = add_skill
             )
             if achievement_description:
-                # Load the resume data
-                file_path = "resume/resume_delete_experience_not_relate.json"
+                # Fix file path
+                file_path = os.path.join(get_resume_dir(), "resume_delete_experience_not_relate.json")
 
                 with open(file_path, "r", encoding="utf-8") as file_load:
                     job_experience = json.load(file_load)
@@ -73,7 +74,9 @@ def run():
 
     if(len(st.session_state.skills_add_achievements) == 0):
 
-        output_file = "resume/resume_user_answers.json"
+        # Fix file path
+        output_file = os.path.join(get_resume_dir(), "resume_user_answers.json")
+
         with open(output_file, "w", encoding="utf-8") as file:
             json.dump(st.session_state.skill_pass, file, indent=4, ensure_ascii=False)
 

@@ -6,17 +6,25 @@ from pypdf import PdfReader
 from io import BytesIO
 import numpy as np
 import re
-from utils import validate_with_gemini
+from utils import get_resume_dir, validate_with_gemini
 import time
+import os
 
 var_back_to_job_seleccion = "⬅️ Back to Job Selection"
 
 def run():
     st.markdown("<h1 style='text-align: center; font-size: 50px;'>Results of your Resume</h1>", unsafe_allow_html=True)
 
-    with open("resume/ats_score_evaluation_pre.json", "r", encoding="utf-8") as file:
-        ats = json.load(file)
+    # Use the absolute file path 
+    ats_path = os.path.join(get_resume_dir(), "ats_score_evaluation_pre.json")
 
+    if not os.path.exists(ats_path):
+        st.error(f"File not found: {ats_path}")
+        return
+        
+    with open(ats_path, "r", encoding="utf-8") as f:
+        ats = json.load(f)
+        
     st.write(f"**Your ATS Score is:** {ats['ats_score']}")
     
     st.write(f"**Your ATS Recommendations:**")

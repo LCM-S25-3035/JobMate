@@ -32,7 +32,7 @@ if st.button("Generar preguntas"):
                 n=n_questions
             )
 
-        st.markdown("### ✅ Preguntas generadas:")
+        st.markdown("### Preguntas generadas:")
         
         # Mostrar preguntas directamente sin columnas
         preguntas = resultado.strip().split('\n')

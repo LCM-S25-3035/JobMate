@@ -6,8 +6,9 @@ from pypdf import PdfReader
 from io import BytesIO
 import numpy as np
 import re
-from utils import validate_with_gemini
+from utils import get_resume_dir, validate_with_gemini
 import time
+import os
 
 var_back_to_job_seleccion = "⬅️ Back to Job Selection"
 
@@ -47,16 +48,17 @@ def run():
                 st.write(f"**Hint to add achievements:** {feedback}")
 
     else:
-        output_file = "resume/resume_updated.json"
+        # Update the file path
+        output_file = os.path.join(get_resume_dir(), "resume_updated.json")
         with open(output_file, "w", encoding="utf-8") as file:
             json.dump(st.session_state.achievements_pass, file, indent=4, ensure_ascii=False)
 
         # Load the data from the original file with the complete structure
-        with open("resume/resume_delete_experience_not_relate.json", "r", encoding="utf-8") as file:
+        with open(os.path.join(get_resume_dir(), "resume_delete_experience_not_relate.json"), "r", encoding="utf-8") as file:
             resume_data = json.load(file)
 
         # Load the data with the updated achievements
-        with open("resume/resume_updated.json", "r", encoding="utf-8") as file:
+        with open(os.path.join(get_resume_dir(), "resume_updated.json"), "r", encoding="utf-8") as file:
             updated_achievements = json.load(file)
 
         # Create a dictionary to quickly access achievements by key
@@ -74,18 +76,18 @@ def run():
             if key in achievements_dict:
                 experience["achievement"] = achievements_dict[key]
 
-        with open("resume/resume_updated.json", "w", encoding="utf-8") as file:
+        with open(os.path.join(get_resume_dir(), "resume_updated.json"), "w", encoding="utf-8") as file:
             json.dump(resume_data, file, indent=4, ensure_ascii=False)
 
         ### add more skills
-        input_filepath = f"resume/resume_missing_skills.json"
+        input_filepath = os.path.join(get_resume_dir(), "resume_missing_skills.json")
         with open(input_filepath, "r", encoding="utf-8") as file_load:
             missing_skills = json.load(file_load)
         missing_skills = sum(missing_skills.values(), [])
 
 
         ### add more skills
-        file_path = "resume/resume_delete_experience_not_relate.json"
+        file_path = os.path.join(get_resume_dir(), "resume_delete_experience_not_relate.json")
         with open(file_path, "r", encoding="utf-8") as file_load:
             resume_data = json.load(file_load)
 
@@ -99,12 +101,12 @@ def run():
             st.session_state.jobs_keys = jobs_keys
             print(st.session_state.jobs_keys)
 
-        if "skills_add_achivments" not in st.session_state:
+        if "skills_add_achievements" not in st.session_state: #fix typo
             st.session_state.skills_add_achievements = missing_skills
             print(st.session_state.skills_add_achievements)
 
         st.session_state.page = "add_skills"
         st.session_state.skill_pass = []
         st.session_state.to_improve_feedback = "No feedback"
-        st.rerun()
+        st.rerun() 
 

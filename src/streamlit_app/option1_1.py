@@ -4,6 +4,7 @@ from utils import extract_cv_information, extract_job_posting_information,resume
 import json
 import time
 import os
+import glob
 
 def run():
     st.markdown("<h1 style='text-align: center; font-size: 50px;'>Tailor my resume for a specific job opportunity</h1>", unsafe_allow_html=True)
@@ -29,6 +30,12 @@ def run():
             resume_dir = os.path.join(project_root, "resume")
             os.makedirs(resume_dir, exist_ok=True)
             st.write(f"Resume directory: {resume_dir}")
+
+            # Clean up old resume JSONs before saving new files
+            for old_file in glob.glob(os.path.join(resume_dir, "*.json")):
+                os.remove(old_file)
+                print(f"Deleted old resume file: {old_file}")
+
             
             # Save uploaded files
             cv_path = os.path.join(resume_dir, "uploaded_cv.pdf")
@@ -44,6 +51,16 @@ def run():
             # Process the files
             st.write("Processing CV...")
             extract_cv_information(uploaded_cv)
+            resume_path = os.path.join(resume_dir, "resume.json")
+            if os.path.exists(resume_path):
+                st.success(f"resume.json exists at: {resume_path}")
+                st.write("Resume folder contents:")
+                for f in os.listdir(resume_dir):
+                    st.write("•", f)
+            else:
+                st.error(f"resume.json was NOT created at: {resume_path}")
+                st.stop()
+
             st.write("Processing job posting...")
             extract_job_posting_information(uploaded_job)
             st.write("Evaluating ATS score...")

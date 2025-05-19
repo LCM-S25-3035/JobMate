@@ -24,4 +24,4 @@ def question_generator_gemini(rol, level, level_description, type, responsibilit
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return f"❌ Error generating questions:\n\n{e}"
+        return f"Error generating questions:\n\n{e}"

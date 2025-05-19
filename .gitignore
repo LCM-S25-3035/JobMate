@@ -61,3 +61,7 @@ airflow.db
 .coverage
 htmlcov/
 pytest_cache/
+
+# Reference: 
+# OpenAI 4o, First Prompt:"What are these .pyc files that are generated when I run a Python script? Can we remove them when commiting?"
+# Last Prompt: "Can also remove the user's tested files like uploaded resumes? but i still want to keep the template folder"

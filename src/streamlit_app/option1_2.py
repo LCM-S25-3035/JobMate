@@ -1,19 +1,20 @@
 import streamlit as st
 import pandas as pd
-import pymongo
+from pymongo import MongoClient
 import os
 
 def run():
     st.markdown("<h1 style='text-align: center; font-size: 50px;'>Select a Job from the Database</h1>", unsafe_allow_html=True)
 
-    # MongoDB Connection
-    MONGO_URI = st.secrets["api_keys"]["MONGODB_URI"]
-    MONGO_DB_NAME = st.secrets["api_keys"]["MONGODB_NAME"]
-    MONGO_JOBS_COLLECTION = st.secrets["api_keys"]["MONGODB_JOBS_COLLECTION"]
-
-    client_mongo = pymongo.MongoClient(MONGO_URI)
-    db = client_mongo[MONGO_DB_NAME]
-    collection = db[MONGO_JOBS_COLLECTION]
+    # Get MongoDB connection details from secrets
+    MONGO_URI = st.secrets["database"]["MONGODB_URI"]
+    MONGO_DB = st.secrets["database"]["MONGODB_DB"]
+    MONGO_COLLECTION = st.secrets["database"]["MONGODB_COLLECTION"]
+    
+    # Connect to MongoDB
+    client = MongoClient(MONGO_URI)
+    db = client[MONGO_DB]
+    collection = db[MONGO_COLLECTION]
 
     # Ruta al archivo local
     parquet_file = "parquet/jobs_data.parquet"
@@ -25,27 +26,53 @@ def run():
         # Load jobs from MongoDB
         jobs_data = list(collection.find({}))  # Retrieve everything
         df = pd.DataFrame(jobs_data)
-        df["_id"] = df["_id"].astype(str)
+        if "_id" in df.columns:
+            df["_id"] = df["_id"].astype(str)
+
     
     # Convert to DataFrame
-    
-    df = df.rename(columns={"_id": "Job ID", "Title": "Job Title", "Provincia": "Province", "Keyword": "Category"})
- 
-    # Fill NaN values
-    df["Category"] = df["Category"].fillna("Not Determined")
-    df["Province"] = df["Province"].fillna("Unknown")
-    
-    # Normalize text format
-    df["Category"] = df["Category"].str.title()
-    df["Province"] = df["Province"].str.title()
-    
-    # Extract unique categories and cities
-    category_options = ["All"] + sorted(df["Category"].unique().tolist())
-    city_options = ["All"] + sorted(df["Province"].unique().tolist())
+    # df = df.rename(columns={"_id": "Job ID", "Title": "Job Title", "Provincia": "Province", "Keyword": "Category"})
+    # Bug fix
+    # Rename columns only if they exist
+    rename_map = {}
+    if "_id" in df.columns:
+        rename_map["_id"] = "Job ID"
+    if "Title" in df.columns:
+        rename_map["Title"] = "Job Title"
+    if "Provincia" in df.columns:
+        rename_map["Provincia"] = "Province"
+    if "Keyword" in df.columns:
+        rename_map["Keyword"] = "Category"
+    df = df.rename(columns=rename_map)
 
+    # Bug fix
+    # Fill NaN values
+    if "Category" in df.columns:
+        df["Category"] = df["Category"].fillna("Not Determined")
+        df["Category"] = df["Category"].str.title()
+    else:
+        df["Category"] = "Not Determined"
+    if "Province" in df.columns:
+        df["Province"] = df["Province"].fillna("Unknown")
+        df["Province"] = df["Province"].str.title()
+    else:
+        df["Province"] = "Unknown"
+
+    # Bug fix
+    # Normalize text format
+    if "Category" in df.columns:
+        df["Category"] = df["Category"].astype(str).str.title()
+    else:
+        df["Category"] = "Not Determined"
+
+    if "Province" in df.columns:
+        df["Province"] = df["Province"].astype(str).str.title()
+    else:
+        df["Province"] = "Unknown"
+    
     # Extract unique categories and cities
-    category_options = ["All"] + sorted(df["Category"].unique().tolist())
-    city_options = ["All"] + sorted(df["Province"].unique().tolist())
+    category_options = ["All"] + sorted(df["Category"].unique().tolist()) if "Category" in df.columns else ["All"]
+    city_options = ["All"] + sorted(df["Province"].unique().tolist()) if "Province" in df.columns else ["All"]
 
     # Sidebar Filters
     st.sidebar.header("🔍 Filter Jobs")

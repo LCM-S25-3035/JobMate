@@ -1,0 +1,27 @@
+[
+    {
+        "job_key": "FPP EDU MEDIA-SOFTWARE ENGINEER",
+        "skill": "accountability",
+        "achievement": "eveloped a REST API using Python and Flask during a 3-month internship, which reduced data retrieval time by 15%."
+    },
+    {
+        "job_key": "FPP EDU MEDIA-SOFTWARE ENGINEER",
+        "skill": "analytical skills",
+        "achievement": "Developed a REST API using Python and Flask during a 3-month internship, which reduced data retrieval time by 15%."
+    },
+    {
+        "job_key": "FPP EDU MEDIA-SOFTWARE ENGINEER",
+        "skill": "self-starter",
+        "achievement": "Developed a REST API using Python and Flask during a 3-month internship, which processed over 10,000 requests per day with an average response time of under 200ms."
+    },
+    {
+        "job_key": "FPP EDU MEDIA-SOFTWARE ENGINEER",
+        "skill": "drive",
+        "achievement": "Developed a REST API using Python and Flask during a 3-month internship, which processed an average of 10,000 requests per day."
+    },
+    {
+        "job_key": "FPP EDU MEDIA-SOFTWARE ENGINEER",
+        "skill": "think outside the box",
+        "achievement": "Developed a REST API using Python and Flask during a 3-month internship, which processed an average of 10,000 requests per day."
+    }
+]

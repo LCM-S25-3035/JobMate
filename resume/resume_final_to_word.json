@@ -1,0 +1,113 @@
+{
+    "education": [
+        {
+            "degree": "Graduate Certificate",
+            "institution": "Lambton College",
+            "location": "Mississauga",
+            "start_date": "January 2024",
+            "end_date": "December 2025"
+        },
+        {
+            "degree": "Bachelor's Degree",
+            "institution": "Faculdade Santissimo Sacramento",
+            "location": "Ba",
+            "start_date": "January 2013",
+            "end_date": "December 2013"
+        },
+        {
+            "degree": "Bachelor's Degree",
+            "institution": "Universidade do Estado da Bahia",
+            "location": "Ba",
+            "start_date": "January 2012",
+            "end_date": "December 2012"
+        }
+    ],
+    "personal_information": {
+        "name": "RICARDO TASSIO",
+        "phone": "(647) 804-8130",
+        "email": "ricardotassio@gmail.com",
+        "addres": "Mississauga, ON",
+        "social_media": [
+            "https://www.linkedin.com/in/ricardo-tassio/",
+            "https://github.com/ricardotassio"
+        ]
+    },
+    "professional_summary": "A Senior Software Engineer with over 10 years of experience in PHP development, leveraging frameworks like Laravel and Symfony to design and implement secure, scalable web applications. Proficient in RESTful API development, database management (MySQL, PostgreSQL, SQL Server, Oracle), and front-end integration using JavaScript technologies. Experienced in optimizing cloud infrastructure on AWS and Azure, utilizing DevOps tools like Docker and Kubernetes for containerized development and deployment. Adept at working in Agile environments, contributing to continuous improvement initiatives and ensuring adherence to industry best practices.",
+    "skills": [
+        "azure",
+        "effective communication",
+        "accountability",
+        "oop",
+        "php",
+        "cloud",
+        "collaboration",
+        "think outside the box",
+        "sql",
+        "linux",
+        "drive",
+        "frameworks",
+        "docker",
+        "nosql",
+        "analytical skills",
+        "self-starter",
+        "problem solving",
+        "rest api",
+        "kubernetes",
+        "symfony",
+        "mysql"
+    ],
+    "work_experience": [
+        {
+            "job_title": "SOFTWARE ENGINEER",
+            "company": "NUNCHI SOLUCOES",
+            "location": "Feira de Santana, Ba",
+            "start_date": "June 2020",
+            "end_date": "Present",
+            "key": "NUNCHI SOLUCOES-SOFTWARE ENGINEER",
+            "achievement": [
+                "Led integration of RESTful APIs with third-party tools, reducing operational time and costs.",
+                "Implemented cloud-based solutions on AWS to boost system scalability and performance.",
+                "Designed and implemented secure, scalable web applications using PHP and Laravel, adhering to industry standards and best practices, resulting in enhanced system performance and reduced operational costs.",
+                "Utilized Agile methodologies (Scrum) for project management and contributed to continuous improvement initiatives."
+            ]
+        },
+        {
+            "job_title": "SOFTWARE ENGINEER",
+            "company": "FPP EDU MEDIA",
+            "location": "Las Vega, Nv",
+            "start_date": "February 2016",
+            "end_date": "March 2024",
+            "key": "FPP EDU MEDIA-SOFTWARE ENGINEER",
+            "achievement": [
+                "Design and developed a 3D virtual platform using PHP, Node.js, and cloud services to increase accessibility.",
+                "eveloped a REST API using Python and Flask during a 3-month internship, which reduced data retrieval time by 15%.",
+                "Developed a REST API using Python and Flask during a 3-month internship, which reduced data retrieval time by 15%.",
+                "Developed a REST API using Python and Flask during a 3-month internship, which processed over 10,000 requests per day with an average response time of under 200ms.",
+                "Developed a REST API using Python and Flask during a 3-month internship, which processed an average of 10,000 requests per day."
+            ]
+        },
+        {
+            "job_title": "SOFTWARE ENGINEER",
+            "company": "ASSISTE VIDA",
+            "location": "Salvador, Ba",
+            "start_date": "June 2012",
+            "end_date": "March 2023",
+            "key": "ASSISTE VIDA-SOFTWARE ENGINEER",
+            "achievement": [
+                "Spearheaded the implementation of DevOps tools such as Docker and optimized cloud infrastructure on Azure for a healthcare platform.",
+                "Improved application security by integrating best practices and conducting thorough code reviews and version control."
+            ]
+        },
+        {
+            "job_title": "CHIEF TECHNOLOGY OFFICER",
+            "company": "BENMELHOR",
+            "location": "Feira de Santana, Ba",
+            "start_date": "January 2015",
+            "end_date": "January 2023",
+            "key": "BENMELHOR-CHIEF TECHNOLOGY OFFICER",
+            "achievement": [
+                "Led the development of robust, scalable solutions using PHP, Laravel, and Symfony, following industry best practices (e.g., PSR standards)."
+            ]
+        }
+    ]
+}

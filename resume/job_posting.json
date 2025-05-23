@@ -1,0 +1,76 @@
+{
+    "job_title": "Senior Software Engineer (PHP)",
+    "company": {
+        "name": "Guidepoint",
+        "industry": "Research Enablement Platform",
+        "location": "Toronto",
+        "remote": false
+    },
+    "employment_type": "Full-time",
+    "experience_level": "Senior",
+    "years_of_experience_required": 4,
+    "salary_range": {
+        "min": null,
+        "max": null,
+        "currency": null,
+        "payment_frequency": null
+    },
+    "job_description": "As a Senior Software Engineer (PHP), you’ll work with a team of engineers through challenging development projects. Optimizing monolithic legacy codebases and newer repositories using PHP (Symfony).",
+    "responsibilities": [
+        "Optimizing monolithic legacy codebases and newer repositories using PHP (Symfony)",
+        "Work in an agile environment with Product Managers in completing user stories and converting complex business rules/workflows from User Story requirements into bespoke Sales Force type CRM applications",
+        "Maintain development and deployment environments using containerization technologies such as Docker and Kubernetes",
+        "Collaborate with full-stack (Front-end/Back-end) team members with projects",
+        "Cooperate with QA and Application Support teams to triage bugs",
+        "Work with large database schemas that would include adding and updating tables and rows using MySql",
+        "Write Unit tests and Documentation"
+    ],
+    "requirements": [
+        "4 years' experience with PHP, SQL, OOP, and Linux",
+        "2 years' experience with REST API and Symfony/Frameworks",
+        "Experience with Azure/Cloud, System and API Design, and containerized development/deployments",
+        "Experience with using containerization technologies such as Docker and Kubernetes"
+    ],
+    "technical_skills": [
+        "PHP",
+        "SQL",
+        "OOP",
+        "Linux",
+        "REST API",
+        "Symfony",
+        "Frameworks",
+        "Azure",
+        "Cloud",
+        "System Design",
+        "API Design",
+        "Docker",
+        "Kubernetes",
+        "MySql",
+        "RabbitMQ",
+        "CosmosDB",
+        "NoSQL"
+    ],
+    "soft_skills": [
+        "Effective communication",
+        "Ownership",
+        "Accountability",
+        "Problem solving",
+        "Analytical skills",
+        "Collaboration",
+        "Self-starter",
+        "Drive",
+        "Think outside the box"
+    ],
+    "education_required": [],
+    "certifications_required": [],
+    "languages_required": [],
+    "benefits": [
+        "Paid Time Off",
+        "Comprehensive benefits plan",
+        "Company RRSP Match",
+        "Development opportunities through the LinkedIn Learning platform"
+    ],
+    "application_deadline": null,
+    "job_posting_date": null,
+    "application_link": null
+}

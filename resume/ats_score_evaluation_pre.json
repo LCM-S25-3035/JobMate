@@ -1,0 +1,68 @@
+{
+    "ats_score": 82,
+    "matching_technical_skills": [
+        "php",
+        "sql",
+        "oop",
+        "linux",
+        "rest api",
+        "symfony",
+        "frameworks",
+        "azure",
+        "cloud",
+        "docker",
+        "kubernetes",
+        "mysql",
+        "nosql"
+    ],
+    "missing_technical_skills": [
+        "system design",
+        "api design",
+        "rabbitmq",
+        "cosmosdb"
+    ],
+    "matching_soft_skills": [
+        "effective communication",
+        "problem solving",
+        "collaboration"
+    ],
+    "missing_soft_skills": [
+        "ownership",
+        "accountability",
+        "analytical skills",
+        "self-starter",
+        "drive",
+        "think outside the box"
+    ],
+    "keywords_matched": [
+        "php",
+        "sql",
+        "oop",
+        "linux",
+        "rest api",
+        "symfony",
+        "frameworks",
+        "azure",
+        "cloud",
+        "docker",
+        "kubernetes",
+        "mysql"
+    ],
+    "keywords_missing": [
+        "system design",
+        "api design",
+        "rabbitmq",
+        "cosmosdb"
+    ],
+    "years_of_experience_match": "Yes",
+    "education_match": "Yes",
+    "summary_match": "Strong",
+    "responsibility_alignment": "Strong",
+    "recommendations": [
+        "The resume is well-aligned with the job description.",
+        "To improve the ATS score, consider explicitly mentioning 'ownership', 'accountability', 'analytical skills', 'self-starter', 'drive', and 'think outside the box' in the resume, possibly within the summary or work experience sections.",
+        "While the resume mentions experience with cloud platforms, system design and api design are not explicitly mentioned. Adding these terms, if applicable, would strengthen the match.",
+        "Consider adding 'NoSQL' to the skills section to ensure it is explicitly matched.",
+        "Consider adding 'RabbitMQ' and 'CosmosDB' to the skills section if you have experience with them."
+    ]
+}

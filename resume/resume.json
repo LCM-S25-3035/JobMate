@@ -1,155 +1,130 @@
 {
     "technical_skills": [
-        "PHP",
-        "Laravel",
-        "Symfony",
-        "JavaScript",
-        "HTML5",
-        "CSS3",
-        "jQuery",
-        "Vue.js",
-        "React",
-        "AngularJS",
-        "Node.js",
-        "AWS",
-        "Google Cloud Platform (GCP)",
-        "Azure",
-        "Heroku",
-        "Docker",
-        "Kubernetes",
-        "Jenkins",
-        "Vagrant",
-        "Nginx",
-        "Apache",
-        "Git",
-        "Git lab",
-        "Bitbucket",
-        "MySQL",
-        "PostgreSQL",
-        "Redis",
-        "MongoDB",
-        "Oracle",
-        "RESTful API",
-        "PHPUnit",
-        "Laravel Dusk",
-        "Jest"
+        "Jira (Sprint Boards, Gantt, Issue & Change Tracking, Acceptance Criteria)",
+        "Confluence (PRDs, User Docs)",
+        "Notion (CR submissions)",
+        "Miro",
+        "Lucidchart",
+        "MS Excel",
+        "Microsoft Teams",
+        "SQL",
+        "Google Analytics (UA/GA4)",
+        "Amplitude",
+        "Firebase",
+        "Tableau",
+        "Power BI",
+        "KPI Design",
+        "Funnel Analysis",
+        "A/B Testing",
+        "Python (Pandas)",
+        "Apache Airflow (Task Scheduling)",
+        "GCP (Workflow Deployment)"
     ],
     "soft_skills": [
-        "Teamwork",
-        "Communication",
-        "Continuous Improvement",
-        "Mentoring",
+        "Project Management",
+        "Stakeholder Engagement",
         "Agile Methodologies",
-        "Problem-solving",
+        "Sprint Planning",
+        "Risk Management",
+        "Change Management",
         "Leadership",
-        "Process Design",
-        "Cross-functional Collaboration",
-        "Adaptability"
+        "Communication",
+        "Problem-solving",
+        "Decision-making",
+        "Teamwork",
+        "Adaptability",
+        "Cross-functional coordination",
+        "Negotiation",
+        "Time Management"
     ],
-    "years_of_experience": 12,
+    "years_of_experience": 4.6,
     "education": [
         {
-            "degree": "Graduate Certificate",
+            "degree": "Graduate Certiﬁcate in Big Data Analytics",
             "institution": "Lambton College",
-            "location": "Mississauga",
-            "start_date": "January 2024",
-            "end_date": "December 2025"
+            "location": "Mississauga, ON, Canada",
+            "start_date": "May 2024",
+            "end_date": "January 2026"
         },
         {
-            "degree": "Bachelor's Degree",
-            "institution": "Faculdade Santissimo Sacramento",
-            "location": "Ba",
-            "start_date": "January 2013",
-            "end_date": "December 2013"
+            "degree": "Master of Business Administration",
+            "institution": "University of Bolton",
+            "location": "Bolton, UK",
+            "start_date": "March 2019",
+            "end_date": "September 2021"
         },
         {
-            "degree": "Bachelor's Degree",
-            "institution": "Universidade do Estado da Bahia",
-            "location": "Ba",
-            "start_date": "January 2012",
-            "end_date": "December 2012"
+            "degree": "Diploma in Electronic & Computer Engineering",
+            "institution": "Ngee Ann Polytechnic",
+            "location": "Singapore",
+            "start_date": "April 2012",
+            "end_date": "May 2015"
         }
     ],
-    "experience_level": "Senior",
+    "experience_level": "Mid-Senior Level",
     "work_experience": [
         {
-            "job_title": "SOFTWARE ENGINEER",
-            "company": "NUNCHI SOLUCOES",
-            "location": "Feira de Santana, Ba",
-            "start_date": "June 2020",
-            "end_date": "Present",
-            "key": "NUNCHI SOLUCOES-SOFTWARE ENGINEER",
+            "job_title": "Product Manager - B2C products and Internal Tools",
+            "company": "Carro",
+            "location": "Singapore",
+            "start_date": "August 2021",
+            "end_date": "May 2024",
+            "key": "Carro-Product Manager - B2C products and Internal Tools",
             "achievement": [
-                "I initiated the development and optimization of three financial management systems, increasing efficiency and operational control by more than 40% in the home care, logistics, and education sectors. Furthermore, I created a receivables anticipation system for healthcare professionals, becoming the first startup in Brazil in the segment.",
-                "Led integration of RESTful APIs with third-party tools, reducing operational time and costs.",
-                "Implemented cloud-based solutions on AWS to boost system scalability and performance.",
-                "Provided technical mentorship to junior developers, boosting coding standards and best practices.",
-                "Designed and implemented secure, scalable web applications using PHP and Laravel, adhering to industry standards and best practices, resulting in enhanced system performance and reduced operational costs.",
-                "Utilized Agile methodologies (Scrum) for project management and contributed to continuous improvement initiatives."
+                "Defined rollout phases and delivery strategy across six regional markets, balancing stakeholder demands with scope and delivery constraints.",
+                "Managed sprint planning, scope trade-offs, and effort estimation with tech leads to deliver web, mobile, and internal products under aggressive timelines and competing priorities.",
+                "Tracked RAID items in Jira and led weekly reviews to resolve blockers and compliance risks, escalating key issues to C-level stakeholders during weekly leadership meetings.",
+                "Led UAT with QA and ops using predefined acceptance criteria, tracked test outcomes and readiness in Jira, and drove go/no-go decisions.",
+                "Delivered AI-powered pricing and insurance integration by owning API requirement handoffs, test coordination, and go-live validation with regional teams.",
+                "Managed cross-functional release communications and stakeholder updates to ensure delivery alignment and operational readiness.",
+                "Launched Carro Taiwan MVP by managing rollout, customizing SOPs for compliance, and driving adoption, resulting in on-time delivery and 15% conversion from enquiries.",
+                "Reduced time-to-quote by 50% on covered.sg by managing cross-functional delivery of API-powered self-serve pricing and automated data retrieval, increasing lead conversions."
             ]
         },
         {
-            "job_title": "SOFTWARE ENGINEER",
-            "company": "FPP EDU MEDIA",
-            "location": "Las Vega, Nv",
-            "start_date": "February 2016",
-            "end_date": "March 2024",
-            "key": "FPP EDU MEDIA-SOFTWARE ENGINEER",
+            "job_title": "Product Manager - Payments",
+            "company": "Capital Diamond Star Group Limited (CDSG)",
+            "location": "Yangon, Myanmar",
+            "start_date": "July 2020",
+            "end_date": "March 2021",
+            "key": "Capital Diamond Star Group Limited (CDSG)-Product Manager - Payments",
             "achievement": [
-                "Design and developed a 3D virtual platform using PHP, Node.js, and cloud services to increase accessibility.",
-                "Achieved a 70% increase in new student conversion, expanding partner institutions' educational reach and impact through carefully designed solutions.",
-                "Managed the complexities of mass email dispatch by integrating design principles that accounted for challenges such as timezone differences and compliance with data protection regulations.",
-                "Design and implemented an intelligent \"match\" system aligning students with ideal courses, boosting engagement and educational effectiveness."
+                "Planned and executed phased rollout of Citizens Wallet across iOS/Android by coordinating internal teams, resolving scope constraints, and managing launch blockers.",
+                "Managed sprint planning and backlog execution across engineering and QA to ensure timely delivery of wallet and loyalty features.",
+                "Monitored delivery risks and tracked dependencies across payment and loyalty systems using issue logs to resolve pre-launch blockers.",
+                "Led UAT planning and execution for wallet and loyalty features by defining acceptance criteria with business teams and driving go/no-go decisions based on defect tracking.",
+                "Managed API onboarding with 50+ partners by driving test alignment, contract timelines, and launch approvals.",
+                "Led project closure activities (internal training, Agile retrospectives, and lessons learned register) to update organizational process assets for continuous improvement.",
+                "Delivered high-priority feature enhancements and campaign improvements that drove 10,000+ monthly transactions within 6 months.",
+                "Enabled successful nationwide referral campaign by onboarding 50K+ merchants and 20K+ agents, improving cashback redemption performance through data-driven optimization."
             ]
         },
         {
-            "job_title": "SOFTWARE ENGINEER",
-            "company": "ASSISTE VIDA",
-            "location": "Salvador, Ba",
-            "start_date": "June 2012",
-            "end_date": "March 2023",
-            "key": "ASSISTE VIDA-SOFTWARE ENGINEER",
+            "job_title": "Product Manager",
+            "company": "Flymya",
+            "location": "Yangon, Myanmar",
+            "start_date": "September 2019",
+            "end_date": "June 2020",
+            "key": "Flymya-Product Manager",
             "achievement": [
-                "Spearheaded the implementation of DevOps tools such as Docker and optimized cloud infrastructure on Azure for a healthcare platform.",
-                "Improved application security by integrating best practices and conducting thorough code reviews and version control."
-            ]
-        },
-        {
-            "job_title": "CHIEF TECHNOLOGY OFFICER",
-            "company": "BENMELHOR",
-            "location": "Feira de Santana, Ba",
-            "start_date": "January 2015",
-            "end_date": "January 2023",
-            "key": "BENMELHOR-CHIEF TECHNOLOGY OFFICER",
-            "achievement": [
-                "Guided technology initiatives to deliver software solutions that addressed immediate client requirements and foresaw future trends.",
-                "Identified, debugged, and resolved software defects, enhancing performance and reducing bottlenecks.",
-                "Led the development of robust, scalable solutions using PHP, Laravel, and Symfony, following industry best practices (e.g., PSR standards)."
+                "Managed end-to-end delivery of Flymya’s booking engine MVP, including scope planning, sprint execution, and alignment across engineering, QA, and sales teams.",
+                "Defined and validated acceptance criteria with stakeholders, led UAT cycles, and made go/no-go recommendations based on test outcomes and defect severity.",
+                "Spearheaded integration of KBZ Pay and vendor APIs by coordinating test plans, clarifying API specs, and tracking readiness milestones.",
+                "Created user flows and edge cases for QA to design test scenarios across all conditions.",
+                "Managed launch communications with product, ops, and sales teams to align release timing, collect stakeholder feedback, and guide post-launch workflows",
+                "Delivered booking engine MVP under a 3-month timeline, supporting revenue growth through bundled travel packages and expanded checkout flexibility.",
+                "Reduced checkout abandonment by 12% through continuous A/B testing and booking flow improvements, leading to higher user conversion."
             ]
         }
     ],
-    "professional_summary": "Senior software engineer with over 10 years of experience in PHP development, primarily using Laravel as a framework. Experience in developing RESTful APIs, front-end integration using JavaScript (including jQuery, Vue.js, React) and with databases such as MySQL, PostgreSQL, Sql Server and Oracle. Experience in DevOps tools such as Docker and Vagrant, and cloud platforms such as AWS, Azure and Google Cloud. A strong advocate of agile methodologies, with a commitment to continuous improvement, mentoring and maintaining industry best practices (e.g. PSR standards) for secure and efficient code.",
-    "languages": [],
-    "certifications": [
-        {
-            "name": "1st place at Campus Mobile - 2 Edition",
-            "issuing_organization": "Campus Mobile",
-            "year_issued": "Jul 2013"
-        },
-        {
-            "name": "1st place at Vivo Hackathon - Campus Party",
-            "issuing_organization": null,
-            "year_issued": "2013"
-        }
-    ],
+    "professional_summary": "Project manager with 5+ years of experience driving end-to-end delivery across Fintech, Automotive, and Travel sectors. Skilled in managing project scope, risk, change, and stakeholder engagement across regional rollouts, API integrations, and cross-functional product launches. Experienced in Agile and hybrid project lifecycles, sprint planning, release readiness, and UAT execution using Jira and Confluence. Seeking a Fall 2025 Project Management co-op to apply PMP-aligned leadership and contribute to value-driven delivery in a fast-paced environment.",
     "personal_information": {
-        "name": "RICARDO TASSIO",
-        "phone": "(647) 804-8130",
-        "email": "ricardotassio@gmail.com",
-        "addres": "Mississauga, ON",
+        "name": "CHAW SU SU THINN",
+        "phone": "(437) 435-6953",
+        "email": "chawsusuthinn21@gmail.com",
+        "addres": null,
         "social_media": [
-            "https://www.linkedin.com/in/ricardo-tassio/",
-            "https://github.com/ricardotassio"
+            "https://www.linkedin.com/in/chawthinn/"
         ]
     }
 }

@@ -1,76 +1,66 @@
 {
-    "job_title": "Senior Software Engineer (PHP)",
+    "job_title": "Project Manager",
     "company": {
-        "name": "Guidepoint",
-        "industry": "Research Enablement Platform",
-        "location": "Toronto",
+        "name": "Indeed",
+        "industry": "N/A",
+        "location": "Mississauga, ON",
         "remote": false
     },
-    "employment_type": "Full-time",
-    "experience_level": "Senior",
-    "years_of_experience_required": 4,
+    "employment_type": "N/A",
+    "experience_level": "N/A",
+    "years_of_experience_required": 2,
     "salary_range": {
         "min": null,
         "max": null,
         "currency": null,
         "payment_frequency": null
     },
-    "job_description": "As a Senior Software Engineer (PHP), you’ll work with a team of engineers through challenging development projects. Optimizing monolithic legacy codebases and newer repositories using PHP (Symfony).",
+    "job_description": "Overseeing various projects from inception to completion, ensuring on-time delivery and high standards. Requires excellent organizational skills and a commitment to quality management.",
     "responsibilities": [
-        "Optimizing monolithic legacy codebases and newer repositories using PHP (Symfony)",
-        "Work in an agile environment with Product Managers in completing user stories and converting complex business rules/workflows from User Story requirements into bespoke Sales Force type CRM applications",
-        "Maintain development and deployment environments using containerization technologies such as Docker and Kubernetes",
-        "Collaborate with full-stack (Front-end/Back-end) team members with projects",
-        "Cooperate with QA and Application Support teams to triage bugs",
-        "Work with large database schemas that would include adding and updating tables and rows using MySql",
-        "Write Unit tests and Documentation"
+        "Lead projects from initiation to close-out—on time and within budget",
+        "Supervise project teams, providing guidance and support to ensure successful project outcomes.",
+        "Monitor project performance and timelines, proactively resolving operational issues",
+        "Prepare detailed reports, project schedules, and progress updates",
+        "Make and maintain comprehensive project schedules",
+        "Order and coordinate timely delivery of materials to job site",
+        "Manage workers and their schedules to ensure timely completion of on-site tasks",
+        "Conduct meetings and workshops to communicate status, expectations, and resolve issues",
+        "Communicate effectively with clients and engineers throughout all project phases",
+        "Take progress photos at key project stages—pre-construction, during, and post-completion",
+        "Attend pre-tender meetings to gather information for accurate project pricing",
+        "Manage multiple projects simultaneously with attention to detail",
+        "Implement quality management practices to maintain high standards throughout all phases of the project"
     ],
     "requirements": [
-        "4 years' experience with PHP, SQL, OOP, and Linux",
-        "2 years' experience with REST API and Symfony/Frameworks",
-        "Experience with Azure/Cloud, System and API Design, and containerized development/deployments",
-        "Experience with using containerization technologies such as Docker and Kubernetes"
+        "Engineering background",
+        "2 years of experience",
+        "Valid driver’s license",
+        "Strong leadership, communication, and organizational skills",
+        "Comfortable working at heights",
+        "Self-motivated and able to perform well under pressure"
     ],
-    "technical_skills": [
-        "PHP",
-        "SQL",
-        "OOP",
-        "Linux",
-        "REST API",
-        "Symfony",
-        "Frameworks",
-        "Azure",
-        "Cloud",
-        "System Design",
-        "API Design",
-        "Docker",
-        "Kubernetes",
-        "MySql",
-        "RabbitMQ",
-        "CosmosDB",
-        "NoSQL"
-    ],
+    "technical_skills": [],
     "soft_skills": [
-        "Effective communication",
-        "Ownership",
-        "Accountability",
+        "Leadership",
+        "Communication",
+        "Organizational skills",
+        "Self-motivated",
         "Problem solving",
-        "Analytical skills",
-        "Collaboration",
-        "Self-starter",
-        "Drive",
-        "Think outside the box"
+        "Teamwork"
     ],
-    "education_required": [],
-    "certifications_required": [],
-    "languages_required": [],
+    "education_required": [
+        {
+            "degree": "Bachelor's",
+            "field_of_study": "Engineering",
+            "preferred_institutions": []
+        }
+    ],
     "benefits": [
-        "Paid Time Off",
-        "Comprehensive benefits plan",
-        "Company RRSP Match",
-        "Development opportunities through the LinkedIn Learning platform"
+        "Company vehicle provided",
+        "Dynamic, team-oriented work environment",
+        "Opportunities for growth and advancement in a growing industry"
     ],
     "application_deadline": null,
-    "job_posting_date": null,
-    "application_link": null
+    "job_posting_date": "5/16/25",
+    "application_link": "https://ca.indeed.com/q-project-manager-l-mississauga,-on-jobs.html?vjk=5a5f7479eb27d388"
 }

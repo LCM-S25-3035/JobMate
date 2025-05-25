@@ -1,0 +1,164 @@
+[
+  {
+    "url": "https://jobs.example.com/realjob1",
+    "title": "Software Engineer",
+    "description": "Develop software products.",
+    "company": "TechCo",
+    "contact_email": "hr@techco.com",
+    "salary": 90000,
+    "posted_at": "2025-05-15T10:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/realjob2",
+    "title": "Marketing Manager",
+    "description": "Lead marketing campaigns.",
+    "company": "MarketCo",
+    "contact_email": "jobs@marketco.com",
+    "salary": 70000,
+    "posted_at": "2025-05-14T09:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/ghostjob1",
+    "title": "Lorem Ipsum",
+    "description": "Sample content with placeholder text.",
+    "company": "",
+    "contact_email": "",
+    "salary": 12000,
+    "posted_at": "2025-05-01T00:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/ghostjob1",
+    "title": "Lorem Ipsum",
+    "description": "Sample content with placeholder text.",
+    "company": "",
+    "contact_email": "",
+    "salary": 12000,
+    "posted_at": "2025-05-02T00:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/ghostjob1",
+    "title": "Lorem Ipsum",
+    "description": "Sample content with placeholder text.",
+    "company": "",
+    "contact_email": "",
+    "salary": 12000,
+    "posted_at": "2025-05-03T00:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/ghostjob1",
+    "title": "Lorem Ipsum",
+    "description": "Sample content with placeholder text.",
+    "company": "",
+    "contact_email": "",
+    "salary": 12000,
+    "posted_at": "2025-05-04T00:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/ghostjob1",
+    "title": "Lorem Ipsum",
+    "description": "Sample content with placeholder text.",
+    "company": "",
+    "contact_email": "",
+    "salary": 12000,
+    "posted_at": "2025-05-05T00:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/ghostjob1",
+    "title": "Lorem Ipsum",
+    "description": "Sample content with placeholder text.",
+    "company": "",
+    "contact_email": "",
+    "salary": 12000,
+    "posted_at": "2025-05-06T00:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/ghostjob1",
+    "title": "Lorem Ipsum",
+    "description": "Sample content with placeholder text.",
+    "company": "",
+    "contact_email": "",
+    "salary": 12000,
+    "posted_at": "2025-05-07T00:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/expiredjob",
+    "title": "Expired Job",
+    "description": "Lorem ipsum placeholder",
+    "company": "",
+    "contact_email": "",
+    "salary": 1000000,
+    "posted_at": "2025-04-01T00:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/expiredjob",
+    "title": "Expired Job",
+    "description": "Lorem ipsum placeholder",
+    "company": "",
+    "contact_email": "",
+    "salary": 1000000,
+    "posted_at": "2025-04-02T00:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/expiredjob",
+    "title": "Expired Job",
+    "description": "Lorem ipsum placeholder",
+    "company": "",
+    "contact_email": "",
+    "salary": 1000000,
+    "posted_at": "2025-04-03T00:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/expiredjob",
+    "title": "Expired Job",
+    "description": "Lorem ipsum placeholder",
+    "company": "",
+    "contact_email": "",
+    "salary": 1000000,
+    "posted_at": "2025-04-04T00:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/expiredjob",
+    "title": "Expired Job",
+    "description": "Lorem ipsum placeholder",
+    "company": "",
+    "contact_email": "",
+    "salary": 1000000,
+    "posted_at": "2025-04-05T00:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/expiredjob",
+    "title": "Expired Job",
+    "description": "Lorem ipsum placeholder",
+    "company": "",
+    "contact_email": "",
+    "salary": 1000000,
+    "posted_at": "2025-04-06T00:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/expiredjob",
+    "title": "Expired Job",
+    "description": "Lorem ipsum placeholder",
+    "company": "",
+    "contact_email": "",
+    "salary": 1000000,
+    "posted_at": "2025-04-07T00:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/expiredjob",
+    "title": "Expired Job",
+    "description": "Lorem ipsum placeholder",
+    "company": "",
+    "contact_email": "",
+    "salary": 1000000,
+    "posted_at": "2025-04-08T00:00:00"
+  },
+  {
+    "url": "https://jobs.example.com/realjob3",
+    "title": "Project Manager",
+    "description": "Manage complex projects.",
+    "company": "BuildRight",
+    "contact_email": "pm@buildright.com",
+    "salary": 90000,
+    "posted_at": "2025-05-16T09:00:00"
+  }
+]

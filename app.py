@@ -30,8 +30,24 @@ if st.button("Generate questions"):
                 n=n_questions
             )
 
-        st.markdown("###✅ Questions generated:")
+        st.markdown("### ✅ Questions generated:")
         
-        preguntas = resultado.strip().split('\n')
-        for pregunta in preguntas:
-            st.markdown(f"- {pregunta}")
+        blocks = resultado.split('\n')
+        in_code_block = False
+        code_lines = []
+
+        for line in blocks:
+            # Detectar inicio o fin de bloque de código
+            if line.strip().startswith("```"):
+                in_code_block = not in_code_block
+                if not in_code_block:
+                    # Mostrar bloque de código acumulado
+                    st.code("\n".join(code_lines), language="python")
+                    code_lines = []
+                continue
+
+            if in_code_block:
+                code_lines.append(line)
+            else:
+                if line.strip():  # línea no vacía
+                    st.markdown(f"- {line.strip()}")

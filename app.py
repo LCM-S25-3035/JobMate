@@ -1,5 +1,8 @@
+import os
 import streamlit as st
 from question_gen import question_generator_gemini
+from fpdf import FPDF
+import tempfile
 
 st.set_page_config(page_title="Interview Question Generator", layout="centered")
 
@@ -51,3 +54,31 @@ if st.button("Generate questions"):
             else:
                 if line.strip():  # línea no vacía
                     st.markdown(f"- {line.strip()}")
+      
+        pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.add_page()
+        
+        try:
+            font_path = os.path.join(os.path.dirname(__file__), "DejaVuSans.ttf")
+            pdf.add_font("DejaVu", "", font_path, uni=True)
+            pdf.set_font("DejaVu", size=12)
+        except Exception:
+            pdf.set_font("Arial", size=12)
+
+        pdf.multi_cell(0, 10, "Job Interview Questions", ln=True, align='C')
+        pdf.ln(5)
+
+        for line in blocks:
+            if not line.strip().startswith("```") and line.strip():
+                pdf.multi_cell(0, 10, line.strip())
+                pdf.ln(1)
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+            pdf.output(tmp_file.name)
+            st.download_button(
+                label="📄 Download questions in PDF",
+                data=open(tmp_file.name, "rb").read(),
+                file_name="interview_questions.pdf",
+                mime="application/pdf"
+            )

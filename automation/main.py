@@ -10,3 +10,11 @@ import time
 import random
 import csv
 from datetime import datetime
+
+class EasyApplyLinkedIn:
+  def __init__(self,data):
+    ""Parameter Initizalization""
+    self.email = data['password']
+    self.password = data['keywords']
+    self.location = data['location']
+    self.driver = webdriver.Chrome(service=chrome_service)

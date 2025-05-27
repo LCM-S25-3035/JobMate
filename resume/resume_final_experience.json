@@ -1,0 +1,60 @@
+{
+    "work_experience": [
+        {
+            "job_title": "SOFTWARE ENGINEER",
+            "company": "NUNCHI SOLUCOES",
+            "location": "Feira de Santana, Ba",
+            "start_date": "June 2020",
+            "end_date": "Present",
+            "key": "NUNCHI SOLUCOES-SOFTWARE ENGINEER",
+            "achievement": [
+                "Led integration of RESTful APIs with third-party tools, reducing operational time and costs.",
+                "Implemented cloud-based solutions on AWS to boost system scalability and performance.",
+                "Designed and implemented secure, scalable web applications using PHP and Laravel, adhering to industry standards and best practices, resulting in enhanced system performance and reduced operational costs.",
+                "Utilized Agile methodologies (Scrum) for project management and contributed to continuous improvement initiatives.",
+                "At NUNCHI SOLUCOES, as a Software Engineer, I led the design and implementation of scalable, modular system architectures that improved application performance and maintainability. By applying best practices in system design, I reduced system downtime by 20% and enhanced the system\u2019s ability to handle a 30% increase in user traffic without degradation in response time. This experience honed my skills in designing efficient, reliable, and scalable software solutions.",
+                "At NUNCHI SOLUCOES, as a Software Engineer, I designed and optimized data storage solutions using Azure Cosmos DB to ensure high availability and low latency for global applications. By implementing effective partitioning strategies and indexing, I improved query performance by 25% and supported seamless scaling to handle a growing user base across multiple regions. This experience strengthened my expertise in managing distributed NoSQL databases in cloud environments.",
+                "As a Software Engineer at NUNCHI SOLUCOES, I took full ownership of critical project components from design through deployment and maintenance. By proactively managing deadlines and collaborating across teams, I ensured timely delivery of features that increased user engagement by 15%. My accountability and leadership fostered a culture of responsibility and continuous improvement within the development team.",
+                "At NUNCHI SOLUCOES, as a Software Engineer, I maintained accountability for delivering high-quality code and meeting project milestones. Through rigorous testing and clear communication with stakeholders, I contributed to a 20% reduction in post-release bugs and ensured alignment with client expectations, reinforcing trust and project success.",
+                "As a Software Engineer at NUNCHI SOLUCOES, I applied strong analytical skills to troubleshoot complex system issues and optimize application performance. By analyzing usage patterns and system logs, I identified bottlenecks that, when addressed, improved application response time by 18%, enhancing user experience and system reliability."
+            ]
+        },
+        {
+            "job_title": "SOFTWARE ENGINEER",
+            "company": "FPP EDU MEDIA",
+            "location": "Las Vega, Nv",
+            "start_date": "February 2016",
+            "end_date": "March 2024",
+            "key": "FPP EDU MEDIA-SOFTWARE ENGINEER",
+            "achievement": [
+                "Design and developed a 3D virtual platform using PHP, Node.js, and cloud services to increase accessibility."
+            ]
+        },
+        {
+            "job_title": "SOFTWARE ENGINEER",
+            "company": "ASSISTE VIDA",
+            "location": "Salvador, Ba",
+            "start_date": "June 2012",
+            "end_date": "March 2023",
+            "key": "ASSISTE VIDA-SOFTWARE ENGINEER",
+            "achievement": [
+                "Spearheaded the implementation of DevOps tools such as Docker and optimized cloud infrastructure on Azure for a healthcare platform.",
+                "Improved application security by integrating best practices and conducting thorough code reviews and version control.",
+                "As a Software Engineer at NUNCHI SOLUCOES, I applied strong analytical skills to troubleshoot complex system issues and optimize application performance. By analyzing usage patterns and system logs, I identified bottlenecks that, when addressed, improved application response time by 18%, enhancing user experience and system reliability.",
+                "At ASSISTE VIDA as a Software Engineer, I utilized Google Drive and related cloud storage tools to streamline team collaboration and document management. By organizing project files and automating backups, I improved team productivity by 20% and ensured secure, easy access to critical resources across distributed teams.",
+                "As a Software Engineer at ASSISTE VIDA, I consistently applied creative problem-solving to overcome complex technical challenges. By proposing innovative solutions that deviated from standard approaches, I helped reduce development time by 15% and introduced features that enhanced user engagement, driving overall product differentiation in a competitive market."
+            ]
+        },
+        {
+            "job_title": "CHIEF TECHNOLOGY OFFICER",
+            "company": "BENMELHOR",
+            "location": "Feira de Santana, Ba",
+            "start_date": "January 2015",
+            "end_date": "January 2023",
+            "key": "BENMELHOR-CHIEF TECHNOLOGY OFFICER",
+            "achievement": [
+                "Led the development of robust, scalable solutions using PHP, Laravel, and Symfony, following industry best practices (e.g., PSR standards)."
+            ]
+        }
+    ]
+}

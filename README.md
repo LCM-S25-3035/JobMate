@@ -1,3 +1,11 @@
+
+# JobMate 
+## Auto Apply 2.0: Powered by JobMate
+
+JobMate is a two-sided recruitment platform designed to streamline hiring for recruiters while supporting applicants with ATS-friendly resume optimization. Built on the foundational work of the AutoApply app, which focused on AI-based job recommendations and resume tailoring, JobMate extends functionality to include full recruiter-side tools and end-to-end applicant management.
+
+### How the Previous App Worked :
+
 # AutoApply
 
 AutoApply is a resume/job matching and analysis platform powered by AI. It processes resumes and job descriptions, evaluates compatibility, and manages data using MongoDB, Streamlit, and Apache Airflow.

@@ -1,0 +1,32 @@
+question_id,question_text,type,required,options,step,region
+work_auth,Are you authorized to work in {region_name}?,boolean/select,TRUE,"[""Yes"", ""No""]",1,"[""US"", ""CA""]"
+sponsorship,Will you now or in future require sponsorship to work in {region_name}?,boolean/select,TRUE,"[""Yes"", ""No""]",1,"[""US"", ""CA""]"
+felony,Have you ever been convicted of a felony?,boolean/select,TRUE,"[""Yes"", ""No""]",1,"[""US"", ""CA""]"
+start_date,When can you start working?,date/text,TRUE,,1,"[""US"", ""CA""]"
+relocate,Are you willing to relocate for a job?,boolean/select,FALSE,"[""Yes"", ""No""]",1,"[""US"", ""CA""]"
+salary,What is your desired salary range?,text/select,FALSE,"[""$40K-$60K"", ""$60K-$80K"", ""$80K-$100K"", ""$100K-$120K"", ""$120K+""]",1,"[""US"", ""CA""]"
+gender,What gender do you identify as?,text/select,FALSE,"[""Female"", ""Male"", ""Non-binary"", ""Other"", ""Prefer not to say""]",1,"[""US"", ""CA""]"
+pronouns,What are your pronouns?,text/select,FALSE,"[""He/ Him"", ""She/ Her"", ""They/ Them"", ""Ve/ Ver"", ""Xe/ Xem"", ""Ze/ Hir"", ""Ze/ Zir"", ""Other"", ""Prefer not to say""]",1,"[""US"", ""CA""]"
+ethnicity,What race or ethnicity do you identify as?,text/select,FALSE,"[""American Indian or Alaska Native"", ""Asian"", ""Black or African American"", ""Hispanic or Latino"", ""Native Hawaiian or Other Pacific Islander"", ""White"", ""Middle Eastern or North African"", ""Two or More Races"", ""Other"", ""Prefer not to say""]",1,"[""US"", ""CA""]"
+disability,Do you have any identified or unidentified disabilities?,boolean/select,FALSE,"[""Yes"", ""No""]",1,"[""US"", ""CA""]"
+veteran,Are you a veteran of {region_name} Armed Forces?,boolean/select,FALSE,"[""Yes"", ""No""]",1,"[""US"", ""CA""]"
+first_name,First Name,text,TRUE,,2,"[""US"", ""CA""]"
+middle_name,Middle Name,text,FALSE,,2,"[""US"", ""CA""]"
+last_name,Last Name,text,TRUE,,2,"[""US"", ""CA""]"
+dob,Date of Birth,date,FALSE,,2,"[""US"", ""CA""]"
+email,Email,text,TRUE,,2,"[""US"", ""CA""]"
+phone,Phone Number,text,TRUE,,2,"[""US"", ""CA""]"
+linkedin,LinkedIn Profile URL,text,FALSE,,2,"[""US"", ""CA""]"
+portfolio,Portfolio Website,text,FALSE,,2,"[""US"", ""CA""]"
+state,State,text/select,TRUE,"[""Alabama"", ""Alaska"", ""Arizona"", ""Arkansas"", ""California"", ""Colorado"", ""Connecticut"",
+""Delaware"", ""Florida"", ""Georgia"", ""Hawaii"", ""Idaho"", ""Illinois"", ""Indiana"", ""Iowa"",
+""Kansas"", ""Kentucky"", ""Louisiana"", ""Maine"", ""Maryland"", ""Massachusetts"", ""Michigan"",
+""Minnesota"", ""Mississippi"", ""Missouri"", ""Montana"", ""Nebraska"", ""Nevada"", ""New Hampshire"",
+""New Jersey"", ""New Mexico"", ""New York"", ""North Carolina"", ""North Dakota"", ""Ohio"",
+""Oklahoma"", ""Oregon"", ""Pennsylvania"", ""Rhode Island"", ""South Carolina"", ""South Dakota"",
+""Tennessee"", ""Texas"", ""Utah"", ""Vermont"", ""Virginia"", ""Washington"", ""West Virginia"",
+""Wisconsin"", ""Wyoming""]",2,"[""US""]"
+province,Province,text/select,TRUE,"[""Alberta"", ""British Columbia"", ""Manitoba"", ""New Brunswick"", ""Newfoundland and Labrador"",
+""Nova Scotia"", ""Ontario"", ""Prince Edward Island"", ""Quebec"", ""Saskatchewan"", 
+""Northwest Territories"", ""Nunavut"", ""Yukon""]",2,"[""CA""]"
+city,City,text,TRUE,,2,"[""US"", ""CA""]"

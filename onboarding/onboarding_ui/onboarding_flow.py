@@ -1,6 +1,8 @@
 import streamlit as st
-from onboarding_ui.step1_questions import render_step1
-from onboarding_backend import save_user_answers
+from onboarding_ui.onboarding_step1 import render_step1
+from onboarding_ui.onboarding_step2 import render_step2
+from onboarding_ui.onboarding_step3 import render_step3
+from onboarding_api.services.onboarding_service import save_user_answers
 
 TOTAL_STEPS = 3 # set total steps
 
@@ -26,19 +28,23 @@ def onboarding_flow(region: str, user_id: str):
     # Navigating between steps
     if st.session_state.step == 1:
         can_proceed = render_step1(region, user_id)
-    # elif st.session_state.step == 2:
-    #     can_proceed = render_step2(region, user_id)
+    elif st.session_state.step == 2:
+        can_proceed = render_step2(region, user_id)
+    elif st.session_state.step == 3:
+        can_proceed = render_step3(region, user_id)
+
 
     # Add spacer to push buttons to the bottom
     st.markdown("<div style='height: 5vh;'></div>", unsafe_allow_html=True)
 
     # Create three columns: left for Back, center empty, right for Next
-    col1, col2, col3 = st.columns([1, 8, 1])
+    col1, _, col3 = st.columns([1, 8, 1])
 
     with col1:
         if st.session_state.step > 1:
             if st.button("⬅️ Back"):
                 st.session_state.step -= 1
+                st.rerun()
 
     with col3:
         if st.button("Next ➡️"):
@@ -46,6 +52,7 @@ def onboarding_flow(region: str, user_id: str):
                 save_user_answers(user_id, region, st.session_state.answers)
                 if st.session_state.step < TOTAL_STEPS:
                     st.session_state.step += 1
+                    st.rerun()
             else:
                 st.toast("Please answer all required questions before continuing.")
 

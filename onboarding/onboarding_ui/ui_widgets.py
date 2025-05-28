@@ -1,12 +1,4 @@
 import streamlit as st
-import ast
-import os
-
-def parse_options(options_str):
-    try:
-        return ast.literal_eval(options_str) if options_str else []
-    except Exception:
-        return []
 
 def simplify_type(raw_type):
     raw_type = raw_type.lower()
@@ -32,22 +24,31 @@ def render_boolean(label, default_value, key):
 
 def render_date(label, default_value, key):
     import datetime
+
+    today = datetime.date.today()
+
     if default_value:
         try:
-            default_date = datetime.datetime.strptime(default_value, "%Y-%m-%d").date()
+            if isinstance(default_value, str):
+                default_date = datetime.datetime.strptime(default_value, "%Y-%m-%d").date()
+            elif isinstance(default_value, datetime.datetime):
+                default_date = default_value.date()
+            elif isinstance(default_value, datetime.date):
+                default_date = default_value
+            else:
+                default_date = datetime.date(1990, 1, 1)
         except Exception:
-            default_date = None
+            default_date = datetime.date(1990, 1, 1)
     else:
-        default_date = None
-    return st.date_input(label, value=default_date or datetime.date.today(), key=key)
+        default_date = datetime.date(1990, 1, 1)
+
+    return st.date_input(label, value=default_date, min_value=datetime.date(1900, 1, 1), max_value=today, key=key)
 
 def render_question(q: dict, default_value):
     label = f"{q.get('question_text', 'Question')}{' *' if q.get('required', 'FALSE').upper() == 'TRUE' else ''}"
     raw_type = q.get('type', 'text')
-    options_str = q.get('options (if applicable)', '')
-
+    options = q.get('options', [])
     qtype = simplify_type(raw_type)
-    options = parse_options(options_str)
     key = q.get('question_id')
 
     renderers = {
@@ -57,21 +58,13 @@ def render_question(q: dict, default_value):
         'date': lambda: render_date(label, default_value, key)
     }
 
-    return renderers.get(qtype, render_text_input)()
+    return renderers.get(qtype, lambda: render_text_input(label, default_value, key))()
 
-def load_css(file_path: str):
-    if not os.path.exists(file_path):
-        st.error(f"CSS file not found: {file_path}")
-        return
-
-    with open(file_path) as f:
-        css = f.read()
-    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
-
-# OpenAI 4o, Last Prompt:
+# OpenAI 4o, 1st Prompt:
 # i want to have a funcitonality where i can define all the things that 
 # ui need to control like input fields, dropdown boxes, date pickers. 
 # can explain the strategy first? 
 
-# OpenAI 4o, First Prompt:
+# OpenAI 4o, last Prompt:
 # Cognitive Complexity of functions should not be too high (python:S3776) why am i seeing this for render_question function? 
+# why my date picker is until 2015? coz i need dob.

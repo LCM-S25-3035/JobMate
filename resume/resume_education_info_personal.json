@@ -1,35 +1,34 @@
 {
     "personal_information": {
-        "name": "RICARDO TASSIO",
-        "phone": "(647) 804-8130",
-        "email": "ricardotassio@gmail.com",
-        "addres": "Mississauga, ON",
+        "name": "CHAW SU SU THINN",
+        "phone": "(437) 435-6953",
+        "email": "chawsusuthinn21@gmail.com",
+        "addres": null,
         "social_media": [
-            "https://www.linkedin.com/in/ricardo-tassio/",
-            "https://github.com/ricardotassio"
+            "https://www.linkedin.com/in/chawthinn/"
         ]
     },
     "education": [
         {
-            "degree": "Graduate Certificate",
+            "degree": "Graduate Certificate in Big Data Analytics",
             "institution": "Lambton College",
-            "location": "Mississauga",
-            "start_date": "January 2024",
-            "end_date": "December 2025"
+            "location": "Mississauga, ON, Canada",
+            "start_date": "May 2024",
+            "end_date": "January 2026"
         },
         {
-            "degree": "Bachelor's Degree",
-            "institution": "Faculdade Santissimo Sacramento",
-            "location": "Ba",
-            "start_date": "January 2013",
-            "end_date": "December 2013"
+            "degree": "Master of Business Administration",
+            "institution": "University of Bolton",
+            "location": "Bolton, UK",
+            "start_date": "March 2019",
+            "end_date": "September 2021"
         },
         {
-            "degree": "Bachelor's Degree",
-            "institution": "Universidade do Estado da Bahia",
-            "location": "Ba",
-            "start_date": "January 2012",
-            "end_date": "December 2012"
+            "degree": "Diploma in Electronic & Computer Engineering",
+            "institution": "Ngee Ann Polytechnic",
+            "location": "Singapore",
+            "start_date": "April 2012",
+            "end_date": "May 2015"
         }
     ]
 }

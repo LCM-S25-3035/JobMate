@@ -1010,6 +1010,9 @@ def extract_cv_information(uploaded_pdf):
     for page in pdf_reader.pages:
         pdf_text += page.extract_text()
 
+    if not pdf_text.strip():
+        raise ValueError("❌ No readable text found in uploaded PDF.")
+
     system_instructions = """
     You are an HR analyst responsible for processing and analyzing resumes. Your task is to extract the following information from a given resume:
 

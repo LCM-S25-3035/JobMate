@@ -1,68 +1,39 @@
 {
-    "ats_score": 82,
+    "ats_score": 76,
     "matching_technical_skills": [
-        "php",
-        "sql",
-        "oop",
-        "linux",
-        "rest api",
-        "symfony",
-        "frameworks",
-        "azure",
-        "cloud",
-        "docker",
-        "kubernetes",
-        "mysql",
-        "nosql"
+        "project scheduling",
+        "quality management"
     ],
-    "missing_technical_skills": [
-        "system design",
-        "api design",
-        "rabbitmq",
-        "cosmosdb"
-    ],
+    "missing_technical_skills": [],
     "matching_soft_skills": [
-        "effective communication",
-        "problem solving",
-        "collaboration"
+        "leadership",
+        "communication",
+        "organizational skills",
+        "problem-solving",
+        "team management",
+        "time management"
     ],
-    "missing_soft_skills": [
-        "ownership",
-        "accountability",
-        "analytical skills",
-        "self-starter",
-        "drive",
-        "think outside the box"
-    ],
+    "missing_soft_skills": [],
     "keywords_matched": [
-        "php",
-        "sql",
-        "oop",
-        "linux",
-        "rest api",
-        "symfony",
-        "frameworks",
-        "azure",
-        "cloud",
-        "docker",
-        "kubernetes",
-        "mysql"
+        "2 years of experience",
+        "strong leadership",
+        "communication",
+        "organizational skills"
     ],
     "keywords_missing": [
-        "system design",
-        "api design",
-        "rabbitmq",
-        "cosmosdb"
+        "engineering background",
+        "valid driver’s license",
+        "comfortable working at heights",
+        "self-motivated and able to perform well under pressure"
     ],
     "years_of_experience_match": "Yes",
-    "education_match": "Yes",
-    "summary_match": "Strong",
+    "education_match": "No",
+    "summary_match": "Partial",
     "responsibility_alignment": "Strong",
     "recommendations": [
-        "The resume is well-aligned with the job description.",
-        "Consider adding specific examples of 'ownership', 'accountability', 'analytical skills', 'self-starter', 'drive', and 'thinking outside the box' to the resume, possibly within the work experience section, to better align with the desired soft skills.",
-        "While the resume mentions experience with cloud platforms, explicitly mentioning experience with 'system design' and 'api design' would strengthen the match.",
-        "If possible, include any experience with 'rabbitmq' or 'cosmosdb' to address the missing technical skills. If no direct experience exists, consider highlighting transferable skills or related technologies.",
-        "The resume mentions 'RESTful API', consider changing it to 'REST API' to match the job description."
+        "The resume should include the keyword 'engineering background' to align better with the job posting's requirements.",
+        "The resume should include the keywords 'valid driver’s license', 'comfortable working at heights', and 'self-motivated and able to perform well under pressure' to align better with the job posting's requirements.",
+        "While the resume demonstrates project scheduling and quality management, explicitly stating these skills in the skills section would improve the ATS score.",
+        "The summary could be improved by directly addressing the job's focus on overseeing projects from inception to completion and ensuring on-time delivery to meet the highest standards."
     ]
 }

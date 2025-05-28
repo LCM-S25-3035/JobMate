@@ -1,5 +1,5 @@
 from typing import List, Dict, Optional
-from onboarding_db import get_collection
+from onboarding_api.db.mongo_core import get_collection, create_new_collection
 from datetime import datetime, timezone
 import traceback
 
@@ -18,12 +18,8 @@ def get_questions_by_region(region: str) -> List[dict]:
         if collection is None:
             raise RuntimeError("Questions collection does not exist in DB.")
 
-        doc = collection.find_one({"region": region})
-        if not doc or "questions" not in doc:
-            print(f"[DEBUG] No questions found for region '{region}'")
-            return []
-
-        questions = doc["questions"]
+        questions = list(collection.find({"region": region}))
+        
         print(f"[DEBUG] Loaded {len(questions)} questions for region '{region}'")
         return questions
 
@@ -92,7 +88,6 @@ def save_user_answers(user_id: str, region: str, answers: Dict[str, any]) -> Non
     try:
         collection = get_collection("onboarding_user_answers")
         if collection is None:
-            from onboarding_db import create_new_collection
             create_new_collection("onboarding_user_answers")
             collection = get_collection("onboarding_user_answers")
 
@@ -128,7 +123,7 @@ def load_user_answers(user_id: str, region: str) -> Optional[Dict[str, any]]:
     try:
         collection = get_collection("onboarding_user_answers")
         if collection is None:
-            print(f"[DEBUG] User answers collection does not exist.")
+            print("[DEBUG] User answers collection does not exist.")
             return None
 
         doc = collection.find_one({"user_id": user_id, "region": region})

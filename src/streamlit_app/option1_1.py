@@ -117,7 +117,7 @@ def run():
 
             work_experience = filter_to_continue.get("work_experience", [])
 
-            st.write(f"## Evaluating work experience")
+            st.write("## Evaluating work experience")
          
             # Process achievements and validate them
             for job in work_experience:

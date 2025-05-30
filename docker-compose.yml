@@ -1,5 +1,3 @@
-version: '3.1'
-
 services:
   postgres:
     image: postgres:13
@@ -102,7 +100,11 @@ services:
       - ./plugins:/opt/airflow/plugins
     command: scheduler
     healthcheck:
-      test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
+      test:
+        [
+          "CMD-SHELL",
+          'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"',
+        ]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -139,10 +141,26 @@ services:
     networks:
       - autoapply-network
 
+  sonar-scanner:
+    image: sonarsource/sonar-scanner-cli:latest
+    container_name: sonar-scanner
+    volumes:
+      - ./:/usr/src
+    working_dir: /usr/src
+    environment:
+      SONAR_HOST_URL: "https://sonarqube.nunchisolucoes.com"
+      # Using just token to avoid warnings
+      SONAR_TOKEN: "${SONAR_TOKEN}"
+      SONAR_PROJECT_KEY: "${SONAR_PROJECT_KEY}"
+    networks:
+      - autoapply-network
+    # Use our custom script with timeout
+    entrypoint: ["sh", "/usr/src/run-sonar.sh"]
+
 networks:
   autoapply-network:
     driver: bridge
 
 volumes:
   postgres-db-volume:
-  mongodb-data: 
+  mongodb-data:

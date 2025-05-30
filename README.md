@@ -3,6 +3,7 @@
 AutoApply is a resume/job matching and analysis platform powered by AI. It processes resumes and job descriptions, evaluates compatibility, and manages data using MongoDB, Streamlit, and Apache Airflow.
 
 ## Features
+
 - Upload and analyze resumes and job descriptions (PDF)
 - Extract and evaluate skills, experience, and compatibility
 - Store and manage resumes in MongoDB
@@ -12,12 +13,14 @@ AutoApply is a resume/job matching and analysis platform powered by AI. It proce
 ---
 
 ## Prerequisites
+
 - [Docker](https://www.docker.com/get-started) and [Docker Compose](https://docs.docker.com/compose/install/)
 - (Optional) Python 3.9+ for local development
 
 ---
 
 ## 1. Clone the Repository
+
 ```bash
 git clone <your-repo-url>
 cd AutoApply
@@ -43,6 +46,10 @@ POSTGRES_USER=airflow
 POSTGRES_PASSWORD=airflow
 POSTGRES_DB=airflow
 
+# SonarQube
+SONAR_TOKEN=your_sonarqube_token_here
+SONAR_PROJECT_KEY=JobMate
+
 # Streamlit
 ENVIRONMENT=development
 DEBUG=True
@@ -60,6 +67,7 @@ docker-compose up -d --build
 ```
 
 This will start:
+
 - MongoDB (database)
 - Postgres (for Airflow)
 - Apache Airflow (webserver and scheduler)
@@ -78,6 +86,7 @@ This will start:
 ---
 
 ## 5. Upload and Analyze Resumes
+
 - Go to the Streamlit app
 - Upload your resume and job description (PDF)
 - View compatibility analysis and manage resumes in the database
@@ -85,11 +94,13 @@ This will start:
 ---
 
 ## 6. Stopping the Project
+
 ```bash
 docker-compose down
 ```
 
 To remove all data (including database volumes):
+
 ```bash
 docker-compose down -v
 ```
@@ -97,6 +108,7 @@ docker-compose down -v
 ---
 
 ## 7. Troubleshooting
+
 - Ensure your `.env` file is in the project root
 - Check container logs with `docker-compose logs <service>`
 - If you change environment variables, restart the containers
@@ -104,6 +116,7 @@ docker-compose down -v
 ---
 
 ## 8. Project Structure
+
 ```
 AutoApply/
 ├── src/                  # Source code (Streamlit, utils, etc.)
@@ -113,6 +126,8 @@ AutoApply/
 ├── plugins/              # Airflow plugins
 ├── Dockerfile.streamlit  # Streamlit Dockerfile
 ├── docker-compose.yml    # Docker Compose config
+├── sonar-project.properties # SonarQube configuration
+├── run-sonar.sh         # SonarQube scanner script
 ├── .env                  # Environment variables
 └── README.md             # This file
 ```
@@ -120,28 +135,49 @@ AutoApply/
 ---
 
 ## 9. Environment Variables Reference
-| Variable              | Description                        |
-|-----------------------|------------------------------------|
-| MONGODB_URI           | MongoDB connection string           |
-| MONGODB_DB            | MongoDB database name               |
-| MONGODB_COLLECTION    | MongoDB collection name             |
-| GEMINI_API_KEY        | Gemini API key                      |
-| POSTGRES_USER         | Airflow/Postgres user               |
-| POSTGRES_PASSWORD     | Airflow/Postgres password           |
-| POSTGRES_DB           | Airflow/Postgres database           |
-| ENVIRONMENT           | App environment (development/prod)  |
-| DEBUG                 | Debug mode (True/False)             |
-| LOG_LEVEL             | Logging level (INFO/DEBUG/WARN)     |
+
+| Variable           | Description                        |
+| ------------------ | ---------------------------------- |
+| MONGODB_URI        | MongoDB connection string          |
+| MONGODB_DB         | MongoDB database name              |
+| MONGODB_COLLECTION | MongoDB collection name            |
+| GEMINI_API_KEY     | Gemini API key                     |
+| POSTGRES_USER      | Airflow/Postgres user              |
+| POSTGRES_PASSWORD  | Airflow/Postgres password          |
+| POSTGRES_DB        | Airflow/Postgres database          |
+| SONAR_TOKEN        | SonarQube authentication token     |
+| SONAR_PROJECT_KEY  | SonarQube project key identifier   |
+| ENVIRONMENT        | App environment (development/prod) |
+| DEBUG              | Debug mode (True/False)            |
+| LOG_LEVEL          | Logging level (INFO/DEBUG/WARN)    |
 
 ---
 
-## 10. Useful Commands
+## 10. Code Quality with SonarQube
+
+This project includes SonarQube integration for code quality analysis. SonarQube helps identify bugs, code smells, and security vulnerabilities in your code.
+
+To run a SonarQube analysis:
+
+```bash
+docker-compose run --rm sonar-scanner
+```
+
+The analysis results will be available on your SonarQube server at:
+`https://sonarqube.nunchisolucoes.com/dashboard?id=JobMate`
+
+For configuration details, see `sonar-project.properties` file. The scanner uses environment variables from your `.env` file.
+
+## 11. Useful Commands
+
 - View logs: `docker-compose logs <service>`
 - Rebuild containers: `docker-compose up -d --build`
 - Stop all: `docker-compose down`
 - Remove all data: `docker-compose down -v`
+- Run SonarQube analysis: `docker-compose run --rm sonar-scanner`
 
 ---
 
 ## License
+
 MIT

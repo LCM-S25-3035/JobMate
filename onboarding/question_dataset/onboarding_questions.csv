@@ -1,0 +1,12 @@
+question_id,question_text,type,required,options (if applicable),step
+work_auth,Are you authorized to work in the United States?,boolean/select,TRUE,"[""Yes"", ""No""]",1
+sponsorship,Will you require sponsorship to work in the United States?,boolean/select,TRUE,"[""Yes"", ""No""]",1
+felony,Have you ever been convicted of a felony?,boolean/select,TRUE,"[""Yes"", ""No""]",1
+start_date,When can you start working?,date/text,TRUE,,1
+relocate,Are you willing to relocate for a job?,boolean/select,FALSE,"[""Yes"", ""No""]",1
+salary,What is your desired salary range?,text/select,FALSE,,1
+gender,What gender do you identify as?,text/select,FALSE,"[""Female"", ""Male"", ""Non-binary"", ""Other"", ""Prefer not to say""]",1
+pronouns,What are your pronouns?,text,FALSE,"[""He/ Him"", ""She/ Her"", ""They/ Them"", ""Use my name"", ""Ve/ Ver"", ""Xe/ Xem"", ""Ze/ Hir"", ""Ze/ Zir"", ""Other"", ""Prefer not to say""]",1
+ethnicity,What race or ethnicity do you identify as?,text/select,FALSE,"[""American Indian or Alaska Native"", ""Asian"", ""Black or African American"", ""Hispanic or Latino"", ""Native Hawaiian or Other Pacific Islander"", ""White"", ""Middle Eastern or North African"", ""Two or More Races"", ""Other"", ""Prefer not to say""]",1
+disability,Do you have any identified or unidentified disabilities?,boolean/select,FALSE,"[""Yes"", ""No""]",1
+veteran,Are you a veteran of the US Armed Forces?,boolean/select,FALSE,"[""Yes"", ""No""]",1

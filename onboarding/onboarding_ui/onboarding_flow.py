@@ -31,7 +31,7 @@ def onboarding_flow(region: str, user_id: str):
     elif st.session_state.step == 2:
         can_proceed = render_step2(region, user_id)
     elif st.session_state.step == 3:
-        can_proceed = render_step3(region, user_id)
+        can_proceed = render_step3()
 
 
     # Add spacer to push buttons to the bottom
@@ -41,10 +41,9 @@ def onboarding_flow(region: str, user_id: str):
     col1, _, col3 = st.columns([1, 8, 1])
 
     with col1:
-        if st.session_state.step > 1:
-            if st.button("⬅️ Back"):
-                st.session_state.step -= 1
-                st.rerun()
+        if st.session_state.step > 1 and st.button("⬅️ Back"):
+            st.session_state.step -= 1
+            st.rerun()
 
     with col3:
         if st.button("Next ➡️"):

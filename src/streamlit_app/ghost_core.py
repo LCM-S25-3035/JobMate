@@ -1,5 +1,3 @@
-# ghost_detector_app.py
-
 
 import joblib
 import os
@@ -107,10 +105,10 @@ def hybrid_detect_ghost_jobs(jobs):
             'url': job['url'],
             'rule_score': round(rule_score, 2),
             'ml_prob': round(ml_prob, 2),
+            'ghost_risk_%': round(ml_prob * 100),
             'is_ghost': is_ghost,
             'title': job['title'],
             'company': job['company'],
-            'posted_at': job['posted_at'],
-        'ghost_risk_%': round(ml_prob * 100)
+            'posted_at': job['posted_at']
         })
     return results

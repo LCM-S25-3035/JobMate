@@ -1,18 +1,17 @@
-# ghost_detector_app.py
-
-
+# hybrid_ghost_detector.py
 import joblib
-import os
 from datetime import datetime
 from collections import defaultdict
 from difflib import SequenceMatcher
 import statistics
+import re
 import pandas as pd
 
-base_path = os.path.dirname(__file__)
-model = joblib.load(os.path.join(base_path, "logistic_model.pkl"))
-vectorizer = joblib.load(os.path.join(base_path, "tfidf_vectorizer.pkl"))
+# Load ML model & vectorizer
+model = joblib.load("models/logistic_model.pkl")
+vectorizer = joblib.load("models/tfidf_vectorizer.pkl")
 
+# Rule-based threshold
 GHOST_SCORE_THRESHOLD = 0.7
 
 def is_broken_link(url):
@@ -77,21 +76,11 @@ def predict_ml(job):
     return pred, prob
 
 def hybrid_detect_ghost_jobs(jobs):
-    salaries = []
-    for j in jobs:
-        try:
-            salaries.append(float(j['salary']))
-        except (ValueError, TypeError):
-            continue
-
-    if not salaries:
-        raise ValueError("No valid salaries found in the dataset.")
-
+    salaries = [float(j['salary']) for j in jobs if isinstance(j.get('salary'), (int, float))]
     stats = {
         'mean': statistics.mean(salaries),
         'std': statistics.stdev(salaries)
     }
-
     url_post_dates = defaultdict(list)
     content_map = defaultdict(set)
     for job in jobs:
@@ -110,7 +99,6 @@ def hybrid_detect_ghost_jobs(jobs):
             'is_ghost': is_ghost,
             'title': job['title'],
             'company': job['company'],
-            'posted_at': job['posted_at'],
-        'ghost_risk_%': round(ml_prob * 100)
+            'posted_at': job['posted_at']
         })
     return results

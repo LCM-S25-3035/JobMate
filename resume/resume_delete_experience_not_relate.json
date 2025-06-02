@@ -1,51 +1,49 @@
 {
     "work_experience": [
         {
-            "job_title": "SOFTWARE ENGINEER",
-            "company": "NUNCHI SOLUCOES",
-            "location": "Feira de Santana, Ba",
-            "start_date": "June 2020",
-            "end_date": "Present",
-            "key": "NUNCHI SOLUCOES-SOFTWARE ENGINEER",
+            "job_title": "Product Manager - B2C products and Internal Tools",
+            "company": "Carro",
+            "location": "Singapore",
+            "start_date": "August 2021",
+            "end_date": "May 2024",
+            "key": "Carro-Product Manager - B2C products and Internal Tools",
             "achievement": [
-                "Led integration of RESTful APIs with third-party tools, reducing operational time and costs.",
-                "Implemented cloud-based solutions on AWS to boost system scalability and performance.",
-                "Designed and implemented secure, scalable web applications using PHP and Laravel, adhering to industry standards and best practices, resulting in enhanced system performance and reduced operational costs.",
-                "Utilized Agile methodologies (Scrum) for project management and contributed to continuous improvement initiatives."
+                "Defined rollout phases and delivery strategy across six regional markets, balancing stakeholder demands with scope and delivery constraints.",
+                "Managed sprint planning, scope trade-offs, and effort estimation with tech leads to deliver web, mobile, and internal products under aggressive timelines and competing priorities.",
+                "Tracked RAID items in Jira and led weekly reviews to resolve blockers and compliance risks, escalating key issues to C-level stakeholders during weekly leadership meetings.",
+                "Led UAT with QA and ops using predefined acceptance criteria, tracked test outcomes and readiness in Jira, and drove go/no-go decisions.",
+                "Managed cross-functional release communications and stakeholder updates to ensure delivery alignment and operational readiness.",
+                "Launched Carro Taiwan MVP by managing rollout, customizing SOPs for compliance, and driving adoption, resulting in on-time delivery and 15% conversion from enquiries."
             ]
         },
         {
-            "job_title": "SOFTWARE ENGINEER",
-            "company": "FPP EDU MEDIA",
-            "location": "Las Vega, Nv",
-            "start_date": "February 2016",
-            "end_date": "March 2024",
-            "key": "FPP EDU MEDIA-SOFTWARE ENGINEER",
+            "job_title": "Product Manager - Payments",
+            "company": "Capital Diamond Star Group Limited (CDSG)",
+            "location": "Yangon, Myanmar",
+            "start_date": "July 2020",
+            "end_date": "March 2021",
+            "key": "Capital Diamond Star Group Limited (CDSG)-Product Manager - Payments",
             "achievement": [
-                "Design and developed a 3D virtual platform using PHP, Node.js, and cloud services to increase accessibility."
+                "Planned and executed phased rollout of Citizens Wallet across iOS/Android by coordinating internal teams, resolving scope constraints, and managing launch blockers.",
+                "Managed sprint planning and backlog execution across engineering and QA to ensure timely delivery of wallet and loyalty features.",
+                "Monitored delivery risks and tracked dependencies across payment and loyalty systems using issue logs to resolve pre-launch blockers.",
+                "Led UAT planning and execution for wallet and loyalty features by defining acceptance criteria with business teams and driving go/no-go decisions based on defect tracking.",
+                "Managed API onboarding with 50+ partners by driving test alignment, contract timelines, and launch approvals.",
+                "Led project closure activities (internal training, Agile retrospectives, and lessons learned register) to update organizational process assets for continuous improvement."
             ]
         },
         {
-            "job_title": "SOFTWARE ENGINEER",
-            "company": "ASSISTE VIDA",
-            "location": "Salvador, Ba",
-            "start_date": "June 2012",
-            "end_date": "March 2023",
-            "key": "ASSISTE VIDA-SOFTWARE ENGINEER",
+            "job_title": "Product Manager",
+            "company": "Flymya",
+            "location": "Yangon, Myanmar",
+            "start_date": "September 2019",
+            "end_date": "June 2020",
+            "key": "Flymya-Product Manager",
             "achievement": [
-                "Spearheaded the implementation of DevOps tools such as Docker and optimized cloud infrastructure on Azure for a healthcare platform.",
-                "Improved application security by integrating best practices and conducting thorough code reviews and version control."
-            ]
-        },
-        {
-            "job_title": "CHIEF TECHNOLOGY OFFICER",
-            "company": "BENMELHOR",
-            "location": "Feira de Santana, Ba",
-            "start_date": "January 2015",
-            "end_date": "January 2023",
-            "key": "BENMELHOR-CHIEF TECHNOLOGY OFFICER",
-            "achievement": [
-                "Led the development of robust, scalable solutions using PHP, Laravel, and Symfony, following industry best practices (e.g., PSR standards)."
+                "Managed end-to-end delivery of Flymya’s booking engine MVP, including scope planning, sprint execution, and alignment across engineering, QA, and sales teams.",
+                "Defined and validated acceptance criteria with stakeholders, led UAT cycles, and made go/no-go recommendations based on test outcomes and defect severity.",
+                "Spearheaded integration of KBZ Pay and vendor APIs by coordinating test plans, clarifying API specs, and tracking readiness milestones.",
+                "Managed launch communications with product, ops, and sales teams to align release timing, collect stakeholder feedback, and guide post-launch workflows"
             ]
         }
     ]

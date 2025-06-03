@@ -13,8 +13,9 @@ from streamlit_app.modules.personalization_tools import display_tools
 
 st.set_page_config(page_title="JobMate - Applicant Dashboard", layout="wide")
 
+#To link the onboarding and extract data for the applicant profile 
 def main():
-    st.title("\U0001F4CB JobMate: Applicant Dashboard") # to pull data from the onboarding 
+    st.title("\U0001F4CB JobMate: Applicant Dashboard") 
 
     menu = [
         "Applicant Profile",

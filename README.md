@@ -1,5 +1,5 @@
+# JobMate
 
-# JobMate 
 ## Auto Apply 2.0: Powered by JobMate
 
 JobMate is a two-sided recruitment platform designed to streamline hiring for recruiters while supporting applicants with ATS-friendly resume optimization. Built on the foundational work of the AutoApply app, which focused on AI-based job recommendations and resume tailoring, JobMate extends functionality to include full recruiter-side tools and end-to-end applicant management.
@@ -11,6 +11,7 @@ JobMate is a two-sided recruitment platform designed to streamline hiring for re
 AutoApply is a resume/job matching and analysis platform powered by AI. It processes resumes and job descriptions, evaluates compatibility, and manages data using MongoDB, Streamlit, and Apache Airflow.
 
 ## Features
+
 - Upload and analyze resumes and job descriptions (PDF)
 - Extract and evaluate skills, experience, and compatibility
 - Store and manage resumes in MongoDB
@@ -20,6 +21,7 @@ AutoApply is a resume/job matching and analysis platform powered by AI. It proce
 ---
 
 ## Prerequisites
+
 - [Docker](https://www.docker.com/get-started) and [Docker Compose](https://docs.docker.com/compose/install/)
 - (Optional) Python 3.9+ for local development
 - Get Google Gemini API Key (https://ai.google.dev/gemini-api/docs/api-key)
@@ -27,6 +29,7 @@ AutoApply is a resume/job matching and analysis platform powered by AI. It proce
 ---
 
 ## 1. Clone the Repository
+
 ```bash
 git clone <your-repo-url>
 cd AutoApply
@@ -73,6 +76,7 @@ docker-compose up -d --build
 ```
 
 This will start:
+
 - MongoDB (database)
 - Postgres (for Airflow)
 - Apache Airflow (webserver and scheduler)
@@ -91,6 +95,7 @@ This will start:
 ---
 
 ## 5. Upload and Analyze Resumes
+
 - Go to the Streamlit app
 - Upload your resume and job description (PDF)
 - View compatibility analysis and manage resumes in the database
@@ -98,11 +103,13 @@ This will start:
 ---
 
 ## 6. Stopping the Project
+
 ```bash
 docker-compose down
 ```
 
 To remove all data (including database volumes):
+
 ```bash
 docker-compose down -v
 ```
@@ -110,6 +117,7 @@ docker-compose down -v
 ---
 
 ## 7. Troubleshooting
+
 - Ensure your `.env` file is in the project root
 - Check container logs with `docker-compose logs <service>`
 - If you change environment variables, restart the containers
@@ -117,6 +125,7 @@ docker-compose down -v
 ---
 
 ## 8. Project Structure
+
 ```
 AutoApply/
 ├── src/                  # Source code (Streamlit, utils, etc.)
@@ -135,20 +144,21 @@ AutoApply/
 ---
 
 ## 9. Environment Variables Reference
-| Variable              | Description                        |
-|-----------------------|------------------------------------|
-| MONGODB_URI           | MongoDB connection string           |
-| MONGODB_DB            | MongoDB database name               |
-| MONGODB_COLLECTION    | MongoDB collection name             |
-| GEMINI_API_KEY        | Gemini API key                      |
-| POSTGRES_USER         | Airflow/Postgres user               |
-| POSTGRES_PASSWORD     | Airflow/Postgres password           |
-| POSTGRES_DB           | Airflow/Postgres database           |
-| SONAR_TOKEN           | SonarQube authentication token      |
-| SONAR_PROJECT_KEY     | SonarQube project key identifier    |
-| ENVIRONMENT           | App environment (development/prod)  |
-| DEBUG                 | Debug mode (True/False)             |
-| LOG_LEVEL             | Logging level (INFO/DEBUG/WARN)     |
+
+| Variable           | Description                        |
+| ------------------ | ---------------------------------- |
+| MONGODB_URI        | MongoDB connection string          |
+| MONGODB_DB         | MongoDB database name              |
+| MONGODB_COLLECTION | MongoDB collection name            |
+| GEMINI_API_KEY     | Gemini API key                     |
+| POSTGRES_USER      | Airflow/Postgres user              |
+| POSTGRES_PASSWORD  | Airflow/Postgres password          |
+| POSTGRES_DB        | Airflow/Postgres database          |
+| SONAR_TOKEN        | SonarQube authentication token     |
+| SONAR_PROJECT_KEY  | SonarQube project key identifier   |
+| ENVIRONMENT        | App environment (development/prod) |
+| DEBUG              | Debug mode (True/False)            |
+| LOG_LEVEL          | Logging level (INFO/DEBUG/WARN)    |
 
 ---
 
@@ -168,6 +178,7 @@ The analysis results will be available on your SonarQube server at:
 For configuration details, see `sonar-project.properties` file. The scanner uses environment variables from your `.env` file.
 
 ## 11. Useful Commands
+
 - View logs: `docker-compose logs <service>`
 - Rebuild containers: `docker-compose up -d --build`
 - Stop all: `docker-compose down`
@@ -177,4 +188,5 @@ For configuration details, see `sonar-project.properties` file. The scanner uses
 ---
 
 ## License
+
 MIT

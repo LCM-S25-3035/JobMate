@@ -139,6 +139,22 @@ services:
     restart: always
     networks:
       - autoapply-network
+      
+  sonar-scanner:
+    image: sonarsource/sonar-scanner-cli:latest
+    container_name: sonar-scanner
+    volumes:
+      - ./:/usr/src
+    working_dir: /usr/src
+    environment:
+      SONAR_HOST_URL: "https://sonarqube.nunchisolucoes.com"
+      # Using just token to avoid warnings
+      SONAR_TOKEN: "${SONAR_TOKEN}"
+      SONAR_PROJECT_KEY: "${SONAR_PROJECT_KEY}"
+    networks:
+      - autoapply-network
+    # Use our custom script with timeout
+    entrypoint: ["sh", "/usr/src/run-sonar.sh"]
 
 networks:
   autoapply-network:

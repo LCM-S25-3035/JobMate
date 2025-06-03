@@ -52,6 +52,10 @@ POSTGRES_USER=airflow
 POSTGRES_PASSWORD=airflow
 POSTGRES_DB=airflow
 
+# SonarQube
+SONAR_TOKEN=your_sonarqube_token_here
+SONAR_PROJECT_KEY=JobMate
+
 # Streamlit
 ENVIRONMENT=development
 DEBUG=True
@@ -122,6 +126,8 @@ AutoApply/
 ├── plugins/              # Airflow plugins
 ├── Dockerfile.streamlit  # Streamlit Dockerfile
 ├── docker-compose.yml    # Docker Compose config
+├── sonar-project.properties # SonarQube configuration
+├── run-sonar.sh         # SonarQube scanner script
 ├── .env                  # Environment variables
 └── README.md             # This file
 ```
@@ -138,17 +144,35 @@ AutoApply/
 | POSTGRES_USER         | Airflow/Postgres user               |
 | POSTGRES_PASSWORD     | Airflow/Postgres password           |
 | POSTGRES_DB           | Airflow/Postgres database           |
+| SONAR_TOKEN           | SonarQube authentication token      |
+| SONAR_PROJECT_KEY     | SonarQube project key identifier    |
 | ENVIRONMENT           | App environment (development/prod)  |
 | DEBUG                 | Debug mode (True/False)             |
 | LOG_LEVEL             | Logging level (INFO/DEBUG/WARN)     |
 
 ---
 
-## 10. Useful Commands
+## 10. Code Quality with SonarQube
+
+This project includes SonarQube integration for code quality analysis. SonarQube helps identify bugs, code smells, and security vulnerabilities in your code.
+
+To run a SonarQube analysis:
+
+```bash
+docker-compose run --rm sonar-scanner
+```
+
+The analysis results will be available on your SonarQube server at:
+`https://sonarqube.nunchisolucoes.com/dashboard?id=JobMate`
+
+For configuration details, see `sonar-project.properties` file. The scanner uses environment variables from your `.env` file.
+
+## 11. Useful Commands
 - View logs: `docker-compose logs <service>`
 - Rebuild containers: `docker-compose up -d --build`
 - Stop all: `docker-compose down`
 - Remove all data: `docker-compose down -v`
+- Run SonarQube analysis: `docker-compose run --rm sonar-scanner`
 
 ---
 

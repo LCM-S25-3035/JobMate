@@ -1,12 +1,33 @@
 import os
+import json
 import streamlit as st
 from question_gen import question_generator_gemini
 from fpdf import FPDF
 import tempfile
+from pygments import highlight
+from pygments.lexers import PythonLexer
+from pygments.formatters import ImageFormatter
+from PIL import Image
+import io
 
 st.set_page_config(page_title="Interview Question Generator", layout="centered")
 
 st.title("🗣️ Job Interview Question Generator 📊")
+
+def code_to_image(code_text: str) -> str:
+    formatter = ImageFormatter(
+        font_name='Courier New',
+        line_numbers=True,
+        style='default',
+        image_format='PNG'
+    )
+    img_data = io.BytesIO()
+    highlight(code_text, PythonLexer(), formatter, outfile=img_data)
+    img_data.seek(0)
+    image = Image.open(img_data)
+    tmp_image_path = tempfile.NamedTemporaryFile(delete=False, suffix='.png').name
+    image.save(tmp_image_path)
+    return tmp_image_path
 
 rol = st.text_input("Job position 🔍", placeholder="Example: Data Analyst")
 level = st.selectbox("Candidate level", ["Entry", "Junior", "Mid", "Senior"])
@@ -21,7 +42,7 @@ if st.button("Generate questions"):
     if not rol:
         st.warning("Please enter a role.")
     else:
-        with st.spinner("Generating questions..."):
+        with st.spinner("Generating questions...⏳"):
             resultado = question_generator_gemini(
                 rol=rol,
                 level=level,
@@ -40,11 +61,9 @@ if st.button("Generate questions"):
         code_lines = []
 
         for line in blocks:
-            # Detectar inicio o fin de bloque de código
             if line.strip().startswith("```"):
                 in_code_block = not in_code_block
                 if not in_code_block:
-                    # Mostrar bloque de código acumulado
                     st.code("\n".join(code_lines), language="python")
                     code_lines = []
                 continue
@@ -52,8 +71,8 @@ if st.button("Generate questions"):
             if in_code_block:
                 code_lines.append(line)
             else:
-                if line.strip():  # línea no vacía
-                    st.markdown(f"- {line.strip()}")
+                if line.strip():
+                    st.markdown(line.strip())
       
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
@@ -69,10 +88,24 @@ if st.button("Generate questions"):
         pdf.multi_cell(0, 10, "Job Interview Questions", ln=True, align='C')
         pdf.ln(5)
 
+        code_block = []
+        in_code = False
+
         for line in blocks:
-            if not line.strip().startswith("```") and line.strip():
-                pdf.multi_cell(0, 10, line.strip())
-                pdf.ln(1)
+            if line.strip().startswith("```"):
+                in_code = not in_code
+                if not in_code:
+                    code_image_path = code_to_image("\n".join(code_block))
+                    pdf.image(code_image_path, w=180)
+                    code_block = []
+                continue
+
+            if in_code:
+                code_block.append(line)
+            else:
+                if line.strip():
+                    pdf.multi_cell(0, 10, line.strip())
+                    pdf.ln(1)
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
             pdf.output(tmp_file.name)

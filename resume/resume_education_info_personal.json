@@ -1,35 +1,27 @@
 {
     "personal_information": {
-        "name": "RICARDO TASSIO",
-        "phone": "(647) 804-8130",
-        "email": "ricardotassio@gmail.com",
-        "addres": "Mississauga, ON",
+        "name": "Mugilmithran Kathiravan",
+        "phone": "+1 (416) 879-2858",
+        "email": "mugilmithran01@gmail.com",
+        "addres": "Mississauga, ON L5N 7T7",
         "social_media": [
-            "https://www.linkedin.com/in/ricardo-tassio/",
-            "https://github.com/ricardotassio"
+            "https://www.linkedin.com/in/mugilmithrankathiravan/"
         ]
     },
     "education": [
         {
-            "degree": "Graduate Certificate",
+            "degree": "Post-Graduate in Big Data Analytics",
             "institution": "Lambton College",
-            "location": "Mississauga",
-            "start_date": "January 2024",
+            "location": null,
+            "start_date": "April 2024",
             "end_date": "December 2025"
         },
         {
-            "degree": "Bachelor's Degree",
-            "institution": "Faculdade Santissimo Sacramento",
-            "location": "Ba",
-            "start_date": "January 2013",
-            "end_date": "December 2013"
-        },
-        {
-            "degree": "Bachelor's Degree",
-            "institution": "Universidade do Estado da Bahia",
-            "location": "Ba",
-            "start_date": "January 2012",
-            "end_date": "December 2012"
+            "degree": "Bachelor of Computer Science",
+            "institution": "Vistula University",
+            "location": null,
+            "start_date": "September 2016",
+            "end_date": "May 2020"
         }
     ]
 }

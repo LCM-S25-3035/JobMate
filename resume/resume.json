@@ -1,155 +1,109 @@
 {
     "technical_skills": [
-        "PHP",
-        "Laravel",
-        "Symfony",
-        "JavaScript",
-        "HTML5",
-        "CSS3",
-        "jQuery",
-        "Vue.js",
-        "React",
-        "AngularJS",
-        "Node.js",
-        "AWS",
-        "Google Cloud Platform (GCP)",
-        "Azure",
-        "Heroku",
+        "Python",
+        "PySpark",
         "Docker",
-        "Kubernetes",
-        "Jenkins",
-        "Vagrant",
-        "Nginx",
-        "Apache",
-        "Git",
-        "Git lab",
-        "Bitbucket",
-        "MySQL",
+        "Google Cloud Platform (GCP)",
+        "Google Cloud Storage",
+        "BigQuery",
+        "Cloud Composer",
         "PostgreSQL",
-        "Redis",
+        "ETL Pipelines",
+        "Data Ingestion",
+        "Data Transformation",
+        "Data Warehousing",
+        "Data Modeling",
+        "Scalable Data Infrastructure",
+        "Apache Airflow",
+        "Jupyter Notebook",
+        "Pendo",
+        "Version Control (Git)",
+        "Software Design Patterns",
+        "Automation",
+        "Code Documentation",
+        "Testing",
+        "Hive",
+        "XGBoost",
         "MongoDB",
-        "Oracle",
-        "RESTful API",
-        "PHPUnit",
-        "Laravel Dusk",
-        "Jest"
+        "NLP",
+        "Streamlit"
     ],
     "soft_skills": [
-        "Teamwork",
-        "Communication",
-        "Continuous Improvement",
-        "Mentoring",
-        "Agile Methodologies",
-        "Problem-solving",
-        "Leadership",
-        "Process Design",
+        "Analytical Thinking",
+        "Business Outcome-Oriented Engineering",
         "Cross-functional Collaboration",
-        "Adaptability"
+        "Adaptability",
+        "Proactive Problem Solving",
+        "Ownership & Accountability",
+        "Communication",
+        "Training & Enablement",
+        "Problem-solving",
+        "Data analysis",
+        "Teamwork",
+        "Accuracy",
+        "Time management",
+        "Attention to detail"
     ],
-    "years_of_experience": 12,
+    "years_of_experience": 2,
     "education": [
         {
-            "degree": "Graduate Certificate",
+            "degree": "Post-Graduate in Big Data Analytics",
             "institution": "Lambton College",
-            "location": "Mississauga",
-            "start_date": "January 2024",
+            "location": null,
+            "start_date": "April 2024",
             "end_date": "December 2025"
         },
         {
-            "degree": "Bachelor's Degree",
-            "institution": "Faculdade Santissimo Sacramento",
-            "location": "Ba",
-            "start_date": "January 2013",
-            "end_date": "December 2013"
-        },
-        {
-            "degree": "Bachelor's Degree",
-            "institution": "Universidade do Estado da Bahia",
-            "location": "Ba",
-            "start_date": "January 2012",
-            "end_date": "December 2012"
+            "degree": "Bachelor of Computer Science",
+            "institution": "Vistula University",
+            "location": null,
+            "start_date": "September 2016",
+            "end_date": "May 2020"
         }
     ],
-    "experience_level": "Senior",
+    "experience_level": "Entry Level",
     "work_experience": [
         {
-            "job_title": "SOFTWARE ENGINEER",
-            "company": "NUNCHI SOLUCOES",
-            "location": "Feira de Santana, Ba",
-            "start_date": "June 2020",
-            "end_date": "Present",
-            "key": "NUNCHI SOLUCOES-SOFTWARE ENGINEER",
+            "job_title": "ML Data Associate",
+            "company": "Amazon",
+            "location": "Chennai, India",
+            "start_date": "February 2022",
+            "end_date": "January 2024",
+            "key": "amazon-ml data associate",
             "achievement": [
-                "I initiated the development and optimization of three financial management systems, increasing efficiency and operational control by more than 40% in the home care, logistics, and education sectors. Furthermore, I created a receivables anticipation system for healthcare professionals, becoming the first startup in Brazil in the segment.",
-                "Led integration of RESTful APIs with third-party tools, reducing operational time and costs.",
-                "Implemented cloud-based solutions on AWS to boost system scalability and performance.",
-                "Provided technical mentorship to junior developers, boosting coding standards and best practices.",
-                "Designed and implemented secure, scalable web applications using PHP and Laravel, adhering to industry standards and best practices, resulting in enhanced system performance and reduced operational costs.",
-                "Utilized Agile methodologies (Scrum) for project management and contributed to continuous improvement initiatives."
+                "Ensured high data quality by processing and validating over 20,000 records with 98% accuracy, supporting integrity of datasets used in compliance-sensitive ML model training and downstream reporting.",
+                "Applied exploratory data analysis (EDA) techniques and collaborated with cross-functional teams to align data workflows with key risk and performance indicators (KRIs/KPIs), enhancing accuracy and relevance of reporting outputs.",
+                "Built anomaly detection and pattern recognition tools to identify data quality issues and operational risks, enhancing integrity of datasets leveraged in risk reporting and regulatory analysis.",
+                "Automated data processing pipelines to streamline repetitive data preparation tasks, improving reporting efficiency and reducing manual errors by 40%.",
+                "Analyzed performance monitoring and reporting accuracy enhancements by developing data visualizations and dashboards in Amazon Quick sight, managing insight generation for operational optimization.",
+                "Utilized Jira and Confluence in an Agile team to manage workflows and sprint planning."
             ]
         },
         {
-            "job_title": "SOFTWARE ENGINEER",
-            "company": "FPP EDU MEDIA",
-            "location": "Las Vega, Nv",
-            "start_date": "February 2016",
-            "end_date": "March 2024",
-            "key": "FPP EDU MEDIA-SOFTWARE ENGINEER",
+            "job_title": "Fund Accountant Intern",
+            "company": "State Street",
+            "location": "Gdansk, Poland",
+            "start_date": "December 2020",
+            "end_date": "February 2021",
+            "key": "state street-fund accountant intern",
             "achievement": [
-                "Design and developed a 3D virtual platform using PHP, Node.js, and cloud services to increase accessibility.",
-                "Achieved a 70% increase in new student conversion, expanding partner institutions' educational reach and impact through carefully designed solutions.",
-                "Managed the complexities of mass email dispatch by integrating design principles that accounted for challenges such as timezone differences and compliance with data protection regulations.",
-                "Design and implemented an intelligent \"match\" system aligning students with ideal courses, boosting engagement and educational effectiveness."
-            ]
-        },
-        {
-            "job_title": "SOFTWARE ENGINEER",
-            "company": "ASSISTE VIDA",
-            "location": "Salvador, Ba",
-            "start_date": "June 2012",
-            "end_date": "March 2023",
-            "key": "ASSISTE VIDA-SOFTWARE ENGINEER",
-            "achievement": [
-                "Spearheaded the implementation of DevOps tools such as Docker and optimized cloud infrastructure on Azure for a healthcare platform.",
-                "Improved application security by integrating best practices and conducting thorough code reviews and version control."
-            ]
-        },
-        {
-            "job_title": "CHIEF TECHNOLOGY OFFICER",
-            "company": "BENMELHOR",
-            "location": "Feira de Santana, Ba",
-            "start_date": "January 2015",
-            "end_date": "January 2023",
-            "key": "BENMELHOR-CHIEF TECHNOLOGY OFFICER",
-            "achievement": [
-                "Guided technology initiatives to deliver software solutions that addressed immediate client requirements and foresaw future trends.",
-                "Identified, debugged, and resolved software defects, enhancing performance and reducing bottlenecks.",
-                "Led the development of robust, scalable solutions using PHP, Laravel, and Symfony, following industry best practices (e.g., PSR standards)."
+                "Calculate and report Net Asset Values (NAV) for assigned funds accurately and on schedule, ensuring compliance with State Street policies and client requirements.",
+                "Reconcile cash, assets, and other financial transactions to maintain accuracy across all accounts. Identify and resolve discrepancies, contributing to timely and accurate financial reporting.",
+                "Review and process fund expenses, management fees, and performance fees in compliance with client agreements and industry standards.",
+                "Associated in preparing fund data for audits and regulatory reporting. Ensure all fund activities comply with relevant regulations and State Street’s internal audit standards."
             ]
         }
     ],
-    "professional_summary": "Senior software engineer with over 10 years of experience in PHP development, primarily using Laravel as a framework. Experience in developing RESTful APIs, front-end integration using JavaScript (including jQuery, Vue.js, React) and with databases such as MySQL, PostgreSQL, Sql Server and Oracle. Experience in DevOps tools such as Docker and Vagrant, and cloud platforms such as AWS, Azure and Google Cloud. A strong advocate of agile methodologies, with a commitment to continuous improvement, mentoring and maintaining industry best practices (e.g. PSR standards) for secure and efficient code.",
+    "professional_summary": "Highly motivated postgraduate big data analyst with a solid foundation in advanced machine learning, data engineering, and scalable system deployment. Demonstrated expertise in Python, PySpark, Docker, and cloud-native technologies, committed to furnishing analytical rigour and innovative solutions to drive strategic business outcomes and operational excellence. Seeking to contribute technical proficiency and a passion for data-driven decision-making in a challenging and growth-oriented environment.",
     "languages": [],
-    "certifications": [
-        {
-            "name": "1st place at Campus Mobile - 2 Edition",
-            "issuing_organization": "Campus Mobile",
-            "year_issued": "Jul 2013"
-        },
-        {
-            "name": "1st place at Vivo Hackathon - Campus Party",
-            "issuing_organization": null,
-            "year_issued": "2013"
-        }
-    ],
+    "certifications": [],
     "personal_information": {
-        "name": "RICARDO TASSIO",
-        "phone": "(647) 804-8130",
-        "email": "ricardotassio@gmail.com",
-        "addres": "Mississauga, ON",
+        "name": "Mugilmithran Kathiravan",
+        "phone": "+1 (416) 879-2858",
+        "email": "mugilmithran01@gmail.com",
+        "addres": "Mississauga, ON L5N 7T7",
         "social_media": [
-            "https://www.linkedin.com/in/ricardo-tassio/",
-            "https://github.com/ricardotassio"
+            "https://www.linkedin.com/in/mugilmithrankathiravan/"
         ]
     }
 }

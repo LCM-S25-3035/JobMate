@@ -1,52 +1,26 @@
 {
     "work_experience": [
         {
-            "job_title": "SOFTWARE ENGINEER",
-            "company": "NUNCHI SOLUCOES",
-            "location": "Feira de Santana, Ba",
-            "start_date": "June 2020",
-            "end_date": "Present",
-            "key": "NUNCHI SOLUCOES-SOFTWARE ENGINEER",
+            "job_title": "ML Data Associate",
+            "company": "Amazon",
+            "location": "Chennai, India",
+            "start_date": "February 2022",
+            "end_date": "January 2024",
+            "key": "amazon-ml data associate",
             "achievement": [
-                "Led integration of RESTful APIs with third-party tools, reducing operational time and costs.",
-                "Implemented cloud-based solutions on AWS to boost system scalability and performance.",
-                "Designed and implemented secure, scalable web applications using PHP and Laravel, adhering to industry standards and best practices, resulting in enhanced system performance and reduced operational costs.",
-                "Utilized Agile methodologies (Scrum) for project management and contributed to continuous improvement initiatives."
+                "Built anomaly detection and pattern recognition tools to identify data quality issues and operational risks, enhancing integrity of datasets leveraged in risk reporting and regulatory analysis.",
+                "Automated data processing pipelines to streamline repetitive data preparation tasks, improving reporting efficiency and reducing manual errors by 40%.",
+                "Analyzed performance monitoring and reporting accuracy enhancements by developing data visualizations and dashboards in Amazon Quick sight, managing insight generation for operational optimization."
             ]
         },
         {
-            "job_title": "SOFTWARE ENGINEER",
-            "company": "FPP EDU MEDIA",
-            "location": "Las Vega, Nv",
-            "start_date": "February 2016",
-            "end_date": "March 2024",
-            "key": "FPP EDU MEDIA-SOFTWARE ENGINEER",
-            "achievement": [
-                "Design and developed a 3D virtual platform using PHP, Node.js, and cloud services to increase accessibility."
-            ]
-        },
-        {
-            "job_title": "SOFTWARE ENGINEER",
-            "company": "ASSISTE VIDA",
-            "location": "Salvador, Ba",
-            "start_date": "June 2012",
-            "end_date": "March 2023",
-            "key": "ASSISTE VIDA-SOFTWARE ENGINEER",
-            "achievement": [
-                "Spearheaded the implementation of DevOps tools such as Docker and optimized cloud infrastructure on Azure for a healthcare platform.",
-                "Improved application security by integrating best practices and conducting thorough code reviews and version control."
-            ]
-        },
-        {
-            "job_title": "CHIEF TECHNOLOGY OFFICER",
-            "company": "BENMELHOR",
-            "location": "Feira de Santana, Ba",
-            "start_date": "January 2015",
-            "end_date": "January 2023",
-            "key": "BENMELHOR-CHIEF TECHNOLOGY OFFICER",
-            "achievement": [
-                "Led the development of robust, scalable solutions using PHP, Laravel, and Symfony, following industry best practices (e.g., PSR standards)."
-            ]
+            "job_title": "Fund Accountant Intern",
+            "company": "State Street",
+            "location": "Gdansk, Poland",
+            "start_date": "December 2020",
+            "end_date": "February 2021",
+            "key": "state street-fund accountant intern",
+            "achievement": []
         }
     ]
 }

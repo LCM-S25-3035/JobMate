@@ -1,0 +1,15 @@
+# Dockerfile.airflow
+
+# Base image
+FROM apache/airflow:2.7.0
+
+# Switch to non-root airflow user to install packages
+USER airflow
+
+# Install required Python packages for DAGs
+RUN pip install --no-cache-dir --user \
+    pymongo \
+    python-dotenv \
+    pandas \
+    joblib \
+    scikit-learn

@@ -1,12 +1,20 @@
+# ghost_job_detector.py
 
+import os
+import streamlit as st
+from pymongo import MongoClient
+from dotenv import load_dotenv
 from datetime import datetime
 from collections import defaultdict
 from difflib import SequenceMatcher
 import statistics
-import re
 
+# Set the ghost score threshold
 GHOST_SCORE_THRESHOLD = 0.7
 
+# -------------------------
+# Helper functions
+# -------------------------
 def is_broken_link(url):
     return any(term in url.lower() for term in ['404', 'expired', 'invalid', '.xyz'])
 
@@ -34,6 +42,9 @@ def is_duplicate_content(job, job_list):
                 return True
     return False
 
+# -------------------------
+# Main detection function
+# -------------------------
 def detect_ghost_jobs(jobs):
     salaries = [float(j['salary']) for j in jobs if isinstance(j.get('salary'), (int, float))]
     mean_salary = statistics.mean(salaries)
@@ -59,25 +70,18 @@ def detect_ghost_jobs(jobs):
         dates = url_post_dates[url]
         if len(dates) > 5 and all(abs((d - dates[0]).days) < 10 for d in dates):
             score += 0.3
-
         if is_broken_link(url):
             score += 0.2
-
         if is_placeholder(title) or is_placeholder(description):
             score += 0.2
-
         if is_unrealistic_salary(salary, mean_salary, std_salary):
             score += 0.2
-
         if not company or not contact:
             score += 0.2
-
         if len(content_map[(title, description)]) > 3:
             score += 0.2
-
         if has_generic_keywords(description):
             score += 0.2
-
         if is_duplicate_content(job, jobs):
             score += 0.2
 
@@ -90,4 +94,42 @@ def detect_ghost_jobs(jobs):
             'posted_at': job['posted_at']
         })
 
-    return results
+    return sorted(results, key=lambda x: x['score'], reverse=True)
+
+# -------------------------
+# MongoDB loader
+# -------------------------
+def load_jobs_from_mongo():
+    load_dotenv()
+    uri = os.getenv("MONGODB_URI")
+    client = MongoClient(uri)
+    db = client["your_db"]  # <- update to real DB name
+    collection = db["your_collection"]  # <- update to real collection
+    return list(collection.find())
+
+# -------------------------
+# Streamlit runner
+# -------------------------
+def run():
+    st.title("👻 Ghost Job Detector")
+
+    if st.button("Run Detector on MongoDB"):
+        try:
+            jobs = load_jobs_from_mongo()
+            if not jobs:
+                st.warning("No jobs found.")
+                return
+
+            results = detect_ghost_jobs(jobs)
+
+            for job in results:
+                st.subheader(f"{job['title']} @ {job['company']}")
+                st.write(f"📅 Posted: {job['posted_at']}")
+                st.write(f"🔗 URL: {job['url']}")
+                st.write(f"Ghost Score: `{job['score']}`")
+                st.progress(min(job['score'], 1.0))
+                st.markdown("✅ **Legit**" if not job['is_ghost'] else "🚨 **Ghost Job**")
+                st.markdown("---")
+
+        except Exception as e:
+            st.error(f"❌ Error running ghost job detector:\n\n{str(e)}")

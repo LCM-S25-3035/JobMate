@@ -1,0 +1,155 @@
+{
+    "technical_skills": [
+        "PHP",
+        "Laravel",
+        "Symfony",
+        "JavaScript",
+        "HTML5",
+        "CSS3",
+        "jQuery",
+        "Vue.js",
+        "React",
+        "AngularJS",
+        "Node.js",
+        "AWS",
+        "Google Cloud Platform (GCP)",
+        "Azure",
+        "Heroku",
+        "Docker",
+        "Kubernetes",
+        "Jenkins",
+        "Vagrant",
+        "Nginx",
+        "Apache",
+        "Git",
+        "Git lab",
+        "Bitbucket",
+        "MySQL",
+        "PostgreSQL",
+        "Redis",
+        "MongoDB",
+        "Oracle",
+        "RESTful API",
+        "PHPUnit",
+        "Laravel Dusk",
+        "Jest"
+    ],
+    "soft_skills": [
+        "Teamwork",
+        "Communication",
+        "Continuous Improvement",
+        "Mentoring",
+        "Agile Methodologies",
+        "Problem-solving",
+        "Leadership",
+        "Process Design",
+        "Cross-functional Collaboration",
+        "Adaptability"
+    ],
+    "years_of_experience": 12,
+    "education": [
+        {
+            "degree": "Graduate Certificate",
+            "institution": "Lambton College",
+            "location": "Mississauga",
+            "start_date": "January 2024",
+            "end_date": "December 2025"
+        },
+        {
+            "degree": "Bachelor's Degree",
+            "institution": "Faculdade Santissimo Sacramento",
+            "location": "Ba",
+            "start_date": "January 2013",
+            "end_date": "December 2013"
+        },
+        {
+            "degree": "Bachelor's Degree",
+            "institution": "Universidade do Estado da Bahia",
+            "location": "Ba",
+            "start_date": "January 2012",
+            "end_date": "December 2012"
+        }
+    ],
+    "experience_level": "Senior",
+    "work_experience": [
+        {
+            "job_title": "SOFTWARE ENGINEER",
+            "company": "NUNCHI SOLUCOES",
+            "location": "Feira de Santana, Ba",
+            "start_date": "June 2020",
+            "end_date": "Present",
+            "key": "NUNCHI SOLUCOES-SOFTWARE ENGINEER",
+            "achievement": [
+                "I initiated the development and optimization of three financial management systems, increasing efficiency and operational control by more than 40% in the home care, logistics, and education sectors. Furthermore, I created a receivables anticipation system for healthcare professionals, becoming the first startup in Brazil in the segment.",
+                "Led integration of RESTful APIs with third-party tools, reducing operational time and costs.",
+                "Implemented cloud-based solutions on AWS to boost system scalability and performance.",
+                "Provided technical mentorship to junior developers, boosting coding standards and best practices.",
+                "Designed and implemented secure, scalable web applications using PHP and Laravel, adhering to industry standards and best practices, resulting in enhanced system performance and reduced operational costs.",
+                "Utilized Agile methodologies (Scrum) for project management and contributed to continuous improvement initiatives."
+            ]
+        },
+        {
+            "job_title": "SOFTWARE ENGINEER",
+            "company": "FPP EDU MEDIA",
+            "location": "Las Vega, Nv",
+            "start_date": "February 2016",
+            "end_date": "March 2024",
+            "key": "FPP EDU MEDIA-SOFTWARE ENGINEER",
+            "achievement": [
+                "Design and developed a 3D virtual platform using PHP, Node.js, and cloud services to increase accessibility.",
+                "Achieved a 70% increase in new student conversion, expanding partner institutions' educational reach and impact through carefully designed solutions.",
+                "Managed the complexities of mass email dispatch by integrating design principles that accounted for challenges such as timezone differences and compliance with data protection regulations.",
+                "Design and implemented an intelligent \"match\" system aligning students with ideal courses, boosting engagement and educational effectiveness."
+            ]
+        },
+        {
+            "job_title": "SOFTWARE ENGINEER",
+            "company": "ASSISTE VIDA",
+            "location": "Salvador, Ba",
+            "start_date": "June 2012",
+            "end_date": "March 2023",
+            "key": "ASSISTE VIDA-SOFTWARE ENGINEER",
+            "achievement": [
+                "Spearheaded the implementation of DevOps tools such as Docker and optimized cloud infrastructure on Azure for a healthcare platform.",
+                "Improved application security by integrating best practices and conducting thorough code reviews and version control."
+            ]
+        },
+        {
+            "job_title": "CHIEF TECHNOLOGY OFFICER",
+            "company": "BENMELHOR",
+            "location": "Feira de Santana, Ba",
+            "start_date": "January 2015",
+            "end_date": "January 2023",
+            "key": "BENMELHOR-CHIEF TECHNOLOGY OFFICER",
+            "achievement": [
+                "Guided technology initiatives to deliver software solutions that addressed immediate client requirements and foresaw future trends.",
+                "Identified, debugged, and resolved software defects, enhancing performance and reducing bottlenecks.",
+                "Led the development of robust, scalable solutions using PHP, Laravel, and Symfony, following industry best practices (e.g., PSR standards)."
+            ]
+        }
+    ],
+    "professional_summary": "Senior software engineer with over 10 years of experience in PHP development, primarily using Laravel as a framework. Experience in developing RESTful APIs, front-end integration using JavaScript (including jQuery, Vue.js, React) and with databases such as MySQL, PostgreSQL, Sql Server and Oracle. Experience in DevOps tools such as Docker and Vagrant, and cloud platforms such as AWS, Azure and Google Cloud. A strong advocate of agile methodologies, with a commitment to continuous improvement, mentoring and maintaining industry best practices (e.g. PSR standards) for secure and efficient code.",
+    "languages": [],
+    "certifications": [
+        {
+            "name": "1st place at Campus Mobile - 2 Edition",
+            "issuing_organization": "Campus Mobile",
+            "year_issued": "Jul 2013"
+        },
+        {
+            "name": "1st place at Vivo Hackathon - Campus Party",
+            "issuing_organization": null,
+            "year_issued": "2013"
+        }
+    ],
+    "personal_information": {
+        "name": "RICARDO TASSIO",
+        "phone": "(647) 804-8130",
+        "email": "ricardotassio@gmail.com",
+        "addres": "Mississauga, ON",
+        "social_media": [
+            "https://www.linkedin.com/in/ricardo-tassio/",
+            "https://github.com/ricardotassio"
+        ]
+    }
+}

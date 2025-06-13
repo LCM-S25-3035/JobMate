@@ -3,18 +3,17 @@ import pandas as pd
 from pymongo import MongoClient
 import os
 
+
 def run():
     st.markdown("<h1 style='text-align: center; font-size: 50px;'>Select a Job from the Database</h1>", unsafe_allow_html=True)
 
-    # Get MongoDB connection details from secrets
-    MONGO_URI = st.secrets["database"]["MONGODB_URI"]
-    MONGO_DB = st.secrets["database"]["MONGODB_DB"]
-    MONGO_COLLECTION = st.secrets["database"]["MONGODB_COLLECTION"]
-    
-    # Connect to MongoDB
-    client = MongoClient(MONGO_URI)
-    db = client[MONGO_DB]
-    collection = db[MONGO_COLLECTION]
+    uri = st.secrets["database"]["MONGODB_URI"]
+    db_name = st.secrets["database"]["MONGODB_DB"]
+    collection_name = st.secrets["database"]["MONGODB_COLLECTION"]
+
+    client = MongoClient(uri)
+    db = client[db_name]
+    collection = db[collection_name]
 
     # Ruta al archivo local
     parquet_file = "parquet/jobs_data.parquet"

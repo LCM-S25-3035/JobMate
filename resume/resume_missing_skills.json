@@ -1,16 +1,24 @@
 {
     "technical_skills": [
-        "system design",
-        "api design",
-        "rabbitmq",
-        "cosmosdb"
+        "data engineering",
+        "data architecture",
+        "enterprise architecture",
+        "software engineering",
+        "data lakes",
+        "snowflake",
+        "dbt",
+        "fivetran",
+        "looker",
+        "master data management",
+        "data governance",
+        "metadata management",
+        "data lineage",
+        "ci/cd",
+        "devops",
+        "disaster recovery"
     ],
     "soft_skills": [
-        "ownership",
-        "accountability",
-        "analytical skills",
-        "self-starter",
-        "drive",
-        "think outside the box"
+        "stakeholder management",
+        "strategic thinking"
     ]
 }

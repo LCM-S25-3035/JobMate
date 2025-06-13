@@ -1,0 +1,14 @@
+# Exclude large directories and unnecessary files
+.git/
+logs/
+node_modules/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.ipynb
+*.csv
+*.parquet
+*.xlsx
+*.pbix

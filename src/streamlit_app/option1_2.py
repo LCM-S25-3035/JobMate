@@ -8,7 +8,7 @@ def run():
 
     # Get MongoDB connection details from secrets
     MONGODB_URI = st.secrets["database"]["MONGODB_URI"]
-    MONGO_DB = st.secrets["database"]["MONGODB_DB"]
+    MONGO_DB = st.secrets["database"]["MONGO_DB"]
     MONGO_COLLECTION = st.secrets["database"]["MONGODB_COLLECTION"]
     
     # Connect to MongoDB

@@ -7,12 +7,12 @@ def run():
     st.markdown("<h1 style='text-align: center; font-size: 50px;'>Select a Job from the Database</h1>", unsafe_allow_html=True)
 
     # Get MongoDB connection details from secrets
-    MONGO_URI = st.secrets["database"]["MONGODB_URI"]
+    MONGODB_URI = st.secrets["database"]["MONGODB_URI"]
     MONGO_DB = st.secrets["database"]["MONGODB_DB"]
     MONGO_COLLECTION = st.secrets["database"]["MONGODB_COLLECTION"]
     
     # Connect to MongoDB
-    client = MongoClient(MONGO_URI)
+    client = MongoClient(MONGODB_URI)
     db = client[MONGO_DB]
     collection = db[MONGO_COLLECTION]
 

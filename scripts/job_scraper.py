@@ -17,17 +17,17 @@ def main():
     load_dotenv()
 
     # Read MongoDB connection details from environment variables
-    mongo_uri = os.getenv("MONGODB_URI")
-    mongo_db = os.getenv("MONGO_DB")
-    mongo_collection = os.getenv("MONGO_COLLECTION")
+    MONGODB_URI = os.getenv("MONGODB_URI")
+    MONGO_DB = os.getenv("MONGO_DB")
+    MONGO_COLLECTION = os.getenv("MONGO_COLLECTION")
 
-    if not all([mongo_uri, mongo_db, mongo_collection]):
+    if not all([MONGODB_URI, MONGO_DB, MONGO_COLLECTION]):
         raise ValueError("MongoDB environment variables (MONGODB_URI, MONGO_DB, MONGO_COLLECTION) must be set in .env")
 
     # Establish connection to MongoDB
-    client = MongoClient(mongo_uri)
-    db = client[mongo_db]
-    collection = db[mongo_collection]
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGO_DB]
+    collection = db[MONGO_COLLECTION]
 
     # Define job search parameters
     job_titles = ["Data Scientist", "Data Analyst"]

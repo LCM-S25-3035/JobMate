@@ -351,10 +351,11 @@ services:
       - ./resume:/resume
       - ./output:/output
       - ./parquet:/app/parquet
+    env_file: .env
     environment:
       - MONGODB_URI=${MONGODB_URI}
-      - MONGODB_DB=job_automation
-      - MONGODB_COLLECTION=jobs
+      - MONGO_DB=${MONGO_DB}
+      - MONGO_COLLECTION=${MONGO_COLLECTION}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - DEBUG=${DEBUG:-True}

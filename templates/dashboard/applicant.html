@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - JobMate{% endblock %}
+
+{% block head %}
+<style>
+    .dashboard-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+    }
+    
+    .completion-bar {
+        height: 8px;
+        border-radius: 4px;
+        background: #e9ecef;
+        overflow: hidden;
+    }
+    
+    .completion-fill {
+        height: 100%;
+        background: linear-gradient(45deg, #28a745, #20c997);
+        transition: width 0.3s ease;
+    }
+    
+    .quick-action-btn {
+        background: rgba(102, 126, 234, 0.1);
+        border: 2px solid #667eea;
+        color: #667eea;
+        border-radius: 8px;
+        padding: 15px;
+        text-decoration: none;
+        display: block;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .quick-action-btn:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 fw-bold mb-1">Welcome back, {{ current_user.first_name }}! 👋</h1>
+                    <p class="text-muted mb-0">Here's what's happening with your job search</p>
+                </div>
+                <div class="d-none d-md-block">
+                    <small class="text-muted">Today</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Overview -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="dashboard-card stats-card p-3">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="fw-bold mb-1">{{ recent_applications|length }}</h5>
+                        <small class="opacity-90">Recent Applications</small>
+                    </div>
+                    <i class="bi bi-send fs-3 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="dashboard-card p-3">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="fw-bold mb-1 text-primary">{{ recommended_jobs|length }}</h5>
+                        <small class="text-muted">Job Matches</small>
+                    </div>
+                    <i class="bi bi-star fs-3 text-warning"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="dashboard-card p-3">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="fw-bold mb-1 text-success">{{ completion_percentage }}%</h5>
+                        <small class="text-muted">Profile Complete</small>
+                    </div>
+                    <i class="bi bi-person-check fs-3 text-success"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="dashboard-card p-3">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="fw-bold mb-1 text-info">{% if active_resume %}1{% else %}0{% endif %}</h5>
+                        <small class="text-muted">Active Resume</small>
+                    </div>
+                    <i class="bi bi-file-earmark-text fs-3 text-info"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-card p-4">
+                <h5 class="fw-bold mb-3">
+                    <i class="bi bi-lightning-charge me-2 text-warning"></i>Quick Actions
+                </h5>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="#" class="quick-action-btn" onclick="alert('Job search coming soon!')">
+                            <i class="bi bi-search fs-4 mb-2 d-block"></i>
+                            <span class="fw-semibold">Search Jobs</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="#" class="quick-action-btn" onclick="alert('Resume upload coming soon!')">
+                            <i class="bi bi-cloud-upload fs-4 mb-2 d-block"></i>
+                            <span class="fw-semibold">Upload Resume</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="#" class="quick-action-btn" onclick="alert('Profile settings coming soon!')">
+                            <i class="bi bi-gear fs-4 mb-2 d-block"></i>
+                            <span class="fw-semibold">Profile Settings</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="#" class="quick-action-btn" onclick="alert('AI optimization coming soon!')">
+                            <i class="bi bi-robot fs-4 mb-2 d-block"></i>
+                            <span class="fw-semibold">AI Optimize</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Profile Completion -->
+    {% if completion_percentage < 100 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-card p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold mb-0">
+                        <i class="bi bi-person-lines-fill me-2 text-primary"></i>Complete Your Profile
+                    </h5>
+                    <span class="badge bg-primary">{{ completion_percentage }}% Complete</span>
+                </div>
+                
+                <div class="completion-bar mb-3">
+                    <div class="completion-fill" style="width: {{ completion_percentage }}%;"></div>
+                </div>
+                
+                <p class="text-muted mb-3">
+                    Complete your profile to get better job matches and increase your visibility to recruiters.
+                </p>
+                
+                <div class="row">
+                    {% if not active_resume %}
+                    <div class="col-md-6 mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-circle me-2 text-danger"></i>
+                            <span>Upload your resume</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if not current_user.phone %}
+                    <div class="col-md-6 mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-circle me-2 text-danger"></i>
+                            <span>Add phone number</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if not current_user.city %}
+                    <div class="col-md-6 mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-circle me-2 text-danger"></i>
+                            <span>Add location information</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Recent Applications -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mb-4">
+            <div class="dashboard-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">
+                        <i class="bi bi-send me-2 text-primary"></i>Recent Applications
+                    </h5>
+                    <a href="#" class="btn btn-outline-primary btn-sm" onclick="alert('Applications page coming soon!')">
+                        View All
+                    </a>
+                </div>
+                
+                {% if recent_applications %}
+                    <div class="list-group list-group-flush">
+                        {% for application in recent_applications %}
+                        <div class="list-group-item px-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="fw-semibold mb-1">{{ application.job_title }}</h6>
+                                    <p class="text-muted mb-1">{{ application.company_name }}</p>
+                                    <small class="text-muted">Applied {{ application.created_at.strftime('%B %d, %Y') if application.created_at else 'recently' }}</small>
+                                </div>
+                                <span class="badge bg-{% if application.status == 'applied' %}primary{% elif application.status == 'interview' %}warning{% elif application.status == 'offer' %}success{% else %}secondary{% endif %}">
+                                    {{ application.status.title() }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
+                        <h6 class="text-muted">No applications yet</h6>
+                        <p class="text-muted mb-3">Start applying to jobs to see your applications here.</p>
+                        <a href="#" class="btn btn-primary" onclick="alert('Job search coming soon!')">
+                            <i class="bi bi-search me-1"></i>Find Jobs
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Job Recommendations -->
+        <div class="col-lg-4 mb-4">
+            <div class="dashboard-card p-4">
+                <h5 class="fw-bold mb-3">
+                    <i class="bi bi-star me-2 text-warning"></i>Recommended Jobs
+                </h5>
+                
+                {% if recommended_jobs %}
+                    <!-- Will be populated when job matching is implemented -->
+                    <div class="list-group list-group-flush">
+                        {% for job in recommended_jobs %}
+                        <div class="list-group-item px-0">
+                            <h6 class="fw-semibold mb-1">{{ job.title }}</h6>
+                            <p class="text-muted mb-1">{{ job.company_name }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">{{ job.location }}</small>
+                                <span class="badge bg-success">{{ job.match_score }}% match</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-lightbulb fs-2 text-muted mb-2 d-block"></i>
+                        <h6 class="text-muted">No recommendations yet</h6>
+                        <p class="text-muted small mb-3">Complete your profile to get AI-powered job recommendations.</p>
+                        <a href="#" class="btn btn-outline-primary btn-sm" onclick="alert('Profile setup coming soon!')">
+                            Complete Profile
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tips & Resources -->
+    <div class="row">
+        <div class="col-12">
+            <div class="dashboard-card p-4">
+                <h5 class="fw-bold mb-3">
+                    <i class="bi bi-lightbulb me-2 text-success"></i>Job Search Tips
+                </h5>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="bi bi-file-earmark-text text-primary fs-4 mb-2 d-block"></i>
+                            <h6 class="fw-semibold">Optimize Your Resume</h6>
+                            <p class="text-muted small mb-0">Use AI-powered suggestions to improve your resume and increase your chances of getting noticed.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="bi bi-graph-up text-success fs-4 mb-2 d-block"></i>
+                            <h6 class="fw-semibold">Track Your Progress</h6>
+                            <p class="text-muted small mb-0">Monitor your application status and get insights on your job search performance.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="bi bi-people text-info fs-4 mb-2 d-block"></i>
+                            <h6 class="fw-semibold">Network & Connect</h6>
+                            <p class="text-muted small mb-0">Build your professional network and get referrals from industry connections.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Dashboard interactivity
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate completion bar
+    const completionFill = document.querySelector('.completion-fill');
+    if (completionFill) {
+        setTimeout(() => {
+            completionFill.style.width = '{{ completion_percentage }}%';
+        }, 500);
+    }
+    
+    // Load dashboard stats via API (placeholder)
+    // fetch('/api/dashboard/stats')
+    //     .then(response => response.json())
+    //     .then(data => {
+    //         // Update stats dynamically
+    //     });
+});
+</script>
+{% endblock %} 

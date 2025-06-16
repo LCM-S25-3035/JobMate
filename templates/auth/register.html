@@ -1,0 +1,488 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account - JobMate{% endblock %}
+
+{% block head %}
+<style>
+    .auth-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .auth-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: none;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-floating > .form-control, .form-select {
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .form-floating > .form-control:focus, .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .btn-register {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        border: none;
+        padding: 12px 30px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-register:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .user-type-selector {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .user-type-option {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .user-type-option:hover {
+        border-color: #0d6efd;
+        transform: translateY(-2px);
+    }
+    
+    .user-type-option.active {
+        border-color: #0d6efd;
+        background: rgba(13, 110, 253, 0.1);
+    }
+    
+    .user-type-option .check-icon {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        color: #0d6efd;
+        font-size: 1.2rem;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .user-type-option.active .check-icon {
+        opacity: 1;
+    }
+    
+    .password-strength {
+        margin-top: 5px;
+    }
+    
+    .password-strength-bar {
+        height: 4px;
+        border-radius: 2px;
+        background: #e9ecef;
+        overflow: hidden;
+    }
+    
+    .password-strength-fill {
+        height: 100%;
+        transition: all 0.3s ease;
+        border-radius: 2px;
+    }
+    
+    .strength-weak { background-color: #dc3545; }
+    .strength-fair { background-color: #fd7e14; }
+    .strength-good { background-color: #ffc107; }
+    .strength-strong { background-color: #198754; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="row justify-content-center align-items-center" style="min-height: 100vh;">
+        <div class="col-lg-6 col-md-8">
+            <div class="card shadow-lg" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: none;">
+                <div class="card-body p-5">
+                    <!-- Header -->
+                    <div class="text-center mb-4">
+                        <i class="bi bi-person-plus-fill text-primary mb-3" style="font-size: 3rem;"></i>
+                        <h2 class="fw-bold text-dark">Join JobMate</h2>
+                        <p class="text-muted">Create your account and start your career journey</p>
+                    </div>
+                    
+                    <!-- User Type Selection -->
+                    <div class="bg-light rounded p-4 mb-4">
+                        <h6 class="fw-semibold mb-3 text-center">I am a...</h6>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="card user-type-card h-100 text-center" data-type="applicant" style="cursor: pointer; transition: all 0.3s ease;">
+                                    <div class="card-body">
+                                        <i class="bi bi-person-workspace text-primary mb-2" style="font-size: 2rem;"></i>
+                                        <h6 class="fw-semibold">Job Seeker</h6>
+                                        <small class="text-muted">Looking for opportunities</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card user-type-card h-100 text-center" data-type="recruiter" style="cursor: pointer; transition: all 0.3s ease;">
+                                    <div class="card-body">
+                                        <i class="bi bi-building text-success mb-2" style="font-size: 2rem;"></i>
+                                        <h6 class="fw-semibold">Recruiter</h6>
+                                        <small class="text-muted">Hiring talent</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <!-- Registration Form -->
+                    <form method="POST" novalidate id="registrationForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Hidden user type field -->
+                        {{ form.user_type(id="userTypeField", style="display: none;") }}
+                        
+                        <!-- User Type Selection Validation -->
+                        {% if form.user_type.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.user_type.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Name Fields -->
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <div class="form-floating">
+                                    {{ form.first_name(class="form-control" + (" is-invalid" if form.first_name.errors else ""), placeholder="First Name") }}
+                                    {{ form.first_name.label }}
+                                    {% if form.first_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.first_name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-floating">
+                                    {{ form.last_name(class="form-control" + (" is-invalid" if form.last_name.errors else ""), placeholder="Last Name") }}
+                                    {{ form.last_name.label }}
+                                    {% if form.last_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.last_name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Email Field -->
+                        <div class="form-floating mb-3">
+                            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="name@example.com") }}
+                            {{ form.email.label }}
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Password Field -->
+                        <div class="form-floating mb-3">
+                            {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="Password") }}
+                            {{ form.password.label }}
+                            {% if form.password.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.password.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <!-- Password Strength Indicator -->
+                            <div class="password-strength mt-2" style="display: none;">
+                                <div class="password-strength-bar">
+                                    <div class="password-strength-fill" style="width: 0%;"></div>
+                                </div>
+                                <small class="password-strength-text text-muted">Password strength</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Confirm Password Field -->
+                        <div class="form-floating mb-3">
+                            {{ form.password2(class="form-control" + (" is-invalid" if form.password2.errors else ""), placeholder="Confirm Password") }}
+                            {{ form.password2.label }}
+                            {% if form.password2.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.password2.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Terms & Conditions -->
+                        <div class="form-check mb-4">
+                            {{ form.terms_accepted(class="form-check-input" + (" is-invalid" if form.terms_accepted.errors else "")) }}
+                            <label class="form-check-label" for="{{ form.terms_accepted.id }}">
+                                I agree to the 
+                                <a href="#" class="text-decoration-none">Terms of Service</a> 
+                                and 
+                                <a href="#" class="text-decoration-none">Privacy Policy</a>
+                            </label>
+                            {% if form.terms_accepted.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.terms_accepted.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="d-grid mb-3">
+                            {{ form.submit(class="btn btn-primary btn-lg", id="submitBtn") }}
+                        </div>
+                        
+                        <!-- Login Link -->
+                        <div class="text-center">
+                            <p class="mb-0">
+                                Already have an account? 
+                                <a href="{{ url_for('auth.login') }}" class="text-decoration-none fw-semibold">
+                                    Sign in here
+                                </a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const userTypeCards = document.querySelectorAll('.user-type-card');
+    const userTypeField = document.getElementById('userTypeField');
+    const form = document.getElementById('registrationForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const passwordField = document.querySelector('#password');
+    const password2Field = document.querySelector('#password2');
+    const emailField = document.querySelector('#email');
+    
+    // User Type Selection
+    userTypeCards.forEach(card => {
+        card.addEventListener('click', function() {
+            // Remove active class from all cards
+            userTypeCards.forEach(c => {
+                c.classList.remove('border-primary', 'bg-light');
+                c.style.transform = 'scale(1)';
+            });
+            
+            // Add active class to clicked card
+            this.classList.add('border-primary', 'bg-light');
+            this.style.transform = 'scale(1.05)';
+            
+            // Set the hidden field value
+            userTypeField.value = this.dataset.type;
+            
+            // Remove any previous validation error
+            const errorAlert = document.querySelector('.alert-danger');
+            if (errorAlert && errorAlert.textContent.includes('select your role')) {
+                errorAlert.style.display = 'none';
+            }
+        });
+        
+        // Hover effects
+        card.addEventListener('mouseenter', function() {
+            if (!this.classList.contains('border-primary')) {
+                this.style.transform = 'scale(1.02)';
+            }
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            if (!this.classList.contains('border-primary')) {
+                this.style.transform = 'scale(1)';
+            }
+        });
+    });
+    
+    // Password Strength Checker
+    if (passwordField) {
+        const strengthIndicator = document.querySelector('.password-strength');
+        const strengthFill = document.querySelector('.password-strength-fill');
+        const strengthText = document.querySelector('.password-strength-text');
+        
+        passwordField.addEventListener('input', function() {
+            const password = this.value;
+            const strength = calculatePasswordStrength(password);
+            
+            if (password.length > 0) {
+                strengthIndicator.style.display = 'block';
+                updateStrengthIndicator(strength, strengthFill, strengthText);
+            } else {
+                strengthIndicator.style.display = 'none';
+            }
+        });
+    }
+    
+    // Email validation
+    if (emailField) {
+        emailField.addEventListener('blur', function() {
+            const email = this.value;
+            if (email && isValidEmail(email)) {
+                checkEmailAvailability(email);
+            }
+        });
+    }
+    
+    // Confirm password validation
+    if (password2Field) {
+        password2Field.addEventListener('input', function() {
+            const password = passwordField.value;
+            const confirmPassword = this.value;
+            
+            if (confirmPassword && password !== confirmPassword) {
+                this.classList.add('is-invalid');
+                showFieldError(this, 'Passwords do not match');
+            } else {
+                this.classList.remove('is-invalid');
+                hideFieldError(this);
+            }
+        });
+    }
+    
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Check if user type is selected
+        if (!userTypeField.value) {
+            isValid = false;
+            showAlert('Please select whether you are a Job Seeker or Recruiter', 'danger');
+        }
+        
+        // Additional validation can be added here
+        
+        if (isValid) {
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating Account...';
+            submitBtn.disabled = true;
+        } else {
+            e.preventDefault();
+        }
+    });
+    
+    // Helper Functions
+    function calculatePasswordStrength(password) {
+        let score = 0;
+        
+        if (password.length >= 8) score += 1;
+        if (password.length >= 12) score += 1;
+        if (/[a-z]/.test(password)) score += 1;
+        if (/[A-Z]/.test(password)) score += 1;
+        if (/[0-9]/.test(password)) score += 1;
+        if (/[^A-Za-z0-9]/.test(password)) score += 1;
+        
+        return score;
+    }
+    
+    function updateStrengthIndicator(score, fill, text) {
+        const strength = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
+        const colors = ['#dc3545', '#dc3545', '#fd7e14', '#ffc107', '#198754', '#198754'];
+        const widths = [16, 32, 48, 64, 80, 100];
+        
+        const level = Math.min(score, 5);
+        
+        fill.style.width = widths[level] + '%';
+        fill.style.backgroundColor = colors[level];
+        text.textContent = strength[level];
+        text.style.color = colors[level];
+    }
+    
+    function isValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+    
+    function checkEmailAvailability(email) {
+        fetch(`/auth/check-email?email=${encodeURIComponent(email)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.exists) {
+                    emailField.classList.add('is-invalid');
+                    showFieldError(emailField, 'This email is already registered');
+                } else {
+                    emailField.classList.remove('is-invalid');
+                    hideFieldError(emailField);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking email:', error);
+            });
+    }
+    
+    function showFieldError(field, message) {
+        let feedback = field.parentNode.querySelector('.invalid-feedback');
+        if (!feedback) {
+            feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback';
+            field.parentNode.appendChild(feedback);
+        }
+        feedback.textContent = message;
+    }
+    
+    function hideFieldError(field) {
+        const feedback = field.parentNode.querySelector('.invalid-feedback');
+        if (feedback) {
+            feedback.textContent = '';
+        }
+    }
+    
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const form = document.getElementById('registrationForm');
+        form.parentNode.insertBefore(alertDiv, form);
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+});
+</script>
+{% endblock %} 

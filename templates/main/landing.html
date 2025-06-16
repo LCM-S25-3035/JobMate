@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}JobMate - AI-Powered Job Matching Platform{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero bg-primary text-white py-5">
+    <div class="container">
+        <div class="row align-items-center min-vh-100">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">
+                    Find Your Perfect Job with 
+                    <span class="text-warning">AI Power</span>
+                </h1>
+                <p class="lead mb-4">
+                    JobMate connects talented professionals with Ontario's top tech companies 
+                    using advanced AI matching algorithms.
+                </p>
+                
+                <div class="mb-4">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h4 class="fw-bold">50K+</h4>
+                            <small>Active Jobs</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="fw-bold">15K+</h4>
+                            <small>Successful Matches</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="fw-bold">500+</h4>
+                            <small>Companies</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-warning btn-lg me-3 mb-2">
+                        <i class="bi bi-person-plus me-2"></i>Get Started Free
+                    </a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-lg mb-2">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="text-center">
+                    <div class="bg-white bg-opacity-10 rounded-3 p-5">
+                        <i class="bi bi-robot" style="font-size: 8rem; opacity: 0.8;"></i>
+                        <h4 class="mt-3">AI-Powered Matching</h4>
+                        <p>Smart algorithms find the perfect job for your skills</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="display-5 fw-bold mb-3">Why Choose JobMate?</h2>
+                <p class="lead text-muted">Experience the future of job searching</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card h-100 text-center border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-3 mx-auto mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-magic text-primary" style="font-size: 2rem;"></i>
+                        </div>
+                        <h5 class="fw-bold">AI Job Matching</h5>
+                        <p class="text-muted">
+                            Advanced AI analyzes your skills for perfect job matches.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card h-100 text-center border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="bg-success bg-opacity-10 rounded-circle p-3 mx-auto mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-lightning-charge-fill text-success" style="font-size: 2rem;"></i>
+                        </div>
+                        <h5 class="fw-bold">Auto-Apply</h5>
+                        <p class="text-muted">
+                            Save time with intelligent auto-apply features.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card h-100 text-center border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="bg-info bg-opacity-10 rounded-circle p-3 mx-auto mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-file-earmark-text-fill text-info" style="font-size: 2rem;"></i>
+                        </div>
+                        <h5 class="fw-bold">Resume Optimization</h5>
+                        <p class="text-muted">
+                            AI-powered resume optimization for better results.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="bg-primary text-white py-5">
+    <div class="container text-center">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h2 class="display-5 fw-bold mb-3">Ready to Find Your Dream Job?</h2>
+                <p class="lead mb-4">
+                    Join thousands of professionals who've accelerated their careers with JobMate.
+                </p>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-warning btn-lg me-3">
+                    <i class="bi bi-rocket-takeoff me-2"></i>Start Your Journey
+                </a>
+                
+                <div class="mt-4">
+                    <small class="opacity-75">
+                        <i class="bi bi-shield-check me-1"></i>
+                        Free to get started • No credit card required
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %} 

@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - JobMate{% endblock %}
+
+{% block head %}
+<style>
+    .auth-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .auth-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: none;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-floating > .form-control {
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .form-floating > .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .btn-login {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        border: none;
+        padding: 12px 30px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .user-type-selector {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .user-type-option {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .user-type-option:hover {
+        border-color: #0d6efd;
+        transform: translateY(-2px);
+    }
+    
+    .user-type-option.active {
+        border-color: #0d6efd;
+        background: rgba(13, 110, 253, 0.1);
+    }
+    
+    .demo-credentials {
+        background: #e7f3ff;
+        border: 1px solid #b3d7ff;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container d-flex align-items-center py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-5 col-md-7">
+                <div class="card auth-card">
+                    <div class="card-body p-5">
+                        <!-- Header -->
+                        <div class="text-center mb-4">
+                            <div class="mb-3">
+                                <i class="bi bi-briefcase-fill text-primary" style="font-size: 3rem;"></i>
+                            </div>
+                            <h2 class="fw-bold text-dark">Welcome Back</h2>
+                            <p class="text-muted">Sign in to your JobMate account</p>
+                        </div>
+                        
+                        <!-- Demo Credentials (for development) -->
+                        {% if config.FLASK_ENV == 'development' %}
+                        <div class="demo-credentials">
+                            <h6 class="fw-semibold mb-2">
+                                <i class="bi bi-info-circle me-2"></i>Demo Credentials
+                            </h6>
+                            <small class="text-muted">
+                                <strong>Applicant:</strong> applicant@demo.com / password123<br>
+                                <strong>Recruiter:</strong> recruiter@demo.com / password123
+                            </small>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Login Form -->
+                        <form method="POST" id="loginForm" novalidate>
+                            {{ form.hidden_tag() }}
+                            
+                            <!-- Email Field -->
+                            <div class="form-floating mb-3">
+                                {{ form.email(class="form-control", placeholder="name@example.com", id="floatingEmail") }}
+                                {{ form.email.label(for="floatingEmail") }}
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            
+                            <!-- Password Field -->
+                            <div class="form-floating mb-3">
+                                {{ form.password(class="form-control", placeholder="Password", id="floatingPassword") }}
+                                {{ form.password.label(for="floatingPassword") }}
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            
+                            <!-- Remember Me & Forgot Password -->
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="form-check">
+                                    {{ form.remember_me(class="form-check-input", id="rememberMe") }}
+                                    <label class="form-check-label" for="rememberMe">
+                                        Remember me
+                                    </label>
+                                </div>
+                                <a href="{{ url_for('auth.reset_password_request') }}" class="text-decoration-none">
+                                    Forgot password?
+                                </a>
+                            </div>
+                            
+                            <!-- Submit Button -->
+                            <div class="d-grid mb-3">
+                                <button type="submit" class="btn btn-primary btn-login btn-lg" id="loginBtn">
+                                    <span class="spinner-border spinner-border-sm d-none me-2" id="loginSpinner"></span>
+                                    <i class="bi bi-box-arrow-in-right me-2"></i>
+                                    Sign In
+                                </button>
+                            </div>
+                            
+                            <!-- Social Login (Optional) -->
+                            <div class="text-center mb-3">
+                                <small class="text-muted">or continue with</small>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-outline-dark w-100" disabled>
+                                        <i class="bi bi-google me-2"></i>Google
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-outline-primary w-100" disabled>
+                                        <i class="bi bi-linkedin me-2"></i>LinkedIn
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Register Link -->
+                            <div class="text-center">
+                                <p class="mb-0">
+                                    Don't have an account? 
+                                    <a href="{{ url_for('auth.register') }}" class="text-decoration-none fw-semibold">
+                                        Create one here
+                                    </a>
+                                </p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Features Preview -->
+                <div class="text-center text-white mt-4">
+                    <div class="row">
+                        <div class="col-4">
+                            <i class="bi bi-robot" style="font-size: 2rem;"></i>
+                            <p class="small mt-2">AI Resume Matching</p>
+                        </div>
+                        <div class="col-4">
+                            <i class="bi bi-lightning-charge-fill" style="font-size: 2rem;"></i>
+                            <p class="small mt-2">Auto Apply</p>
+                        </div>
+                        <div class="col-4">
+                            <i class="bi bi-graph-up-arrow" style="font-size: 2rem;"></i>
+                            <p class="small mt-2">Career Growth</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('loginForm');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginSpinner = document.getElementById('loginSpinner');
+    
+    // Real-time validation
+    const emailField = document.getElementById('floatingEmail');
+    const passwordField = document.getElementById('floatingPassword');
+    
+    emailField.addEventListener('blur', validateEmail);
+    passwordField.addEventListener('blur', validatePassword);
+    
+    function validateEmail() {
+        const email = emailField.value.trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        
+        if (!email) {
+            showFieldError(emailField, 'Email is required');
+            return false;
+        } else if (!emailRegex.test(email)) {
+            showFieldError(emailField, 'Please enter a valid email address');
+            return false;
+        } else {
+            showFieldSuccess(emailField);
+            return true;
+        }
+    }
+    
+    function validatePassword() {
+        const password = passwordField.value;
+        
+        if (!password) {
+            showFieldError(passwordField, 'Password is required');
+            return false;
+        } else if (password.length < 6) {
+            showFieldError(passwordField, 'Password must be at least 6 characters');
+            return false;
+        } else {
+            showFieldSuccess(passwordField);
+            return true;
+        }
+    }
+    
+    function showFieldError(field, message) {
+        field.classList.add('is-invalid');
+        field.classList.remove('is-valid');
+        field.nextElementSibling.nextElementSibling.textContent = message;
+    }
+    
+    function showFieldSuccess(field) {
+        field.classList.add('is-valid');
+        field.classList.remove('is-invalid');
+        field.nextElementSibling.nextElementSibling.textContent = '';
+    }
+    
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const isEmailValid = validateEmail();
+        const isPasswordValid = validatePassword();
+        
+        if (isEmailValid && isPasswordValid) {
+            // Show loading state
+            loginBtn.disabled = true;
+            loginSpinner.classList.remove('d-none');
+            
+            // Submit form via AJAX
+            const formData = new FormData(form);
+            
+            fetch('{{ url_for("auth.api_login") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+                },
+                body: JSON.stringify({
+                    email: formData.get('email'),
+                    password: formData.get('password'),
+                    remember: formData.get('remember_me') === 'on'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    showAlert('success', 'Login successful! Redirecting...');
+                    
+                    // Redirect after short delay
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || '{{ url_for("main.dashboard") }}';
+                    }, 1000);
+                } else {
+                    // Show error message
+                    showAlert('danger', data.message || 'Login failed. Please try again.');
+                    
+                    // Reset button
+                    loginBtn.disabled = false;
+                    loginSpinner.classList.add('d-none');
+                }
+            })
+            .catch(error => {
+                console.error('Login error:', error);
+                showAlert('danger', 'An error occurred. Please try again.');
+                
+                // Reset button
+                loginBtn.disabled = false;
+                loginSpinner.classList.add('d-none');
+            });
+        }
+    });
+    
+    function showAlert(type, message) {
+        // Remove existing alerts
+        const existingAlerts = document.querySelectorAll('.alert');
+        existingAlerts.forEach(alert => alert.remove());
+        
+        // Create new alert
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            <i class="bi bi-${type === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Insert alert
+        form.insertBefore(alertDiv, form.firstChild);
+    }
+    
+    // Demo credentials quick fill
+    {% if config.FLASK_ENV == 'development' %}
+    document.addEventListener('keydown', function(e) {
+        if (e.altKey && e.key === 'a') { // Alt+A for applicant
+            emailField.value = 'applicant@demo.com';
+            passwordField.value = 'password123';
+        } else if (e.altKey && e.key === 'r') { // Alt+R for recruiter
+            emailField.value = 'recruiter@demo.com';
+            passwordField.value = 'password123';
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %} 

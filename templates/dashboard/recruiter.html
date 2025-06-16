@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+
+{% block title %}Recruiter Dashboard - JobMate{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-success text-white">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h3 class="fw-bold mb-2">Welcome back, {{ current_user.first_name }}! 🎯</h3>
+                            <p class="mb-0 opacity-75">
+                                Manage your job postings and discover top talent with AI-powered matching.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <i class="bi bi-people" style="font-size: 4rem; opacity: 0.3;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="text-success mb-2">
+                        <i class="bi bi-briefcase-fill" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="fw-bold">{{ job_postings|length }}</h5>
+                    <p class="text-muted mb-0">Active Job Postings</p>
+                    <small class="text-success">
+                        <i class="bi bi-arrow-up"></i> 2 added this week
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="text-primary mb-2">
+                        <i class="bi bi-person-plus-fill" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="fw-bold">47</h5>
+                    <p class="text-muted mb-0">New Applications</p>
+                    <small class="text-primary">Last 7 days</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="text-warning mb-2">
+                        <i class="bi bi-calendar-event-fill" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="fw-bold">8</h5>
+                    <p class="text-muted mb-0">Interviews Scheduled</p>
+                    <small class="text-warning">Next: Today 3PM</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="text-info mb-2">
+                        <i class="bi bi-star-fill" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="fw-bold">12</h5>
+                    <p class="text-muted mb-0">Top Candidates</p>
+                    <small class="text-info">AI Recommended</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning-charge-fill me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ url_for('recruiter.post_job') }}" class="btn btn-success w-100 h-100 d-flex flex-column justify-content-center text-decoration-none">
+                                <i class="bi bi-plus-circle mb-2" style="font-size: 1.5rem;"></i>
+                                <span>Post New Job</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ url_for('recruiter.candidates') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column justify-content-center text-decoration-none">
+                                <i class="bi bi-people mb-2" style="font-size: 1.5rem;"></i>
+                                <span>Browse Candidates</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ url_for('recruiter.analytics') }}" class="btn btn-outline-info w-100 h-100 d-flex flex-column justify-content-center text-decoration-none">
+                                <i class="bi bi-graph-up mb-2" style="font-size: 1.5rem;"></i>
+                                <span>View Analytics</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Job Postings -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-briefcase me-2"></i>Active Job Postings
+                    </h5>
+                    <a href="{{ url_for('recruiter.job_postings') }}" class="btn btn-outline-primary btn-sm">
+                        Manage All
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if job_postings %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Position</th>
+                                        <th>Applications</th>
+                                        <th>Status</th>
+                                        <th>Posted</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for job in job_postings[:5] %}
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <h6 class="mb-1">{{ job.title or 'Senior Software Developer' }}</h6>
+                                                <small class="text-muted">{{ job.location or 'Toronto, ON' }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">23 new</span>
+                                            <small class="text-muted d-block">45 total</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">Active</span>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">2 days ago</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="button" class="btn btn-outline-primary" title="View Applications">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary" title="Edit">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-briefcase text-muted" style="font-size: 3rem;"></i>
+                        <h6 class="text-muted mt-2">No active job postings</h6>
+                        <p class="text-muted small">Post your first job to start receiving applications</p>
+                        <a href="{{ url_for('recruiter.post_job') }}" class="btn btn-success">
+                            Post Your First Job
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Applications -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-lines-fill me-2"></i>Recent Applications
+                    </h5>
+                    <a href="{{ url_for('recruiter.all_applications') }}" class="btn btn-outline-primary btn-sm">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if recent_applications %}
+                        {% for application in recent_applications %}
+                        <div class="d-flex justify-content-between align-items-center py-3 {% if not loop.last %}border-bottom{% endif %}">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <img src="https://ui-avatars.com/api/?name={{ application.candidate_name or 'John Doe' }}&background=0d6efd&color=fff&size=40" 
+                                         class="rounded-circle" alt="Candidate" width="40" height="40">
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">{{ application.candidate_name or 'John Doe' }}</h6>
+                                    <p class="text-muted mb-0 small">Applied for {{ application.position or 'Software Developer' }}</p>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="btn-group btn-group-sm mb-1">
+                                    <button class="btn btn-outline-success" title="Accept">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" title="Reject">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                                <p class="text-muted mb-0 small">2 hours ago</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                        <h6 class="text-muted mt-2">No applications yet</h6>
+                        <p class="text-muted small">Applications will appear here once candidates start applying</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- AI Candidate Matches -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-robot me-2"></i>AI Candidate Matches
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="candidate-match mb-3 p-3 border rounded">
+                        <div class="d-flex align-items-center mb-2">
+                            <img src="https://ui-avatars.com/api/?name=Sarah Johnson&background=28a745&color=fff&size=40" 
+                                 class="rounded-circle me-3" alt="Candidate" width="40" height="40">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">Sarah Johnson</h6>
+                                <small class="text-muted">Full Stack Developer</small>
+                            </div>
+                            <span class="badge bg-success">95% Match</span>
+                        </div>
+                        <div class="mb-2">
+                            <div class="progress" style="height: 4px;">
+                                <div class="progress-bar bg-success" style="width: 95%"></div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">5+ years experience</small>
+                            <button class="btn btn-outline-primary btn-sm">View Profile</button>
+                        </div>
+                    </div>
+                    
+                    <div class="candidate-match mb-3 p-3 border rounded">
+                        <div class="d-flex align-items-center mb-2">
+                            <img src="https://ui-avatars.com/api/?name=Michael Chen&background=007bff&color=fff&size=40" 
+                                 class="rounded-circle me-3" alt="Candidate" width="40" height="40">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">Michael Chen</h6>
+                                <small class="text-muted">DevOps Engineer</small>
+                            </div>
+                            <span class="badge bg-warning">89% Match</span>
+                        </div>
+                        <div class="mb-2">
+                            <div class="progress" style="height: 4px;">
+                                <div class="progress-bar bg-warning" style="width: 89%"></div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">3+ years experience</small>
+                            <button class="btn btn-outline-primary btn-sm">View Profile</button>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <a href="{{ url_for('recruiter.ai_matches') }}" class="btn btn-primary btn-sm">
+                            View All Matches
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hiring Pipeline -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-funnel me-2"></i>Hiring Pipeline
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="pipeline-stage mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-semibold">Applied</span>
+                            <span class="text-muted">47</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-secondary" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="pipeline-stage mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-semibold">Screening</span>
+                            <span class="text-muted">23</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-primary" style="width: 49%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="pipeline-stage mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-semibold">Interview</span>
+                            <span class="text-muted">8</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-warning" style="width: 17%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="pipeline-stage">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-semibold">Offer</span>
+                            <span class="text-muted">3</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-success" style="width: 6%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Company Insights -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up me-2"></i>Company Insights
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="insight-item mb-3 p-3 bg-light rounded">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-trending-up text-success me-2"></i>
+                            <div>
+                                <h6 class="mb-1">Response Rate</h6>
+                                <p class="text-muted mb-0 small">
+                                    24% higher than industry average
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="insight-item mb-3 p-3 bg-light rounded">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-clock text-info me-2"></i>
+                            <div>
+                                <h6 class="mb-1">Avg. Time to Hire</h6>
+                                <p class="text-muted mb-0 small">
+                                    18 days (Industry: 23 days)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="insight-item p-3 bg-light rounded">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-star text-warning me-2"></i>
+                            <div>
+                                <h6 class="mb-1">Candidate Experience</h6>
+                                <p class="text-muted mb-0 small">
+                                    4.7/5 rating from applicants
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate progress bars
+    const progressBars = document.querySelectorAll('.progress-bar');
+    progressBars.forEach(bar => {
+        setTimeout(() => {
+            bar.style.transition = 'width 1s ease-in-out';
+        }, 100);
+    });
+    
+    // Auto-refresh candidate matches every 60 seconds
+    setInterval(() => {
+        fetch('{{ url_for("recruiter.api_matches") }}')
+            .then(response => response.json())
+            .then(data => {
+                // Update candidate matches if needed
+                console.log('Updated candidate matches:', data);
+            })
+            .catch(error => console.error('Error fetching matches:', error));
+    }, 60000);
+});
+</script>
+{% endblock %} 

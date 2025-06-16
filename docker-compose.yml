@@ -1,0 +1,204 @@
+services:
+  # Flask Application
+  web:
+    build: .
+    container_name: jobmate_web
+    ports:
+      - "5002:5002"
+    environment:
+      - FLASK_ENV=docker
+      - DATABASE_URL=postgresql://jobmate_user:jobmate_password@postgres:5432/jobmate_db
+      - MONGODB_URI=mongodb://mongodb:27017/
+      - MONGODB_DB=jobmate_mongo
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-super-secret-key-change-in-production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - jobmate_network
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: jobmate_postgres
+    environment:
+      - POSTGRES_DB=jobmate_db
+      - POSTGRES_USER=jobmate_user
+      - POSTGRES_PASSWORD=jobmate_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jobmate_user -d jobmate_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - jobmate_network
+    restart: unless-stopped
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:7-jammy
+    container_name: jobmate_mongodb
+    environment:
+      - MONGO_INITDB_DATABASE=jobmate_mongo
+    volumes:
+      - mongodb_data:/data/db
+      - ./database/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    ports:
+      - "27017:27017"
+    networks:
+      - jobmate_network
+    restart: unless-stopped
+
+  # Redis Cache & Message Broker
+  redis:
+    image: redis:7-alpine
+    container_name: jobmate_redis
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    networks:
+      - jobmate_network
+    restart: unless-stopped
+
+  # Celery Worker for Background Tasks
+  celery_worker:
+    build: .
+    container_name: jobmate_celery_worker
+    command: celery -A app.tasks.celery worker --loglevel=info
+    environment:
+      - FLASK_ENV=docker
+      - DATABASE_URL=postgresql://jobmate_user:jobmate_password@postgres:5432/jobmate_db
+      - MONGODB_URI=mongodb://mongodb:27017/
+      - MONGODB_DB=jobmate_mongo
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-super-secret-key-change-in-production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+      - mongodb
+      - redis
+    networks:
+      - jobmate_network
+    restart: unless-stopped
+
+  # Celery Beat for Scheduled Tasks
+  celery_beat:
+    build: .
+    container_name: jobmate_celery_beat
+    command: celery -A app.tasks.celery beat --loglevel=info
+    environment:
+      - FLASK_ENV=docker
+      - DATABASE_URL=postgresql://jobmate_user:jobmate_password@postgres:5432/jobmate_db
+      - MONGODB_URI=mongodb://mongodb:27017/
+      - MONGODB_DB=jobmate_mongo
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-super-secret-key-change-in-production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+      - mongodb
+      - redis
+    networks:
+      - jobmate_network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy (Optional for production)
+  nginx:
+    image: nginx:alpine
+    container_name: jobmate_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - web
+    networks:
+      - jobmate_network
+    restart: unless-stopped
+    profiles:
+      - production
+
+  # Monitoring with Prometheus (Optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: jobmate_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    networks:
+      - jobmate_network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # Grafana for Monitoring Dashboard (Optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: jobmate_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - jobmate_network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+# Named Volumes
+volumes:
+  postgres_data:
+    driver: local
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+# Networks
+networks:
+  jobmate_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 

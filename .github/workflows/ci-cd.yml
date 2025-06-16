@@ -1,0 +1,330 @@
+name: JobMate CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Lint and Code Quality
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort mypy
+        pip install -r requirements.txt
+    
+    - name: Lint with flake8
+      run: |
+        flake8 app/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 app/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Check code formatting with Black
+      run: black --check app/
+    
+    - name: Check import sorting with isort
+      run: isort --check-only app/
+    
+    - name: Type checking with mypy
+      run: mypy app/ --ignore-missing-imports
+
+  # Security Scanning
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install bandit
+      run: pip install bandit[toml]
+    
+    - name: Security scan with bandit
+      run: bandit -r app/ -f json -o bandit-report.json
+    
+    - name: Upload security scan results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: bandit-results
+        path: bandit-report.json
+
+  # Unit Tests
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: jobmate_password
+          POSTGRES_USER: jobmate_user
+          POSTGRES_DB: jobmate_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+      
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install coverage pytest-cov
+    
+    - name: Run tests with coverage
+      env:
+        DATABASE_URL: postgresql://jobmate_user:jobmate_password@localhost:5432/jobmate_test
+        MONGODB_URI: mongodb://localhost:27017/
+        REDIS_URL: redis://localhost:6379/0
+        SECRET_KEY: test-secret-key
+        FLASK_ENV: testing
+      run: |
+        coverage run -m pytest tests/ -v
+        coverage xml
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  # End-to-End Tests with Playwright
+  e2e-test:
+    runs-on: ubuntu-latest
+    needs: [test]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Install Playwright
+      run: |
+        pip install playwright
+        playwright install
+    
+    - name: Start application stack
+      run: |
+        cp env.example .env
+        docker-compose up -d --wait
+    
+    - name: Run Playwright tests
+      run: |
+        pytest tests/e2e/ --browser chromium --browser firefox
+    
+    - name: Upload Playwright results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: playwright-results
+        path: test-results/
+    
+    - name: Cleanup
+      if: always()
+      run: docker-compose down
+
+  # Build Docker Image
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint, security, test]
+    if: github.event_name == 'push'
+    
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix=sha-
+          type=raw,value=latest,enable={{is_default_branch}}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Deploy to Staging
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [build, e2e-test]
+    if: github.ref == 'refs/heads/develop'
+    
+    environment:
+      name: staging
+      url: https://staging.jobmate.app
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+    
+    - name: Deploy to ECS Staging
+      run: |
+        # Update ECS service with new image
+        aws ecs update-service \
+          --cluster jobmate-staging \
+          --service jobmate-web-staging \
+          --task-definition jobmate-staging:latest \
+          --force-new-deployment
+    
+    - name: Wait for deployment
+      run: |
+        aws ecs wait services-stable \
+          --cluster jobmate-staging \
+          --services jobmate-web-staging
+    
+    - name: Run smoke tests
+      run: |
+        curl -f https://staging.jobmate.app/health || exit 1
+
+  # Deploy to Production
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.ref == 'refs/heads/main'
+    
+    environment:
+      name: production
+      url: https://jobmate.app
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+    
+    - name: Deploy to ECS Production
+      run: |
+        # Update ECS service with new image
+        aws ecs update-service \
+          --cluster jobmate-production \
+          --service jobmate-web-production \
+          --task-definition jobmate-production:latest \
+          --force-new-deployment
+    
+    - name: Wait for deployment
+      run: |
+        aws ecs wait services-stable \
+          --cluster jobmate-production \
+          --services jobmate-web-production
+    
+    - name: Run smoke tests
+      run: |
+        curl -f https://jobmate.app/health || exit 1
+    
+    - name: Notify team
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+      if: always()
+
+  # Database Migration (Production)
+  migrate-production:
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: github.ref == 'refs/heads/main'
+    
+    environment:
+      name: production-db
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run database migrations
+      env:
+        DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        SECRET_KEY: ${{ secrets.PRODUCTION_SECRET_KEY }}
+      run: |
+        flask db upgrade 

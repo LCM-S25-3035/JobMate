@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block title %}My Resumes - JobMate{% endblock %}
+
+{% block head %}
+<style>
+    .resume-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .resume-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .resume-card.primary {
+        border-color: #28a745;
+        background: linear-gradient(135deg, rgba(40, 167, 69, 0.05) 0%, rgba(255, 255, 255, 1) 50%);
+    }
+    
+    .ats-score {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        border-radius: 50px;
+        padding: 5px 15px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .ats-score.excellent { background: linear-gradient(45deg, #28a745, #20c997); }
+    .ats-score.good { background: linear-gradient(45deg, #ffc107, #fd7e14); }
+    .ats-score.poor { background: linear-gradient(45deg, #dc3545, #e83e8c); }
+    
+    .upload-prompt {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        text-align: center;
+        padding: 60px 40px;
+    }
+    
+    .action-btn {
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        margin: 0 2px;
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 fw-bold mb-1">
+                        <i class="bi bi-file-earmark-text text-primary me-2"></i>My Resumes
+                    </h1>
+                    <p class="text-muted mb-0">Manage your resumes and track ATS compatibility</p>
+                </div>
+                <a href="{{ url_for('resume.upload_resume') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>Upload New Resume
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    {% if resumes %}
+        <!-- Resumes Grid -->
+        <div class="row">
+            {% for resume in resumes %}
+            <div class="col-lg-6 col-xl-4 mb-4">
+                <div class="resume-card p-4 h-100{% if resume.is_primary %} primary{% endif %}">
+                    <!-- Primary Badge -->
+                    {% if resume.is_primary %}
+                    <div class="mb-2">
+                        <span class="badge bg-success">
+                            <i class="bi bi-star-fill me-1"></i>Primary Resume
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Resume Header -->
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="flex-grow-1">
+                            <h5 class="fw-bold mb-1">{{ resume.title }}</h5>
+                            {% if resume.description %}
+                                <p class="text-muted small mb-2">{{ resume.description }}</p>
+                            {% endif %}
+                            <small class="text-muted">
+                                <i class="bi bi-clock me-1"></i>
+                                Uploaded {{ resume.created_at.strftime('%B %d, %Y') }}
+                            </small>
+                        </div>
+                        
+                        <!-- ATS Score -->
+                        {% if resume.ats_score %}
+                        <span class="ats-score {% if resume.ats_score >= 80 %}excellent{% elif resume.ats_score >= 60 %}good{% else %}poor{% endif %}">
+                            {{ resume.ats_score }}%
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Resume Stats -->
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <div class="text-center p-2 bg-light rounded">
+                                <div class="fw-bold text-primary">{{ (resume.file_size / 1024) | round(1) }} KB</div>
+                                <small class="text-muted">File Size</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-2 bg-light rounded">
+                                <div class="fw-bold text-success">{{ resume.keywords_found|length if resume.keywords_found else 0 }}</div>
+                                <small class="text-muted">Keywords</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Keywords Preview -->
+                    {% if resume.keywords_found %}
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1">Keywords found:</small>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% for keyword in resume.keywords_found[:6] %}
+                                <span class="badge bg-secondary">{{ keyword }}</span>
+                            {% endfor %}
+                            {% if resume.keywords_found|length > 6 %}
+                                <span class="badge bg-light text-dark">+{{ resume.keywords_found|length - 6 }} more</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex flex-wrap gap-2 mt-auto">
+                        <a href="{{ url_for('resume.view_resume', resume_id=resume.id) }}" 
+                           class="btn btn-outline-primary btn-sm action-btn flex-fill">
+                            <i class="bi bi-eye"></i> View
+                        </a>
+                        
+                        <a href="{{ url_for('resume.download_resume', resume_id=resume.id) }}" 
+                           class="btn btn-outline-success btn-sm action-btn flex-fill">
+                            <i class="bi bi-download"></i> Download
+                        </a>
+                        
+                        <a href="{{ url_for('resume.analyze_ats', resume_id=resume.id) }}" 
+                           class="btn btn-outline-info btn-sm action-btn flex-fill">
+                            <i class="bi bi-graph-up"></i> Analyze
+                        </a>
+                    </div>
+                    
+                    <!-- Secondary Actions -->
+                    <div class="d-flex justify-content-between mt-3 pt-3 border-top">
+                        {% if not resume.is_primary %}
+                        <form method="POST" action="{{ url_for('resume.set_primary', resume_id=resume.id) }}" class="d-inline">
+                            <button type="submit" class="btn btn-outline-warning btn-sm action-btn">
+                                <i class="bi bi-star"></i> Set Primary
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="text-success small">
+                            <i class="bi bi-check-circle me-1"></i>Active Resume
+                        </span>
+                        {% endif %}
+                        
+                        <form method="POST" action="{{ url_for('resume.delete_resume', resume_id=resume.id) }}" 
+                              class="d-inline" 
+                              onsubmit="return confirm('Are you sure you want to delete this resume?')">
+                            <button type="submit" class="btn btn-outline-danger btn-sm action-btn">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Tips Section -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card border-0 bg-light">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3">
+                            <i class="bi bi-lightbulb text-warning me-2"></i>Resume Tips
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="d-flex">
+                                    <i class="bi bi-target text-primary me-3 mt-1"></i>
+                                    <div>
+                                        <h6 class="fw-semibold">ATS Optimization</h6>
+                                        <p class="text-muted small mb-0">Keep your ATS score above 80% for better visibility to recruiters.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="d-flex">
+                                    <i class="bi bi-tags text-success me-3 mt-1"></i>
+                                    <div>
+                                        <h6 class="fw-semibold">Keywords Matter</h6>
+                                        <p class="text-muted small mb-0">Include relevant technical keywords from job descriptions.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="d-flex">
+                                    <i class="bi bi-arrow-clockwise text-info me-3 mt-1"></i>
+                                    <div>
+                                        <h6 class="fw-semibold">Keep Updated</h6>
+                                        <p class="text-muted small mb-0">Regularly update your resume with new skills and experiences.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    {% else %}
+        <!-- Empty State -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="upload-prompt">
+                    <i class="bi bi-file-earmark-plus" style="font-size: 4rem; margin-bottom: 20px;"></i>
+                    <h3 class="fw-bold mb-3">Upload Your First Resume</h3>
+                    <p class="mb-4 fs-5">
+                        Get started by uploading your resume to receive AI-powered job recommendations and ATS analysis.
+                    </p>
+                    <div class="d-flex flex-column flex-md-row gap-3 justify-content-center">
+                        <a href="{{ url_for('resume.upload_resume') }}" class="btn btn-light btn-lg">
+                            <i class="bi bi-cloud-upload me-2"></i>Upload Resume
+                        </a>
+                        <a href="{{ url_for('match.update_preferences') }}" class="btn btn-outline-light btn-lg">
+                            <i class="bi bi-gear me-2"></i>Set Preferences
+                        </a>
+                    </div>
+                    
+                    <!-- Benefits -->
+                    <div class="row mt-5 text-start">
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill text-light me-3 fs-4"></i>
+                                <span>ATS Compatibility Analysis</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill text-light me-3 fs-4"></i>
+                                <span>AI-Powered Job Matching</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill text-light me-3 fs-4"></i>
+                                <span>Keyword Optimization</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to resume cards
+    const resumeCards = document.querySelectorAll('.resume-card');
+    
+    resumeCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Confirm delete actions
+    const deleteButtons = document.querySelectorAll('form[action*="delete"] button');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            if (!confirm('Are you sure you want to delete this resume? This action cannot be undone.')) {
+                e.preventDefault();
+            }
+        });
+    });
+    
+    // Auto-hide success messages
+    const successAlerts = document.querySelectorAll('.alert-success');
+    successAlerts.forEach(alert => {
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.style.opacity = '0';
+                alert.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => {
+                    if (alert.parentNode) {
+                        alert.remove();
+                    }
+                }, 500);
+            }
+        }, 5000);
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+
+{% block title %}Recommended Jobs - JobMate{% endblock %}
+
+{% block head %}
+<style>
+    .job-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+        overflow: hidden;
+    }
+    
+    .job-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        border-color: #007bff;
+    }
+    
+    .match-score {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+        border-radius: 20px;
+        padding: 6px 15px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        position: absolute;
+        top: 15px;
+        right: 15px;
+    }
+    
+    .match-score.excellent { background: linear-gradient(45deg, #28a745, #20c997); }
+    .match-score.good { background: linear-gradient(45deg, #ffc107, #fd7e14); }
+    .match-score.moderate { background: linear-gradient(45deg, #17a2b8, #6f42c1); }
+    .match-score.low { background: linear-gradient(45deg, #6c757d, #495057); }
+    
+    .job-header {
+        position: relative;
+        padding: 20px 20px 15px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    .job-content {
+        padding: 20px;
+    }
+    
+    .job-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .job-tag {
+        background: rgba(0, 123, 255, 0.1);
+        color: #007bff;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        border: 1px solid rgba(0, 123, 255, 0.2);
+    }
+    
+    .job-tag.remote { background: rgba(40, 167, 69, 0.1); color: #28a745; border-color: rgba(40, 167, 69, 0.2); }
+    .job-tag.salary { background: rgba(255, 193, 7, 0.1); color: #ffc107; border-color: rgba(255, 193, 7, 0.2); }
+    
+    .quick-apply-btn {
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 3px 10px rgba(0, 123, 255, 0.3);
+    }
+    
+    .quick-apply-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
+        color: white;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+    }
+    
+    .filter-sidebar {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+    }
+    
+    .stats-overview {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stats-overview">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="h2 fw-bold mb-2">
+                            <i class="bi bi-stars me-2"></i>AI-Powered Job Recommendations
+                        </h1>
+                        <p class="mb-0 opacity-90">
+                            Based on your profile, skills, and preferences
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <div class="d-flex justify-content-md-end gap-3">
+                            <div class="text-center">
+                                <div class="h4 fw-bold mb-0">{{ recommended_jobs|length }}</div>
+                                <small class="opacity-75">Matches Found</small>
+                            </div>
+                            <div class="text-center">
+                                <div class="h4 fw-bold mb-0">{{ total_available }}</div>
+                                <small class="opacity-75">Total Jobs</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('match.job_discovery') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-funnel me-1"></i>Advanced Search
+                    </a>
+                    <a href="{{ url_for('match.update_preferences') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-gear me-1"></i>Update Preferences
+                    </a>
+                    <a href="{{ url_for('resume.upload_resume') }}" class="btn btn-outline-success">
+                        <i class="bi bi-file-earmark-plus me-1"></i>Upload Resume
+                    </a>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-dark dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-sort-down me-1"></i>Sort by Match Score
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="?sort=score">Highest Match</a></li>
+                        <li><a class="dropdown-item" href="?sort=date">Most Recent</a></li>
+                        <li><a class="dropdown-item" href="?sort=salary">Highest Salary</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if recommended_jobs %}
+        <!-- Jobs Grid -->
+        <div class="row">
+            {% for job_data in recommended_jobs %}
+            {% set job = job_data.job %}
+            {% set score = job_data.score %}
+            {% set match_percentage = job_data.match_percentage %}
+            
+            <div class="col-lg-6 col-xl-4 mb-4">
+                <div class="job-card h-100">
+                    <!-- Job Header -->
+                    <div class="job-header">
+                        <div class="match-score {% if match_percentage >= 80 %}excellent{% elif match_percentage >= 60 %}good{% elif match_percentage >= 40 %}moderate{% else %}low{% endif %}">
+                            {{ match_percentage }}% Match
+                        </div>
+                        
+                        <h5 class="fw-bold mb-2">{{ job.title }}</h5>
+                        <h6 class="text-muted mb-1">{{ job.company_name }}</h6>
+                        <div class="d-flex align-items-center text-muted small">
+                            <i class="bi bi-geo-alt me-1"></i>
+                            <span>{{ job.location }}</span>
+                            {% if job.remote_type == 'remote' %}
+                                <span class="badge bg-success ms-2">Remote</span>
+                            {% elif job.remote_type == 'hybrid' %}
+                                <span class="badge bg-info ms-2">Hybrid</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Job Content -->
+                    <div class="job-content">
+                        <!-- Job Tags -->
+                        <div class="job-tags">
+                            <span class="job-tag">{{ job.employment_type.title().replace('_', ' ') }}</span>
+                            <span class="job-tag">{{ job.experience_level.title() }}</span>
+                            {% if job.remote_type == 'remote' %}
+                                <span class="job-tag remote">Remote Work</span>
+                            {% endif %}
+                            {% if job.salary_range_formatted %}
+                                <span class="job-tag salary">{{ job.salary_range_formatted }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Job Description Preview -->
+                        <p class="text-muted small mb-3">
+                            {{ job.description[:150] }}{% if job.description|length > 150 %}...{% endif %}
+                        </p>
+                        
+                        <!-- Job Stats -->
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <div class="fw-bold text-success">{{ job.view_count }}</div>
+                                    <small class="text-muted">Views</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <div class="fw-bold text-primary">{{ job.application_count }}</div>
+                                    <small class="text-muted">Applications</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('match.job_match_details', job_id=job.id) }}" 
+                               class="btn btn-outline-primary btn-sm flex-fill">
+                                <i class="bi bi-eye me-1"></i>View Details
+                            </a>
+                            <button class="btn quick-apply-btn btn-sm flex-fill" 
+                                    onclick="applyToJob({{ job.id }})">
+                                <i class="bi bi-send me-1"></i>Quick Apply
+                            </button>
+                        </div>
+                        
+                        <!-- Posted Date -->
+                        <div class="text-center mt-3 pt-2 border-top">
+                            <small class="text-muted">
+                                <i class="bi bi-clock me-1"></i>
+                                Posted {{ job.created_at.strftime('%B %d, %Y') }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Load More Button -->
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <button class="btn btn-outline-primary btn-lg" onclick="loadMoreJobs()">
+                    <i class="bi bi-arrow-down-circle me-2"></i>Load More Recommendations
+                </button>
+            </div>
+        </div>
+        
+    {% else %}
+        <!-- Empty State -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="empty-state">
+                    <i class="bi bi-search" style="font-size: 4rem; margin-bottom: 20px;"></i>
+                    <h3 class="fw-bold mb-3">No Job Recommendations Yet</h3>
+                    <p class="mb-4 fs-5">
+                        We need more information to provide personalized job recommendations.
+                    </p>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <i class="bi bi-file-earmark-text me-3 fs-3"></i>
+                                <div class="text-start">
+                                    <h6 class="fw-semibold mb-1">Upload Resume</h6>
+                                    <small class="opacity-75">Help us understand your skills</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <i class="bi bi-sliders me-3 fs-3"></i>
+                                <div class="text-start">
+                                    <h6 class="fw-semibold mb-1">Set Preferences</h6>
+                                    <small class="opacity-75">Tell us what you're looking for</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <i class="bi bi-graph-up me-3 fs-3"></i>
+                                <div class="text-start">
+                                    <h6 class="fw-semibold mb-1">Get Matches</h6>
+                                    <small class="opacity-75">Receive AI-powered recommendations</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex flex-column flex-md-row gap-3 justify-content-center mt-4">
+                        <a href="{{ url_for('resume.upload_resume') }}" class="btn btn-light btn-lg">
+                            <i class="bi bi-cloud-upload me-2"></i>Upload Resume
+                        </a>
+                        <a href="{{ url_for('match.update_preferences') }}" class="btn btn-outline-light btn-lg">
+                            <i class="bi bi-gear me-2"></i>Set Job Preferences
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Job card hover effects
+    const jobCards = document.querySelectorAll('.job-card');
+    
+    jobCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+function applyToJob(jobId) {
+    // TODO: Implement quick apply functionality
+    alert('Quick apply feature coming soon! For now, click "View Details" to see the full job posting.');
+}
+
+function loadMoreJobs() {
+    // TODO: Implement pagination/infinite scroll
+    alert('Load more functionality coming soon!');
+}
+
+function addToWishlist(jobId) {
+    // TODO: Implement wishlist functionality
+    fetch(`/api/wishlist/add/${jobId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Job added to wishlist!');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error adding to wishlist');
+    });
+}
+</script>
+{% endblock %} 

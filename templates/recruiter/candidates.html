@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Candidates - JobMate{% endblock %}
+
+{% block head %}
+<style>
+    .page-header {
+        background: var(--gradient-primary);
+        color: white;
+        border-radius: 0 0 20px 20px;
+        margin-top: -20px;
+        padding: 30px 0;
+    }
+    
+    .candidate-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .candidate-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px var(--shadow-hover);
+    }
+    
+    .skill-tag {
+        display: inline-block;
+        background: var(--secondary-color);
+        color: var(--text-primary);
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        margin: 2px;
+        font-weight: 500;
+    }
+    
+    .match-score {
+        background: var(--gradient-primary);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .filter-sidebar {
+        background: var(--gradient-card);
+        border-radius: 15px;
+        padding: 25px;
+        height: fit-content;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-6 fw-bold mb-2">
+                    <i class="bi bi-people me-3"></i>Candidate Pool
+                </h1>
+                <p class="lead mb-0 opacity-90">
+                    Discover and connect with top talent using AI-powered matching
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <button class="btn btn-light me-2">
+                    <i class="bi bi-funnel me-2"></i>Advanced Search
+                </button>
+                <button class="btn btn-outline-light">
+                    <i class="bi bi-download me-2"></i>Export
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <div class="row">
+        <!-- Filter Sidebar -->
+        <div class="col-lg-3">
+            <div class="filter-sidebar">
+                <h6 class="text-theme-primary mb-3">
+                    <i class="bi bi-sliders me-2"></i>Filters
+                </h6>
+                
+                <!-- Search -->
+                <div class="mb-4">
+                    <label class="form-label text-theme-dark">Search Candidates</label>
+                    <input type="text" class="form-control form-control-theme" placeholder="Name, skills, position...">
+                </div>
+                
+                <!-- Experience Level -->
+                <div class="mb-4">
+                    <label class="form-label text-theme-dark">Experience Level</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="entry" checked>
+                        <label class="form-check-label text-theme-secondary" for="entry">Entry Level (0-2 years)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="mid" checked>
+                        <label class="form-check-label text-theme-secondary" for="mid">Mid Level (3-5 years)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="senior" checked>
+                        <label class="form-check-label text-theme-secondary" for="senior">Senior (5+ years)</label>
+                    </div>
+                </div>
+                
+                <!-- Skills -->
+                <div class="mb-4">
+                    <label class="form-label text-theme-dark">Skills</label>
+                    <input type="text" class="form-control form-control-theme" placeholder="JavaScript, Python, React...">
+                </div>
+                
+                <!-- Location -->
+                <div class="mb-4">
+                    <label class="form-label text-theme-dark">Location</label>
+                    <select class="form-select form-control-theme">
+                        <option value="">All Locations</option>
+                        <option value="toronto">Toronto, ON</option>
+                        <option value="ottawa">Ottawa, ON</option>
+                        <option value="mississauga">Mississauga, ON</option>
+                        <option value="remote">Remote</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-theme-primary w-100 mt-3">
+                    <i class="bi bi-search me-2"></i>Apply Filters
+                </button>
+                
+                <button class="btn btn-theme-outline w-100 mt-2">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Reset
+                </button>
+            </div>
+        </div>
+        
+        <!-- Candidates List -->
+        <div class="col-lg-9">
+            <!-- Search Bar and Actions -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h5 class="text-theme-dark mb-1">24 Candidates Found</h5>
+                    <p class="text-theme-secondary small mb-0">Sorted by match score and availability</p>
+                </div>
+                
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <select class="form-select form-select-sm">
+                            <option>Sort by: Match Score</option>
+                            <option>Sort by: Experience</option>
+                            <option>Sort by: Name</option>
+                            <option>Sort by: Last Active</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Coming Soon Message -->
+            <div class="text-center py-5">
+                <div class="card card-theme p-5">
+                    <i class="bi bi-people text-theme-primary" style="font-size: 4rem; opacity: 0.7;"></i>
+                    <h4 class="text-theme-primary mt-3 mb-2">Candidate Database Coming Soon!</h4>
+                    <p class="text-theme-secondary mb-4">
+                        We're building an amazing candidate discovery system with AI-powered matching. 
+                        This feature will be available in the next update.
+                    </p>
+                    
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <div class="alert alert-theme-info">
+                                <h6 class="text-theme-primary mb-2">
+                                    <i class="bi bi-lightbulb me-2"></i>What's Coming:
+                                </h6>
+                                <ul class="list-unstyled text-theme-secondary mb-0">
+                                    <li><i class="bi bi-check-circle me-2 text-success"></i>AI-powered candidate matching</li>
+                                    <li><i class="bi bi-check-circle me-2 text-success"></i>Advanced filtering and search</li>
+                                    <li><i class="bi bi-check-circle me-2 text-success"></i>Direct messaging system</li>
+                                    <li><i class="bi bi-check-circle me-2 text-success"></i>Resume analysis and scoring</li>
+                                    <li><i class="bi bi-check-circle me-2 text-success"></i>Interview scheduling tools</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="{{ url_for('recruiter.create_job') }}" class="btn btn-theme-primary me-3">
+                            <i class="bi bi-plus-circle me-2"></i>Post a Job
+                        </a>
+                        <a href="{{ url_for('main.recruiter_dashboard') }}" class="btn btn-theme-outline">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Candidates page loaded - feature coming soon!');
+});
+</script>
+{% endblock %} 

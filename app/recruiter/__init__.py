@@ -7,4 +7,4 @@ from flask import Blueprint
 
 bp = Blueprint('recruiter', __name__)
 
-# from app.recruiter import routes  # TODO: Implement routes.py 
+from app.recruiter import routes 

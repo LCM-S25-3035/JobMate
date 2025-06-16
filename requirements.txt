@@ -10,7 +10,7 @@ WTForms==3.1.1
 email-validator==2.1.0
 
 # Database drivers
-psycopg2-binary==2.9.9
+psycopg==3.2.9
 pymongo==4.6.1
 
 # Authentication & Security
@@ -24,6 +24,7 @@ langchain==0.1.0
 beautifulsoup4==4.12.2
 requests==2.31.0
 selenium==4.15.2
+spacy==3.7.2
 
 # Testing
 pytest==7.4.3

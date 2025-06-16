@@ -19,7 +19,7 @@ class Config:
     
     # Database Configuration
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        f'postgresql://jobmate_user:jobmate_password@localhost:5432/jobmate_db'
+        f'postgresql+psycopg://jobmate_user:jobmate_password@localhost:5432/jobmate_db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_size': 10,
@@ -86,7 +86,7 @@ class DevelopmentConfig(Config):
     
     # Development database (local PostgreSQL)
     SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
-        'postgresql://jobmate_user:jobmate_password@localhost:5432/jobmate_dev'
+        'postgresql+psycopg://jobmate_user:jobmate_password@localhost:5432/jobmate_dev'
     
     # Development MongoDB
     MONGODB_DB = 'jobmate_dev'
@@ -143,7 +143,7 @@ class DockerConfig(Config):
     
     # Docker service names
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'postgresql://jobmate_user:jobmate_password@postgres:5432/jobmate_db'
+        'postgresql+psycopg://jobmate_user:jobmate_password@postgres:5432/jobmate_db'
     
     MONGODB_URI = os.environ.get('MONGODB_URI') or 'mongodb://mongodb:27017/'
     REDIS_URL = os.environ.get('REDIS_URL') or 'redis://redis:6379/0'

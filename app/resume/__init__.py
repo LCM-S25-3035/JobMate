@@ -7,4 +7,4 @@ from flask import Blueprint
 
 bp = Blueprint('resume', __name__)
 
-# from app.resume import routes  # TODO: Implement routes.py 
+from app.resume import routes 

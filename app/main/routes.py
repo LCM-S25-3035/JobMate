@@ -49,8 +49,25 @@ def applicant_dashboard():
         Application.created_at.desc()
     ).limit(5).all()
     
-    # Get job recommendations (placeholder - will be implemented in match module)
-    recommended_jobs = []  # TODO: Implement job recommendations
+    # Get job recommendations using the match module
+    from app.models.job_posting import JobPosting
+    from app.match.routes import calculate_job_match_score
+    
+    # Get active jobs and calculate match scores
+    active_jobs = JobPosting.get_active_jobs(limit=10)
+    job_matches = []
+    
+    if active_jobs and active_resume:
+        for job in active_jobs:
+            match_score = calculate_job_match_score(job, current_user, active_resume)
+            if match_score > 30:  # Only show jobs with reasonable match
+                job_matches.append({
+                    'job': job,
+                    'match_score': match_score
+                })
+    
+    # Sort by match score and limit to top 5 for dashboard
+    recommended_jobs = sorted(job_matches, key=lambda x: x['match_score'], reverse=True)[:5]
     
     # Calculate completion percentage
     completion_percentage = calculate_profile_completion(current_user)
@@ -143,7 +160,7 @@ def dashboard_stats():
     else:  # recruiter
         stats = {
             'total_job_postings': current_user.job_postings.count(),
-            'active_job_postings': current_user.job_postings.filter_by(is_active=True).count(),
+            'active_job_postings': current_user.job_postings.filter_by(status='active').count(),
             'total_applications': 0,  # TODO: Calculate applications to recruiter's jobs
             'new_applications': 0,    # TODO: Calculate new applications this week
             'candidates_reviewed': 0  # TODO: Calculate reviewed candidates

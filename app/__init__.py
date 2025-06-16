@@ -58,24 +58,25 @@ def create_app(config_class=Config):
     from app.auth import bp as auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
     
+    # Core modules - implemented
+    from app.resume import bp as resume_bp
+    app.register_blueprint(resume_bp, url_prefix='/resume')
+    
+    from app.match import bp as match_bp
+    app.register_blueprint(match_bp, url_prefix='/match')
+    
     # TODO: Implement remaining modules
     # from app.profile import bp as profile_bp
     # app.register_blueprint(profile_bp, url_prefix='/profile')
     
-    # from app.resume import bp as resume_bp
-    # app.register_blueprint(resume_bp, url_prefix='/resume')
-    
     # from app.jobs import bp as jobs_bp
     # app.register_blueprint(jobs_bp, url_prefix='/jobs')
     
-    # from app.match import bp as match_bp
-    # app.register_blueprint(match_bp, url_prefix='/match')
+    from app.recruiter import bp as recruiter_bp
+    app.register_blueprint(recruiter_bp, url_prefix='/recruiter')
     
     # from app.apply import bp as apply_bp
     # app.register_blueprint(apply_bp, url_prefix='/apply')
-    
-    # from app.recruiter import bp as recruiter_bp
-    # app.register_blueprint(recruiter_bp, url_prefix='/recruiter')
     
     # from app.ai_agents import bp as ai_agents_bp
     # app.register_blueprint(ai_agents_bp, url_prefix='/ai')

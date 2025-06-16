@@ -20,8 +20,7 @@ class EasyApplyLinkedin:
         self.password = data['password']
         self.keywords = data['keywords']
         self.location = data['location']
-        chrome_service = Service(data['driver_path'])
-        self.driver = webdriver.Chrome(service=chrome_service)
+        self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
         self.driver.maximize_window()
         self.successful_apps = []
         self.failed_apps = []

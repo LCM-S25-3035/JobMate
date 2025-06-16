@@ -18,18 +18,26 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
     
+    <!-- Theme System CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
+    
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     
     {% block head %}{% endblock %}
 </head>
-<body>
+<body class="{% if current_user.is_authenticated %}{% if current_user.is_applicant() %}theme-applicant{% elif current_user.is_recruiter() %}theme-recruiter{% endif %}{% endif %}">
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark {% if current_user.is_authenticated %}navbar-theme{% else %}bg-primary{% endif %} fixed-top">
         <div class="container">
             <!-- Brand -->
             <a class="navbar-brand fw-bold" href="{{ url_for('main.index') }}">
                 <i class="bi bi-briefcase-fill me-2"></i>JobMate
+                {% if current_user.is_authenticated %}
+                    <small class="badge {% if current_user.is_applicant() %}bg-light text-dark{% else %}bg-light text-dark{% endif %} ms-2">
+                        {{ current_user.user_type.title() }}
+                    </small>
+                {% endif %}
             </a>
             
             <!-- Mobile toggle -->
@@ -42,36 +50,41 @@
                 <ul class="navbar-nav me-auto">
                     {% if current_user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('main.dashboard') }}">
+                            <a class="nav-link nav-link-theme" href="{{ url_for('main.dashboard') }}">
                                 <i class="bi bi-speedometer2 me-1"></i>Dashboard
                             </a>
                         </li>
                         
                         {% if current_user.is_applicant() %}
                         <li class="nav-item">
-                            <a class="nav-link" href="#" onclick="alert('Jobs module coming soon!')">
+                            <a class="nav-link nav-link-theme" href="#" onclick="alert('Jobs module coming soon!')">
                                 <i class="bi bi-search me-1"></i>Find Jobs
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#" onclick="alert('Resume module coming soon!')">
+                            <a class="nav-link nav-link-theme" href="#" onclick="alert('Resume module coming soon!')">
                                 <i class="bi bi-file-earmark-text me-1"></i>My Resumes
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#" onclick="alert('Applications module coming soon!')">
+                            <a class="nav-link nav-link-theme" href="#" onclick="alert('Applications module coming soon!')">
                                 <i class="bi bi-send me-1"></i>Applications
                             </a>
                         </li>
                         {% elif current_user.is_recruiter() %}
                         <li class="nav-item">
-                            <a class="nav-link" href="#" onclick="alert('Recruiter module coming soon!')">
+                            <a class="nav-link nav-link-theme" href="{{ url_for('recruiter.create_job') }}">
                                 <i class="bi bi-plus-circle me-1"></i>Post Jobs
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#" onclick="alert('Candidates module coming soon!')">
+                            <a class="nav-link nav-link-theme" href="{{ url_for('recruiter.candidates') }}">
                                 <i class="bi bi-people me-1"></i>Candidates
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-theme" href="{{ url_for('recruiter.job_listings') }}">
+                                <i class="bi bi-briefcase me-1"></i>My Jobs
                             </a>
                         </li>
                         {% endif %}
@@ -89,7 +102,7 @@
                     {% if current_user.is_authenticated %}
                         <!-- Notifications -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link position-relative" href="#" data-bs-toggle="dropdown">
+                            <a class="nav-link nav-link-theme position-relative" href="#" data-bs-toggle="dropdown">
                                 <i class="bi bi-bell"></i>
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notification-count" style="display: none;">
                                     0
@@ -104,7 +117,7 @@
                         
                         <!-- User menu -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <a class="nav-link nav-link-theme dropdown-toggle" href="#" data-bs-toggle="dropdown">
                                 <i class="bi bi-person-circle me-1"></i>{{ current_user.first_name }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
@@ -174,70 +187,70 @@
     </main>
     
     <!-- Footer -->
-    <footer class="bg-dark text-light py-5 mt-5">
+    <footer class="py-5 mt-5" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: #ecf0f1;">
         <div class="container">
             <div class="row">
                 <div class="col-lg-4 mb-4">
                     <h5 class="fw-bold">
                         <i class="bi bi-briefcase-fill me-2"></i>JobMate
                     </h5>
-                    <p class="text-light-50">
+                    <p style="color: #bdc3c7; line-height: 1.6;">
                         AI-powered job matching platform helping job seekers in Ontario's tech sector 
                         find their perfect career opportunities.
                     </p>
                     <div class="social-links">
-                        <a href="#" class="text-light me-3"><i class="bi bi-linkedin"></i></a>
-                        <a href="#" class="text-light me-3"><i class="bi bi-twitter"></i></a>
-                        <a href="#" class="text-light me-3"><i class="bi bi-github"></i></a>
+                        <a href="#" class="me-3" style="color: #3498db; font-size: 1.2rem; transition: color 0.3s ease;" onmouseover="this.style.color='#74b9ff'" onmouseout="this.style.color='#3498db'"><i class="bi bi-linkedin"></i></a>
+                        <a href="#" class="me-3" style="color: #3498db; font-size: 1.2rem; transition: color 0.3s ease;" onmouseover="this.style.color='#74b9ff'" onmouseout="this.style.color='#3498db'"><i class="bi bi-twitter"></i></a>
+                        <a href="#" class="me-3" style="color: #3498db; font-size: 1.2rem; transition: color 0.3s ease;" onmouseover="this.style.color='#74b9ff'" onmouseout="this.style.color='#3498db'"><i class="bi bi-github"></i></a>
                     </div>
                 </div>
                 
                 <div class="col-lg-2 col-md-6 mb-4">
                     <h6 class="fw-semibold">Platform</h6>
                     <ul class="list-unstyled">
-                        <li><a href="{{ url_for('main.features') }}" class="text-light-50 text-decoration-none">Features</a></li>
-                        <li><a href="{{ url_for('main.pricing') }}" class="text-light-50 text-decoration-none">Pricing</a></li>
-                        <li><a href="{{ url_for('main.about') }}" class="text-light-50 text-decoration-none">About</a></li>
+                        <li><a href="{{ url_for('main.features') }}" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='#3498db'" onmouseout="this.style.color='#bdc3c7'">Features</a></li>
+                        <li><a href="{{ url_for('main.pricing') }}" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='#3498db'" onmouseout="this.style.color='#bdc3c7'">Pricing</a></li>
+                        <li><a href="{{ url_for('main.about') }}" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='#3498db'" onmouseout="this.style.color='#bdc3c7'">About</a></li>
                     </ul>
                 </div>
                 
                 <div class="col-lg-2 col-md-6 mb-4">
                     <h6 class="fw-semibold">Support</h6>
                     <ul class="list-unstyled">
-                        <li><a href="#" class="text-light-50 text-decoration-none">Help Center</a></li>
-                        <li><a href="{{ url_for('main.contact') }}" class="text-light-50 text-decoration-none">Contact</a></li>
-                        <li><a href="#" class="text-light-50 text-decoration-none">FAQ</a></li>
+                        <li><a href="#" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='#3498db'" onmouseout="this.style.color='#bdc3c7'">Help Center</a></li>
+                        <li><a href="{{ url_for('main.contact') }}" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='#3498db'" onmouseout="this.style.color='#bdc3c7'">Contact</a></li>
+                        <li><a href="#" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='#3498db'" onmouseout="this.style.color='#bdc3c7'">FAQ</a></li>
                     </ul>
                 </div>
                 
                 <div class="col-lg-2 col-md-6 mb-4">
                     <h6 class="fw-semibold">Legal</h6>
                     <ul class="list-unstyled">
-                        <li><a href="{{ url_for('main.privacy') }}" class="text-light-50 text-decoration-none">Privacy</a></li>
-                        <li><a href="{{ url_for('main.terms') }}" class="text-light-50 text-decoration-none">Terms</a></li>
+                        <li><a href="{{ url_for('main.privacy') }}" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='#3498db'" onmouseout="this.style.color='#bdc3c7'">Privacy</a></li>
+                        <li><a href="{{ url_for('main.terms') }}" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='#3498db'" onmouseout="this.style.color='#bdc3c7'">Terms</a></li>
                     </ul>
                 </div>
                 
                 <div class="col-lg-2 col-md-6 mb-4">
                     <h6 class="fw-semibold">Connect</h6>
                     <ul class="list-unstyled">
-                        <li><a href="#" class="text-light-50 text-decoration-none">Newsletter</a></li>
-                        <li><a href="#" class="text-light-50 text-decoration-none">Blog</a></li>
+                        <li><a href="#" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='#3498db'" onmouseout="this.style.color='#bdc3c7'">Newsletter</a></li>
+                        <li><a href="#" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='#3498db'" onmouseout="this.style.color='#bdc3c7'">Blog</a></li>
                     </ul>
                 </div>
             </div>
             
-            <hr class="my-4">
+            <hr class="my-4" style="border-color: #7f8c8d; opacity: 0.3;">
             
             <div class="row align-items-center">
                 <div class="col-md-6">
-                    <p class="mb-0 text-light-50">
+                    <p class="mb-0" style="color: #95a5a6; font-size: 0.9rem;">
                         &copy; 2024 JobMate. All rights reserved.
                     </p>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <p class="mb-0 text-light-50">
-                        Made with <i class="bi bi-heart-fill text-danger"></i> in Ontario, Canada
+                    <p class="mb-0" style="color: #95a5a6; font-size: 0.9rem;">
+                        Made with <i class="bi bi-heart-fill" style="color: #e74c3c;"></i> in Ontario, Canada
                     </p>
                 </div>
             </div>

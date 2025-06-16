@@ -131,27 +131,27 @@
                 </h5>
                 <div class="row">
                     <div class="col-md-3 mb-3">
-                        <a href="#" class="quick-action-btn" onclick="alert('Job search coming soon!')">
+                        <a href="{{ url_for('match.recommended_jobs') }}" class="quick-action-btn">
                             <i class="bi bi-search fs-4 mb-2 d-block"></i>
-                            <span class="fw-semibold">Search Jobs</span>
+                            <span class="fw-semibold">Job Recommendations</span>
                         </a>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <a href="#" class="quick-action-btn" onclick="alert('Resume upload coming soon!')">
+                        <a href="{{ url_for('resume.upload_resume') }}" class="quick-action-btn">
                             <i class="bi bi-cloud-upload fs-4 mb-2 d-block"></i>
                             <span class="fw-semibold">Upload Resume</span>
                         </a>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <a href="#" class="quick-action-btn" onclick="alert('Profile settings coming soon!')">
+                        <a href="{{ url_for('match.update_preferences') }}" class="quick-action-btn">
                             <i class="bi bi-gear fs-4 mb-2 d-block"></i>
-                            <span class="fw-semibold">Profile Settings</span>
+                            <span class="fw-semibold">Job Preferences</span>
                         </a>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <a href="#" class="quick-action-btn" onclick="alert('AI optimization coming soon!')">
-                            <i class="bi bi-robot fs-4 mb-2 d-block"></i>
-                            <span class="fw-semibold">AI Optimize</span>
+                        <a href="{{ url_for('match.job_discovery') }}" class="quick-action-btn">
+                            <i class="bi bi-compass fs-4 mb-2 d-block"></i>
+                            <span class="fw-semibold">Job Discovery</span>
                         </a>
                     </div>
                 </div>
@@ -220,7 +220,7 @@
                     <h5 class="fw-bold mb-0">
                         <i class="bi bi-send me-2 text-primary"></i>Recent Applications
                     </h5>
-                    <a href="#" class="btn btn-outline-primary btn-sm" onclick="alert('Applications page coming soon!')">
+                    <a href="{{ url_for('resume.my_resumes') }}" class="btn btn-outline-primary btn-sm">
                         View All
                     </a>
                 </div>
@@ -247,7 +247,7 @@
                         <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
                         <h6 class="text-muted">No applications yet</h6>
                         <p class="text-muted mb-3">Start applying to jobs to see your applications here.</p>
-                        <a href="#" class="btn btn-primary" onclick="alert('Job search coming soon!')">
+                        <a href="{{ url_for('match.recommended_jobs') }}" class="btn btn-primary">
                             <i class="bi bi-search me-1"></i>Find Jobs
                         </a>
                     </div>
@@ -281,7 +281,7 @@
                         <i class="bi bi-lightbulb fs-2 text-muted mb-2 d-block"></i>
                         <h6 class="text-muted">No recommendations yet</h6>
                         <p class="text-muted small mb-3">Complete your profile to get AI-powered job recommendations.</p>
-                        <a href="#" class="btn btn-outline-primary btn-sm" onclick="alert('Profile setup coming soon!')">
+                        <a href="{{ url_for('match.update_preferences') }}" class="btn btn-outline-primary btn-sm">
                             Complete Profile
                         </a>
                     </div>

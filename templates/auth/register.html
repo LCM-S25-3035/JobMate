@@ -16,73 +16,137 @@
         box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
     }
     
-    .form-floating > .form-control, .form-select {
-        border: 2px solid #e9ecef;
-        transition: all 0.3s ease;
-    }
-    
-    .form-floating > .form-control:focus, .form-select:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-    }
-    
-    .btn-register {
-        background: linear-gradient(45deg, #667eea, #764ba2);
-        border: none;
-        padding: 12px 30px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-register:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    }
-    
     .user-type-selector {
         background: #f8f9fa;
-        border-radius: 10px;
-        padding: 20px;
+        border-radius: 15px;
+        padding: 25px;
         margin-bottom: 25px;
     }
     
     .user-type-option {
         background: white;
         border: 2px solid #e9ecef;
-        border-radius: 8px;
-        padding: 20px;
+        border-radius: 12px;
+        padding: 25px 20px;
         text-align: center;
         cursor: pointer;
         transition: all 0.3s ease;
         position: relative;
+        height: 100%;
+        transform: scale(1);
     }
     
     .user-type-option:hover {
-        border-color: #0d6efd;
-        transform: translateY(-2px);
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
     }
     
-    .user-type-option.active {
-        border-color: #0d6efd;
-        background: rgba(13, 110, 253, 0.1);
+    .user-type-option.selected-applicant {
+        border-color: #9d4edd;
+        background: linear-gradient(145deg, #ffffff 0%, #f8f1ff 100%);
+        box-shadow: 0 8px 25px rgba(157, 78, 221, 0.15);
     }
     
-    .user-type-option .check-icon {
-        position: absolute;
-        top: 10px;
-        right: 10px;
+    .user-type-option.selected-recruiter {
+        border-color: #0d6efd;
+        background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+        box-shadow: 0 8px 25px rgba(13, 110, 253, 0.15);
+    }
+    
+    .user-type-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .user-type-option.selected-applicant .user-type-icon {
+        color: #9d4edd;
+        text-shadow: 0 0 20px rgba(157, 78, 221, 0.3);
+    }
+    
+    .user-type-option.selected-recruiter .user-type-icon {
         color: #0d6efd;
+        text-shadow: 0 0 20px rgba(13, 110, 253, 0.3);
+    }
+    
+    .user-type-option .user-type-icon {
+        color: #6c757d;
+    }
+    
+    .user-type-title {
         font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+        transition: color 0.3s ease;
+    }
+    
+    .user-type-option.selected-applicant .user-type-title {
+        color: #7b2cbf;
+    }
+    
+    .user-type-option.selected-recruiter .user-type-title {
+        color: #0842a0;
+    }
+    
+    .check-icon {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        color: #28a745;
+        font-size: 1.5rem;
         opacity: 0;
         transition: opacity 0.3s ease;
     }
     
-    .user-type-option.active .check-icon {
+    .user-type-option.selected-applicant .check-icon,
+    .user-type-option.selected-recruiter .check-icon {
         opacity: 1;
     }
     
+    .form-floating > .form-control, .form-select {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .theme-applicant .form-floating > .form-control:focus,
+    .theme-applicant .form-select:focus {
+        border-color: #9d4edd;
+        box-shadow: 0 0 0 0.2rem rgba(157, 78, 221, 0.25);
+    }
+    
+    .theme-recruiter .form-floating > .form-control:focus,
+    .theme-recruiter .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .btn-register {
+        border: none;
+        padding: 12px 30px;
+        font-weight: 600;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-register.theme-applicant {
+        background: linear-gradient(135deg, #c77dff 0%, #9d4edd 50%, #7b2cbf 100%);
+        color: white;
+    }
+    
+    .btn-register.theme-recruiter {
+        background: linear-gradient(135deg, #6ea8fe 0%, #0d6efd 50%, #0842a0 100%);
+        color: white;
+    }
+    
+    .btn-register:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        color: white;
+    }
+    
     .password-strength {
-        margin-top: 5px;
+        margin-top: 8px;
     }
     
     .password-strength-bar {
@@ -106,41 +170,18 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid" style="min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+<div class="container-fluid auth-container">
     <div class="row justify-content-center align-items-center" style="min-height: 100vh;">
         <div class="col-lg-6 col-md-8">
-            <div class="card shadow-lg" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: none;">
+            <div class="auth-card card shadow-lg" style="border-radius: 20px;">
                 <div class="card-body p-5">
                     <!-- Header -->
                     <div class="text-center mb-4">
-                        <i class="bi bi-person-plus-fill text-primary mb-3" style="font-size: 3rem;"></i>
+                        <div class="mb-3">
+                            <i class="bi bi-person-plus-fill text-primary" style="font-size: 3.5rem;"></i>
+                        </div>
                         <h2 class="fw-bold text-dark">Join JobMate</h2>
                         <p class="text-muted">Create your account and start your career journey</p>
-                    </div>
-                    
-                    <!-- User Type Selection -->
-                    <div class="bg-light rounded p-4 mb-4">
-                        <h6 class="fw-semibold mb-3 text-center">I am a...</h6>
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="card user-type-card h-100 text-center" data-type="applicant" style="cursor: pointer; transition: all 0.3s ease;">
-                                    <div class="card-body">
-                                        <i class="bi bi-person-workspace text-primary mb-2" style="font-size: 2rem;"></i>
-                                        <h6 class="fw-semibold">Job Seeker</h6>
-                                        <small class="text-muted">Looking for opportunities</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="card user-type-card h-100 text-center" data-type="recruiter" style="cursor: pointer; transition: all 0.3s ease;">
-                                    <div class="card-body">
-                                        <i class="bi bi-building text-success mb-2" style="font-size: 2rem;"></i>
-                                        <h6 class="fw-semibold">Recruiter</h6>
-                                        <small class="text-muted">Hiring talent</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                     
                     <!-- Flash Messages -->
@@ -161,6 +202,29 @@
                         
                         <!-- Hidden user type field -->
                         {{ form.user_type(id="userTypeField", style="display: none;") }}
+                        
+                        <!-- User Type Selection -->
+                        <div class="user-type-selector">
+                            <h6 class="fw-semibold mb-4 text-center">I am a...</h6>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="user-type-option" data-type="applicant">
+                                        <i class="bi bi-person-workspace user-type-icon"></i>
+                                        <div class="user-type-title">Job Seeker</div>
+                                        <small class="text-muted">Looking for opportunities</small>
+                                        <i class="bi bi-check-circle-fill check-icon"></i>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="user-type-option" data-type="recruiter">
+                                        <i class="bi bi-building user-type-icon"></i>
+                                        <div class="user-type-title">Recruiter</div>
+                                        <small class="text-muted">Hiring talent</small>
+                                        <i class="bi bi-check-circle-fill check-icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         
                         <!-- User Type Selection Validation -->
                         {% if form.user_type.errors %}
@@ -226,7 +290,7 @@
                                 </div>
                             {% endif %}
                             <!-- Password Strength Indicator -->
-                            <div class="password-strength mt-2" style="display: none;">
+                            <div class="password-strength" style="display: none;">
                                 <div class="password-strength-bar">
                                     <div class="password-strength-fill" style="width: 0%;"></div>
                                 </div>
@@ -267,7 +331,7 @@
                         
                         <!-- Submit Button -->
                         <div class="d-grid mb-3">
-                            {{ form.submit(class="btn btn-primary btn-lg", id="submitBtn") }}
+                            {{ form.submit(class="btn btn-register btn-lg", id="submitBtn") }}
                         </div>
                         
                         <!-- Login Link -->
@@ -290,47 +354,49 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const userTypeCards = document.querySelectorAll('.user-type-card');
+    const userTypeOptions = document.querySelectorAll('.user-type-option');
     const userTypeField = document.getElementById('userTypeField');
     const form = document.getElementById('registrationForm');
     const submitBtn = document.getElementById('submitBtn');
     const passwordField = document.querySelector('#password');
     const password2Field = document.querySelector('#password2');
     const emailField = document.querySelector('#email');
+    const formContainer = document.querySelector('.auth-card');
+    
+    let selectedTheme = '';
     
     // User Type Selection
-    userTypeCards.forEach(card => {
-        card.addEventListener('click', function() {
-            // Remove active class from all cards
-            userTypeCards.forEach(c => {
-                c.classList.remove('border-primary', 'bg-light');
-                c.style.transform = 'scale(1)';
+    userTypeOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const userType = this.dataset.type;
+            
+            // Remove all selections
+            userTypeOptions.forEach(opt => {
+                opt.classList.remove('selected-applicant', 'selected-recruiter');
             });
             
-            // Add active class to clicked card
-            this.classList.add('border-primary', 'bg-light');
-            this.style.transform = 'scale(1.05)';
+            // Add appropriate selection class
+            if (userType === 'applicant') {
+                this.classList.add('selected-applicant');
+                selectedTheme = 'theme-applicant';
+                submitBtn.className = 'btn btn-register btn-lg theme-applicant';
+            } else {
+                this.classList.add('selected-recruiter');
+                selectedTheme = 'theme-recruiter';
+                submitBtn.className = 'btn btn-register btn-lg theme-recruiter';
+            }
+            
+            // Update form container theme
+            formContainer.classList.remove('theme-applicant', 'theme-recruiter');
+            formContainer.classList.add(selectedTheme);
             
             // Set the hidden field value
-            userTypeField.value = this.dataset.type;
+            userTypeField.value = userType;
             
             // Remove any previous validation error
             const errorAlert = document.querySelector('.alert-danger');
             if (errorAlert && errorAlert.textContent.includes('select your role')) {
                 errorAlert.style.display = 'none';
-            }
-        });
-        
-        // Hover effects
-        card.addEventListener('mouseenter', function() {
-            if (!this.classList.contains('border-primary')) {
-                this.style.transform = 'scale(1.02)';
-            }
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            if (!this.classList.contains('border-primary')) {
-                this.style.transform = 'scale(1)';
             }
         });
     });
@@ -390,8 +456,6 @@ document.addEventListener('DOMContentLoaded', function() {
             showAlert('Please select whether you are a Job Seeker or Recruiter', 'danger');
         }
         
-        // Additional validation can be added here
-        
         if (isValid) {
             submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating Account...';
             submitBtn.disabled = true;
@@ -432,6 +496,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function checkEmailAvailability(email) {
+        // TODO: Implement email check endpoint
         fetch(`/auth/check-email?email=${encodeURIComponent(email)}`)
             .then(response => response.json())
             .then(data => {

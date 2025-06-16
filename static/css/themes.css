@@ -1,0 +1,375 @@
+/* JobMate Theme System - Applicant (Lilac) & Recruiter (Blue) */
+
+/* ===== APPLICANT THEME - LILAC & WHITE ===== */
+.theme-applicant {
+    --primary-color: #9d4edd;
+    --primary-light: #c77dff;
+    --primary-dark: #7b2cbf;
+    --secondary-color: #e0aaff;
+    --accent-color: #c77dff;
+    --gradient-primary: linear-gradient(135deg, #c77dff 0%, #9d4edd 50%, #7b2cbf 100%);
+    --gradient-soft: linear-gradient(135deg, #f8f1ff 0%, #e0aaff 100%);
+    --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8f1ff 100%);
+    --shadow-color: rgba(157, 78, 221, 0.15);
+    --shadow-hover: rgba(157, 78, 221, 0.25);
+    --text-primary: #4a1a5c;
+    --text-secondary: #6b4c7a;
+    --bg-light: #faf8ff;
+    --border-color: #e0aaff;
+}
+
+/* ===== RECRUITER THEME - BLUE & WHITE ===== */
+.theme-recruiter {
+    --primary-color: #0d6efd;
+    --primary-light: #6ea8fe;
+    --primary-dark: #0842a0;
+    --secondary-color: #cfe2ff;
+    --accent-color: #4dabf7;
+    --gradient-primary: linear-gradient(135deg, #6ea8fe 0%, #0d6efd 50%, #0842a0 100%);
+    --gradient-soft: linear-gradient(135deg, #f8fbff 0%, #cfe2ff 100%);
+    --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+    --shadow-color: rgba(13, 110, 253, 0.15);
+    --shadow-hover: rgba(13, 110, 253, 0.25);
+    --text-primary: #1a365d;
+    --text-secondary: #4a6f8a;
+    --bg-light: #f8fbff;
+    --border-color: #cfe2ff;
+}
+
+/* ===== COMMON THEME COMPONENTS ===== */
+
+/* Background Gradients */
+.bg-gradient-theme {
+    background: var(--gradient-primary) !important;
+}
+
+.bg-gradient-soft {
+    background: var(--gradient-soft) !important;
+}
+
+.bg-gradient-card {
+    background: var(--gradient-card) !important;
+}
+
+.bg-theme-light {
+    background-color: var(--bg-light) !important;
+}
+
+/* Button Styles */
+.btn-theme-primary {
+    background: var(--gradient-primary);
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px var(--shadow-color);
+}
+
+.btn-theme-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px var(--shadow-hover);
+    color: white;
+}
+
+.btn-theme-outline {
+    background: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    font-weight: 600;
+    padding: 10px 22px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-theme-outline:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 15px var(--shadow-color);
+}
+
+.btn-theme-soft {
+    background: var(--secondary-color);
+    border: none;
+    color: var(--text-primary);
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-theme-soft:hover {
+    background: var(--accent-color);
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Card Styles */
+.card-theme {
+    background: var(--gradient-card);
+    border: 1px solid var(--border-color);
+    border-radius: 15px;
+    box-shadow: 0 5px 20px var(--shadow-color);
+    transition: all 0.3s ease;
+}
+
+.card-theme:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px var(--shadow-hover);
+}
+
+.card-theme-flat {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* Text Colors */
+.text-theme-primary {
+    color: var(--primary-color) !important;
+}
+
+.text-theme-secondary {
+    color: var(--text-secondary) !important;
+}
+
+.text-theme-dark {
+    color: var(--text-primary) !important;
+}
+
+/* Form Controls */
+.form-control-theme {
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    padding: 12px 16px;
+    transition: all 0.3s ease;
+}
+
+.form-control-theme:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem var(--shadow-color);
+}
+
+/* Navigation */
+.navbar-theme {
+    background: var(--gradient-primary);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.nav-link-theme {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.nav-link-theme:hover {
+    color: white !important;
+    transform: translateY(-1px);
+}
+
+/* Badges */
+.badge-theme-primary {
+    background: var(--primary-color);
+    color: white;
+    font-weight: 500;
+    border-radius: 6px;
+    padding: 6px 12px;
+}
+
+.badge-theme-soft {
+    background: var(--secondary-color);
+    color: var(--text-primary);
+    font-weight: 500;
+    border-radius: 6px;
+    padding: 6px 12px;
+}
+
+/* Statistics Cards */
+.stat-card-theme {
+    background: var(--gradient-card);
+    border: none;
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 20px var(--shadow-color);
+}
+
+.stat-card-theme:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px var(--shadow-hover);
+}
+
+.stat-card-theme .stat-icon {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.stat-card-theme .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+.stat-card-theme .stat-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+/* Sidebar */
+.sidebar-theme {
+    background: var(--gradient-card);
+    border-right: 1px solid var(--border-color);
+    box-shadow: 2px 0 10px var(--shadow-color);
+}
+
+.sidebar-link-theme {
+    color: var(--text-secondary);
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin: 4px 8px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-link-theme:hover {
+    background: var(--secondary-color);
+    color: var(--text-primary);
+    transform: translateX(5px);
+}
+
+.sidebar-link-theme.active {
+    background: var(--primary-color);
+    color: white;
+    font-weight: 600;
+}
+
+/* Tables */
+.table-theme {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px var(--shadow-color);
+}
+
+.table-theme thead {
+    background: var(--gradient-soft);
+    color: var(--text-primary);
+}
+
+.table-theme tbody tr:hover {
+    background: var(--bg-light);
+}
+
+/* Progress Bars */
+.progress-theme {
+    background: var(--bg-light);
+    border-radius: 10px;
+    height: 8px;
+}
+
+.progress-bar-theme {
+    background: var(--gradient-primary);
+    border-radius: 10px;
+}
+
+/* Alerts */
+.alert-theme-info {
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 10px;
+}
+
+.alert-theme-success {
+    background: linear-gradient(135deg, #d1edff 0%, #b3e5fc 100%);
+    border: 1px solid #81c784;
+    color: #2e7d32;
+    border-radius: 10px;
+}
+
+/* Floating Elements */
+.floating-card {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.floating-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gradient-primary);
+    border-radius: 15px;
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.3s ease;
+}
+
+.floating-card:hover::before {
+    opacity: 0.1;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .stat-card-theme {
+        padding: 20px 15px;
+    }
+    
+    .stat-card-theme .stat-icon {
+        font-size: 2rem;
+    }
+    
+    .stat-card-theme .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    .btn-theme-primary, .btn-theme-outline {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Animation Classes */
+.fade-in-theme {
+    animation: fadeInTheme 0.6s ease-out;
+}
+
+@keyframes fadeInTheme {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-in-theme {
+    animation: slideInTheme 0.5s ease-out;
+}
+
+@keyframes slideInTheme {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+} 

@@ -20,6 +20,8 @@ class EasyApplyLinkedin:
         self.password = data['password']
         self.keywords = data['keywords']
         self.location = data['location']
+        # chrome_service = Service(data['driver_path'])
+        # self.driver = webdriver.Chrome(service=chrome_service)
         self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
         self.driver.maximize_window()
         self.successful_apps = []
@@ -219,7 +221,27 @@ class EasyApplyLinkedin:
     def close_browser(self):
         self.driver.quit()
 
+
 if __name__ == "__main__":
     with open('config.json') as config_file:
         data = json.load(config_file)
+
     bot = EasyApplyLinkedin(data)
+    bot.login_linkedin()
+    bot.job_search()
+    bot.filter()
+    bot.paginate_and_apply()
+
+    bot.close_browser()
+    try:
+        log_exists = isfile('job_application_log.csv')
+        with open('job_application_log.csv', 'a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            if not log_exists:
+                writer.writerow(['Status', 'Job Title', 'Company', 'Location', 'Job URL', 'Error Message', 'Timestamp'])
+            for title, company, location, url in bot.successful_apps:
+                writer.writerow(['Success', title, company, location, url, '', datetime.now().isoformat()])
+            for title, company, location, url, error in bot.failed_apps:
+                writer.writerow(['Failed', title, company, location, url, error, datetime.now().isoformat()])
+    except Exception as e:
+        print(f"⚠️ Could not write log file: {e}")

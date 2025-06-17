@@ -1,0 +1,64 @@
+JOÃO SILVA SANTOS
+Desenvolvedor Full Stack Senior
+📧 joao.silva@email.com | 📱 (11) 99888-7777
+🌐 linkedin.com/in/joaosilva | 📍 São Paulo, SP
+
+RESUMO PROFISSIONAL
+Desenvolvedor Full Stack com 6 anos de experiência, especializado em Python, React e AWS.
+Apaixonado por tecnologia e sempre buscando soluções inovadoras.
+
+EXPERIÊNCIA PROFISSIONAL
+
+Tech Lead | Inovação Digital Ltda | Jan 2021 - Presente
+• Lidero equipe de 6 desenvolvedores em projetos de e-commerce
+• Implementei arquitetura de microservices usando Python e FastAPI
+• Reduzi tempo de deploy em 70% através de CI/CD com Docker
+• Tecnologias: Python, FastAPI, React, PostgreSQL, AWS, Docker
+
+Senior Developer | TechSolutions | Mar 2019 - Dez 2020
+• Desenvolvi APIs REST para sistema de gestão empresarial
+• Colaborei com equipe usando metodologia Scrum
+• Melhorei performance de queries em 50%
+• Tecnologias: Python, Django, React, MySQL
+
+Desenvolvedor | WebApps | Jun 2017 - Fev 2019
+• Construí aplicações web para pequenas empresas
+• Integrei sistemas de pagamento e APIs externas
+• Tecnologias: Python, Flask, JavaScript, PostgreSQL
+
+FORMAÇÃO
+
+Bacharelado em Ciência da Computação
+Universidade Federal de São Paulo | 2013 - 2017
+TCC: "Aplicação de Machine Learning em E-commerce"
+
+HABILIDADES TÉCNICAS
+
+Linguagens: Python, JavaScript, TypeScript, SQL, Java
+Frameworks: FastAPI, Django, Flask, React, Node.js
+Bancos: PostgreSQL, MySQL, MongoDB, Redis
+Cloud: AWS (EC2, S3, RDS, Lambda), Docker, Kubernetes
+Ferramentas: Git, Jenkins, Jira, VS Code
+
+CERTIFICAÇÕES
+
+• AWS Certified Developer - Associate (2022)
+• Scrum Master Certified (2021)
+• Oracle Database Administrator (2020)
+
+PROJETOS DESTACADOS
+
+Sistema E-commerce B2B
+• Plataforma completa de vendas online
+• Python, FastAPI, React, PostgreSQL
+• Processamento de 5k+ pedidos/mês
+
+API de Recomendações ML
+• Sistema de recomendação usando machine learning
+• Python, FastAPI, Scikit-learn
+• Aumento de 30% nas vendas
+
+IDIOMAS
+• Português (Nativo)
+• Inglês (Avançado)
+• Espanhol (Básico) 

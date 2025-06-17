@@ -14,6 +14,9 @@ load_dotenv(os.path.join(basedir, '.env'))
 class Config:
     """Base configuration class with common settings"""
     
+    # Application Version
+    VERSION = '1.0.1'
+    
     # Core Flask Configuration
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'jobmate-super-secret-key-change-in-production'
     

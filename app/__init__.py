@@ -178,7 +178,7 @@ def create_app(config_class=None):
         from app.models.user import User
         return User.query.get(int(user_id))
     
-    print("🚀 JobMate Flask application created successfully!")
+    print(f"🚀 JobMate Flask application v{app.config.get('VERSION', '1.0.0')} created successfully!")
     return app
 
 

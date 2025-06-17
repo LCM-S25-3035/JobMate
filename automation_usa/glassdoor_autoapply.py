@@ -155,3 +155,7 @@ if __name__ == "__main__":
     bot.filter_easy_apply()
     bot.apply_to_all_easy_apply_jobs()
     bot.quit()
+
+# Reference
+# OpenAI, 4o 1st prompt: "I want to write these codes into class and functions format. And I want the config file to be in a seprate json file."
+# OpenAI, 4o last prompt: "Getting error: Unable to obtain driver for chrome;"

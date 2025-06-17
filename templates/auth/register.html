@@ -4,9 +4,12 @@
 
 {% block head %}
 <style>
+    /* Fix auth container to work with fixed navbar */
     .auth-container {
         min-height: 100vh;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding-top: 90px; /* Account for fixed navbar height */
+        padding-bottom: 20px;
     }
     
     .auth-card {
@@ -14,6 +17,7 @@
         backdrop-filter: blur(10px);
         border: none;
         box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        margin: 20px 0; /* Add margin for better spacing */
     }
     
     .user-type-selector {
@@ -166,12 +170,33 @@
     .strength-fair { background-color: #fd7e14; }
     .strength-good { background-color: #ffc107; }
     .strength-strong { background-color: #198754; }
+
+    /* Mobile responsive adjustments */
+    @media (max-width: 768px) {
+        .auth-container {
+            padding-top: 80px;
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+        
+        .auth-card {
+            margin: 10px 0;
+        }
+        
+        .user-type-option {
+            padding: 20px 15px;
+        }
+        
+        .user-type-icon {
+            font-size: 2.5rem;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid auth-container">
-    <div class="row justify-content-center align-items-center" style="min-height: 100vh;">
+    <div class="row justify-content-center align-items-center">
         <div class="col-lg-6 col-md-8">
             <div class="auth-card card shadow-lg" style="border-radius: 20px;">
                 <div class="card-body p-5">

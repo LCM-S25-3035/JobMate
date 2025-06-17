@@ -1,55 +1,613 @@
 {% extends "base.html" %}
 
-{% block title %}JobMate - AI-Powered Job Matching Platform{% endblock %}
+{% block title %}JobMate - Professional AI-Powered Career Platform{% endblock %}
+
+{% block head %}
+<style>
+    /* Professional Color Palette */
+    :root {
+        --primary-navy: #1e3a8a;
+        --primary-blue: #3b82f6;
+        --accent-gold: #f59e0b;
+        --neutral-gray: #6b7280;
+        --light-gray: #f8fafc;
+        --dark-navy: #0f172a;
+        --success-green: #10b981;
+        --gradient-primary: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+        --gradient-secondary: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+        --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-medium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --shadow-large: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    
+    /* Smooth Scrolling */
+    html {
+        scroll-behavior: smooth;
+    }
+    
+    /* Reset and Base Styles */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        color: var(--dark-navy);
+    }
+    
+    /* Professional Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes fadeInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    @keyframes fadeInRight {
+        from {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.8;
+        }
+    }
+    
+    /* Hero Section - Professional Design */
+    .hero-section {
+        background: var(--gradient-primary);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+        z-index: 1;
+    }
+    
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .hero-title {
+        font-size: 3.5rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 1.5rem;
+        line-height: 1.2;
+        animation: fadeInLeft 1s ease-out;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.25rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 2rem;
+        line-height: 1.6;
+        animation: fadeInLeft 1s ease-out 0.2s both;
+    }
+    
+    .hero-stats {
+        animation: fadeInUp 1s ease-out 0.4s both;
+    }
+    
+    .stat-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        padding: 2rem 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        height: 140px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: var(--shadow-large);
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--accent-gold);
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.8);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+    
+    .hero-visual {
+        position: relative;
+        animation: fadeInRight 1s ease-out 0.6s both;
+    }
+    
+    .resume-automation-visual {
+        position: relative;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 2rem;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .automation-icon {
+        font-size: 5rem;
+        color: var(--accent-gold);
+        animation: float 3s ease-in-out infinite;
+        text-shadow: 0 0 30px rgba(245, 158, 11, 0.5);
+    }
+    
+    .floating-elements {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+    }
+    
+    .floating-element {
+        position: absolute;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 1.5rem;
+        animation: float 4s ease-in-out infinite;
+    }
+    
+    .floating-element:nth-child(1) { top: 20%; left: 10%; animation-delay: 0s; }
+    .floating-element:nth-child(2) { top: 15%; right: 15%; animation-delay: 1s; }
+    .floating-element:nth-child(3) { bottom: 25%; left: 20%; animation-delay: 2s; }
+    .floating-element:nth-child(4) { bottom: 20%; right: 10%; animation-delay: 3s; }
+    
+    /* CTA Buttons */
+    .cta-buttons {
+        animation: fadeInUp 1s ease-out 0.8s both;
+    }
+    
+    .btn-primary-custom {
+        background: var(--gradient-secondary);
+        border: none;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-medium);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-primary-custom:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-large);
+        color: white;
+    }
+    
+    .btn-secondary-custom {
+        background: transparent;
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-secondary-custom:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-3px);
+        color: white;
+    }
+    
+    /* Features Section */
+    .features-section {
+        background: var(--light-gray);
+        padding: 6rem 0;
+        position: relative;
+    }
+    
+    .section-header {
+        text-align: center;
+        margin-bottom: 4rem;
+    }
+    
+    .section-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--dark-navy);
+        margin-bottom: 1rem;
+    }
+    
+    .section-subtitle {
+        font-size: 1.25rem;
+        color: var(--neutral-gray);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .feature-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2.5rem;
+        height: 100%;
+        box-shadow: var(--shadow-soft);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(30, 58, 138, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: var(--shadow-large);
+    }
+    
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--gradient-primary);
+    }
+    
+    .feature-icon {
+        width: 80px;
+        height: 80px;
+        background: var(--gradient-primary);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-medium);
+    }
+    
+    .feature-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--dark-navy);
+        margin-bottom: 1rem;
+    }
+    
+    .feature-description {
+        color: var(--neutral-gray);
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+    
+    .feature-benefits {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .feature-benefits li {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        color: var(--neutral-gray);
+    }
+    
+    .feature-benefits li i {
+        color: var(--success-green);
+        margin-right: 0.5rem;
+        font-size: 1.1rem;
+    }
+    
+    /* Resume Automation Section */
+    .automation-section {
+        background: var(--dark-navy);
+        color: white;
+        padding: 6rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .automation-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(59,130,246,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
+        z-index: 1;
+    }
+    
+    .automation-content {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .automation-visual-large {
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 20px;
+        padding: 3rem;
+        text-align: center;
+        border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+    
+    .automation-steps {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .step {
+        text-align: center;
+        flex: 1;
+        position: relative;
+    }
+    
+    .step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        right: -20px;
+        width: 40px;
+        height: 2px;
+        background: var(--accent-gold);
+        z-index: 1;
+    }
+    
+    .step-icon {
+        width: 60px;
+        height: 60px;
+        background: var(--gradient-secondary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        margin: 0 auto 1rem;
+        box-shadow: var(--shadow-medium);
+    }
+    
+    .step-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 0.5rem;
+    }
+    
+    .step-description {
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.7);
+    }
+    
+    /* CTA Section */
+    .cta-section {
+        background: var(--gradient-primary);
+        color: white;
+        padding: 6rem 0;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .cta-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="circuit" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 0 20 L 20 20 L 20 0 M 20 20 L 40 20 M 20 20 L 20 40" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23circuit)"/></svg>');
+        z-index: 1;
+    }
+    
+    .cta-content {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .cta-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    
+    .cta-subtitle {
+        font-size: 1.25rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 2rem;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* Scroll Animations */
+    .scroll-reveal {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.6s ease;
+    }
+    
+    .scroll-reveal.revealed {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2.5rem;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.1rem;
+        }
+        
+        .stat-card {
+            height: 120px;
+            padding: 1.5rem 1rem;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+        }
+        
+        .automation-steps {
+            flex-direction: column;
+            gap: 2rem;
+        }
+        
+        .step:not(:last-child)::after {
+            display: none;
+        }
+        
+        .feature-card {
+            padding: 2rem;
+        }
+        
+        .section-title {
+            font-size: 2rem;
+        }
+        
+        .cta-title {
+            font-size: 2rem;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
-<section class="hero bg-primary text-white py-5">
+<section class="hero-section">
     <div class="container">
-        <div class="row align-items-center min-vh-100">
+        <div class="row align-items-center">
             <div class="col-lg-6">
-                <h1 class="display-4 fw-bold mb-4">
-                    Find Your Perfect Job with 
-                    <span class="text-warning">AI Power</span>
-                </h1>
-                <p class="lead mb-4">
-                    JobMate connects talented professionals with Ontario's top tech companies 
-                    using advanced AI matching algorithms.
-                </p>
-                
-                <div class="mb-4">
-                    <div class="row text-center">
-                        <div class="col-4">
-                            <h4 class="fw-bold">50K+</h4>
-                            <small>Active Jobs</small>
-                        </div>
-                        <div class="col-4">
-                            <h4 class="fw-bold">15K+</h4>
-                            <small>Successful Matches</small>
-                        </div>
-                        <div class="col-4">
-                            <h4 class="fw-bold">500+</h4>
-                            <small>Companies</small>
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        Accelerate Your Career with 
+                        <span style="color: var(--accent-gold);">AI-Powered</span> 
+                        Job Matching
+                    </h1>
+                    
+                    <p class="hero-subtitle">
+                        Join thousands of professionals who've transformed their careers with JobMate's 
+                        intelligent matching algorithms and automated application system.
+                    </p>
+                    
+                    <div class="hero-stats mb-5">
+                        <div class="row g-3">
+                            <div class="col-4">
+                                <div class="stat-card">
+                                    <div class="stat-number">50K+</div>
+                                    <div class="stat-label">Active Positions</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="stat-card">
+                                    <div class="stat-number">15K+</div>
+                                    <div class="stat-label">Success Stories</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="stat-card">
+                                    <div class="stat-number">500+</div>
+                                    <div class="stat-label">Partner Companies</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <div>
-                    <a href="{{ url_for('auth.register') }}" class="btn btn-warning btn-lg me-3 mb-2">
-                        <i class="bi bi-person-plus me-2"></i>Get Started Free
-                    </a>
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-lg mb-2">
-                        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
-                    </a>
+                    
+                    <div class="cta-buttons">
+                        <a href="{{ url_for('auth.register') }}" class="btn-primary-custom me-3 mb-3">
+                            <i class="bi bi-rocket-takeoff"></i>
+                            Start Free Trial
+                        </a>
+                        <a href="{{ url_for('auth.login') }}" class="btn-secondary-custom mb-3">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            Sign In
+                        </a>
+                    </div>
                 </div>
             </div>
             
             <div class="col-lg-6">
-                <div class="text-center">
-                    <div class="bg-white bg-opacity-10 rounded-3 p-5">
-                        <i class="bi bi-robot" style="font-size: 8rem; opacity: 0.8;"></i>
-                        <h4 class="mt-3">AI-Powered Matching</h4>
-                        <p>Smart algorithms find the perfect job for your skills</p>
+                <div class="hero-visual">
+                    <div class="resume-automation-visual">
+                        <div class="text-center">
+                            <i class="bi bi-file-earmark-check automation-icon"></i>
+                            <h3 class="text-white mt-3 mb-2">Automated Resume Submission</h3>
+                            <p class="text-white-50">AI analyzes and submits your resume to matching positions</p>
+                        </div>
+                        
+                        <div class="floating-elements">
+                            <i class="bi bi-cpu floating-element"></i>
+                            <i class="bi bi-graph-up-arrow floating-element"></i>
+                            <i class="bi bi-shield-check floating-element"></i>
+                            <i class="bi bi-lightning-charge floating-element"></i>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -58,54 +616,156 @@
 </section>
 
 <!-- Features Section -->
-<section class="py-5">
+<section class="features-section">
     <div class="container">
-        <div class="row text-center mb-5">
-            <div class="col-lg-8 mx-auto">
-                <h2 class="display-5 fw-bold mb-3">Why Choose JobMate?</h2>
-                <p class="lead text-muted">Experience the future of job searching</p>
-            </div>
+        <div class="section-header scroll-reveal">
+            <h2 class="section-title">Why Leading Professionals Choose JobMate</h2>
+            <p class="section-subtitle">
+                Experience the most advanced career acceleration platform designed for ambitious professionals
+            </p>
         </div>
         
         <div class="row g-4">
-            <div class="col-lg-4">
-                <div class="card h-100 text-center border-0 shadow-sm">
-                    <div class="card-body p-4">
-                        <div class="bg-primary bg-opacity-10 rounded-circle p-3 mx-auto mb-3" style="width: 80px; height: 80px;">
-                            <i class="bi bi-magic text-primary" style="font-size: 2rem;"></i>
-                        </div>
-                        <h5 class="fw-bold">AI Job Matching</h5>
-                        <p class="text-muted">
-                            Advanced AI analyzes your skills for perfect job matches.
-                        </p>
+            <div class="col-lg-4 scroll-reveal">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-robot"></i>
                     </div>
+                    <h3 class="feature-title">Intelligent AI Matching</h3>
+                    <p class="feature-description">
+                        Advanced machine learning algorithms analyze your skills, experience, and career goals 
+                        to identify perfect job matches with 95% accuracy.
+                    </p>
+                    <ul class="feature-benefits">
+                        <li><i class="bi bi-check-circle-fill"></i> Personalized job recommendations</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Skills gap analysis</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Career path optimization</li>
+                    </ul>
                 </div>
             </div>
             
-            <div class="col-lg-4">
-                <div class="card h-100 text-center border-0 shadow-sm">
-                    <div class="card-body p-4">
-                        <div class="bg-success bg-opacity-10 rounded-circle p-3 mx-auto mb-3" style="width: 80px; height: 80px;">
-                            <i class="bi bi-lightning-charge-fill text-success" style="font-size: 2rem;"></i>
-                        </div>
-                        <h5 class="fw-bold">Auto-Apply</h5>
-                        <p class="text-muted">
-                            Save time with intelligent auto-apply features.
-                        </p>
+            <div class="col-lg-4 scroll-reveal">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-send-check"></i>
                     </div>
+                    <h3 class="feature-title">Automated Applications</h3>
+                    <p class="feature-description">
+                        Save 20+ hours per week with our intelligent auto-apply system that customizes 
+                        and submits applications to relevant positions.
+                    </p>
+                    <ul class="feature-benefits">
+                        <li><i class="bi bi-check-circle-fill"></i> Smart application customization</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Cover letter generation</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Real-time status tracking</li>
+                    </ul>
                 </div>
             </div>
             
-            <div class="col-lg-4">
-                <div class="card h-100 text-center border-0 shadow-sm">
-                    <div class="card-body p-4">
-                        <div class="bg-info bg-opacity-10 rounded-circle p-3 mx-auto mb-3" style="width: 80px; height: 80px;">
-                            <i class="bi bi-file-earmark-text-fill text-info" style="font-size: 2rem;"></i>
+            <div class="col-lg-4 scroll-reveal">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <h3 class="feature-title">Performance Analytics</h3>
+                    <p class="feature-description">
+                        Comprehensive insights into your job search performance with actionable 
+                        recommendations to improve your success rate.
+                    </p>
+                    <ul class="feature-benefits">
+                        <li><i class="bi bi-check-circle-fill"></i> Application success metrics</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Interview preparation tips</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Market salary insights</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Resume Automation Section -->
+<section class="automation-section">
+    <div class="container">
+        <div class="automation-content">
+            <div class="row align-items-center">
+                <div class="col-lg-6 scroll-reveal">
+                    <h2 class="section-title text-white">
+                        Streamlined Resume 
+                        <span style="color: var(--accent-gold);">Automation Process</span>
+                    </h2>
+                    <p class="section-subtitle text-white-50 mb-4">
+                        Our sophisticated system handles the entire application process while you focus on 
+                        interview preparation and career development.
+                    </p>
+                    
+                    <div class="automation-visual-large">
+                        <div class="automation-steps">
+                            <div class="step">
+                                <div class="step-icon">
+                                    <i class="bi bi-file-earmark-arrow-up"></i>
+                                </div>
+                                <div class="step-title">Upload Resume</div>
+                                <div class="step-description">AI analyzes your profile</div>
+                            </div>
+                            
+                            <div class="step">
+                                <div class="step-icon">
+                                    <i class="bi bi-search"></i>
+                                </div>
+                                <div class="step-title">Smart Matching</div>
+                                <div class="step-description">Find relevant opportunities</div>
+                            </div>
+                            
+                            <div class="step">
+                                <div class="step-icon">
+                                    <i class="bi bi-send"></i>
+                                </div>
+                                <div class="step-title">Auto Apply</div>
+                                <div class="step-description">Submit applications automatically</div>
+                            </div>
+                            
+                            <div class="step">
+                                <div class="step-icon">
+                                    <i class="bi bi-graph-up"></i>
+                                </div>
+                                <div class="step-title">Track Progress</div>
+                                <div class="step-description">Monitor application status</div>
+                            </div>
                         </div>
-                        <h5 class="fw-bold">Resume Optimization</h5>
-                        <p class="text-muted">
-                            AI-powered resume optimization for better results.
-                        </p>
+                        
+                        <div class="text-center mt-4">
+                            <i class="bi bi-cpu-fill" style="font-size: 3rem; color: var(--accent-gold);"></i>
+                            <p class="text-white mt-2 mb-0">Powered by Advanced AI Technology</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6 scroll-reveal">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <div class="stat-number">3x</div>
+                                <div class="stat-label">Faster Job Search</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <div class="stat-number">95%</div>
+                                <div class="stat-label">Match Accuracy</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <div class="stat-number">24/7</div>
+                                <div class="stat-label">Automated Process</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <div class="stat-number">89%</div>
+                                <div class="stat-label">Success Rate</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -113,27 +773,171 @@
     </div>
 </section>
 
-<!-- CTA Section -->
-<section class="bg-primary text-white py-5">
-    <div class="container text-center">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <h2 class="display-5 fw-bold mb-3">Ready to Find Your Dream Job?</h2>
-                <p class="lead mb-4">
-                    Join thousands of professionals who've accelerated their careers with JobMate.
-                </p>
-                <a href="{{ url_for('auth.register') }}" class="btn btn-warning btn-lg me-3">
-                    <i class="bi bi-rocket-takeoff me-2"></i>Start Your Journey
+<!-- Final CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-content scroll-reveal">
+            <h2 class="cta-title">Ready to Transform Your Career?</h2>
+            <p class="cta-subtitle">
+                Join thousands of professionals who've accelerated their careers with JobMate's 
+                AI-powered platform. Start your free trial today.
+            </p>
+            
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a href="{{ url_for('auth.register') }}" class="btn-primary-custom">
+                    <i class="bi bi-rocket-takeoff"></i>
+                    Start Free Trial
                 </a>
-                
-                <div class="mt-4">
-                    <small class="opacity-75">
-                        <i class="bi bi-shield-check me-1"></i>
-                        Free to get started • No credit card required
-                    </small>
-                </div>
+                <a href="#features" class="btn-secondary-custom">
+                    <i class="bi bi-info-circle"></i>
+                    Learn More
+                </a>
+            </div>
+            
+            <div class="mt-4">
+                <small style="color: rgba(255, 255, 255, 0.7);">
+                    <i class="bi bi-shield-check me-2"></i>
+                    No credit card required • 14-day free trial • Cancel anytime
+                </small>
             </div>
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Smooth scroll reveal animation
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('revealed');
+            }
+        });
+    }, observerOptions);
+
+    // Observe all elements with scroll-reveal class
+    document.querySelectorAll('.scroll-reveal').forEach(el => {
+        observer.observe(el);
+    });
+
+    // Enhanced hover effects for feature cards
+    document.querySelectorAll('.feature-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-10px) scale(1.02)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+
+    // Enhanced hover effects for stat cards
+    document.querySelectorAll('.stat-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px) scale(1.05)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+
+    // Parallax effect for floating elements
+    window.addEventListener('scroll', function() {
+        const scrolled = window.pageYOffset;
+        const rate = scrolled * -0.5;
+        
+        document.querySelectorAll('.floating-element').forEach((element, index) => {
+            const speed = (index + 1) * 0.1;
+            element.style.transform = `translateY(${scrolled * speed}px)`;
+        });
+    });
+
+    // Button click animations
+    document.querySelectorAll('.btn-primary-custom, .btn-secondary-custom').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            // Create ripple effect
+            const ripple = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.style.position = 'absolute';
+            ripple.style.borderRadius = '50%';
+            ripple.style.background = 'rgba(255,255,255,0.3)';
+            ripple.style.transform = 'scale(0)';
+            ripple.style.animation = 'ripple 0.6s linear';
+            ripple.style.pointerEvents = 'none';
+            
+            this.style.position = 'relative';
+            this.style.overflow = 'hidden';
+            this.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+
+    // Counter animation for statistics
+    function animateCounters() {
+        document.querySelectorAll('.stat-number').forEach(counter => {
+            const target = counter.textContent;
+            const numericTarget = parseInt(target.replace(/[^\d]/g, ''));
+            const suffix = target.replace(/[\d]/g, '');
+            
+            if (numericTarget) {
+                let current = 0;
+                const increment = numericTarget / 50;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= numericTarget) {
+                        counter.textContent = numericTarget + suffix;
+                        clearInterval(timer);
+                    } else {
+                        counter.textContent = Math.floor(current) + suffix;
+                    }
+                }, 30);
+            }
+        });
+    }
+
+    // Trigger counter animation when stats are in view
+    const statsObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                animateCounters();
+                statsObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.5 });
+
+    document.querySelectorAll('.hero-stats').forEach(el => {
+        statsObserver.observe(el);
+    });
+});
+
+// CSS for ripple animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes ripple {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
 {% endblock %} 

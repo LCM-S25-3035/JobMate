@@ -153,11 +153,38 @@
     box-shadow: 0 0 0 0.2rem var(--shadow-color);
 }
 
-/* Navigation */
-.navbar-theme {
-    background: var(--gradient-primary);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--border-color);
+.navbar-theme,
+.navbar-gradient {
+    display: flex !important;          /* keep flex layout */
+    align-items: center !important;    /* center items vertically */
+    min-height: 70px !important;       /* guarantee minimum height */
+    height: auto !important;           /* allow the bar to expand when the menu is shown */
+    padding-top: .5rem !important;     /* standard BS paddings */
+    padding-bottom: .5rem !important;
+    box-sizing: border-box !important; /* include padding inside height */
+    overflow: visible !important;      /* let the collapsible menu be visible */
+}
+
+/* Allow the navbar to wrap and grow on mobile when the hamburger menu is opened */
+@media (max-width: 991.98px) {
+    .navbar-theme,
+    .navbar-gradient {
+        flex-wrap: wrap !important;
+    }
+    .navbar-theme .container,
+    .navbar-gradient .container {
+        flex-wrap: wrap !important;
+        height: auto !important;
+        min-height: 70px !important;
+    }
+}
+
+.navbar-theme .container,
+.navbar-gradient .container {
+    height: inherit !important;
+    min-height: inherit !important;
+    display: flex !important;
+    align-items: center !important;
 }
 
 .nav-link-theme {
@@ -372,4 +399,9 @@
         opacity: 1;
         transform: translateX(0);
     }
+}
+
+/* Ensure dropdown menus appear above fixed navbar */
+.navbar .dropdown-menu {
+    z-index: 1100 !important;   /* maior que 1030 */
 } 

@@ -1,11 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="JobMate - AI-Powered Job Matching Platform for Ontario's Tech Sector">
     <meta name="keywords" content="jobs, careers, AI, resume, job matching, Ontario, technology">
     <meta name="author" content="JobMate">
+    
+    <!-- Cache busting meta tags -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     
     <title>{% block title %}JobMate{% endblock %}</title>
     
@@ -15,24 +20,354 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <!-- Custom CSS with cache busting -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}?v=20241220003">
     
-    <!-- Theme System CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
+    <!-- Theme System CSS with cache busting -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}?v=20241220003">
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     
+    <!-- Global Layout CSS for sticky footer -->
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main {
+            flex: 1;
+        }
+        
+        /* NAVBAR HEIGHT AND POSITIONING FIXES */
+        nav.navbar.navbar-expand-lg.navbar-dark.navbar-gradient,
+        nav.navbar.navbar-expand-lg.navbar-dark.navbar-theme,
+        .navbar.navbar-gradient,
+        .navbar.navbar-theme,
+        .navbar-gradient,
+        .navbar-theme {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%) !important;
+            background-color: #1e3a8a !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 1030 !important;
+            overflow: visible !important;
+            backdrop-filter: none !important;
+            border-bottom: none !important;
+            min-height: 70px !important;
+            height: auto !important;
+            padding-top: 0.75rem !important;
+            padding-bottom: 0.75rem !important;
+        }
+        
+        /* Force navbar-theme to behave like fixed navbar */
+        .navbar-theme {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            z-index: 1030 !important;
+            min-height: 70px !important;
+            height: auto !important;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%) !important;
+            backdrop-filter: none !important;
+            border-bottom: none !important;
+            padding-top: 0.75rem !important;
+            padding-bottom: 0.75rem !important;
+            box-sizing: border-box !important;
+        }
+        
+        /* Fixed navbar specific height adjustments */
+        .navbar.fixed-top {
+            min-height: 70px !important;
+            height: auto !important;
+        }
+        
+        /* Adjust main content top padding for fixed navbar */
+        main.pt-5 {
+            padding-top: 90px !important;
+        }
+        
+        /* Ensure auth pages don't get additional padding when not authenticated */
+        body:not(.authenticated) main.pt-5 {
+            padding-top: 0 !important;
+        }
+        
+        /* Pattern overlay for both gradients */
+        nav.navbar.navbar-expand-lg.navbar-dark.navbar-gradient::before,
+        nav.navbar.navbar-expand-lg.navbar-dark.navbar-theme::before,
+        .navbar.navbar-gradient::before,
+        .navbar.navbar-theme::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>') !important;
+            z-index: 1 !important;
+            pointer-events: none !important;
+        }
+        
+        /* Container z-index */
+        nav.navbar .container,
+        .navbar .container {
+            position: relative !important;
+            z-index: 2 !important;
+        }
+        
+        /* Force all navbar text to be white */
+        .navbar-dark .navbar-nav .nav-link,
+        .navbar-dark .navbar-brand,
+        .navbar .navbar-nav .nav-link,
+        .navbar .navbar-brand,
+        nav.navbar .navbar-nav .nav-link,
+        nav.navbar .navbar-brand {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+        
+        .navbar-dark .navbar-nav .nav-link:hover,
+        .navbar-dark .navbar-brand:hover,
+        .navbar .navbar-nav .nav-link:hover,
+        .navbar .navbar-brand:hover,
+        nav.navbar .navbar-nav .nav-link:hover,
+        nav.navbar .navbar-brand:hover {
+            color: white !important;
+        }
+        
+        /* Button in navbar */
+        .navbar .btn-outline-light {
+            border-color: rgba(255, 255, 255, 0.5) !important;
+            color: white !important;
+        }
+        
+        .navbar .btn-outline-light:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            border-color: white !important;
+            color: white !important;
+        }
+        
+        /* OVERVIEW CARDS STANDARDIZATION */
+        .stat-card-theme {
+            background: var(--gradient-card);
+            border: none;
+            border-radius: 15px;
+            padding: 20px !important;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px var(--shadow-color);
+            height: 140px !important;
+            min-height: 140px !important;
+            max-height: 140px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+            box-sizing: border-box !important;
+        }
+        
+        .stat-card-theme:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px var(--shadow-hover);
+        }
+        
+        .stat-card-theme .stat-icon {
+            font-size: 2.2rem !important;
+            color: var(--primary-color);
+            margin-bottom: 10px !important;
+            line-height: 1 !important;
+        }
+        
+        .stat-card-theme .stat-number {
+            font-size: 1.8rem !important;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 5px !important;
+            line-height: 1.1 !important;
+        }
+        
+        .stat-card-theme .stat-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.75rem !important;
+            letter-spacing: 0.5px;
+            line-height: 1.2 !important;
+            margin-bottom: 0 !important;
+        }
+        
+        /* Dashboard Cards Standardization (for applicant dashboard) */
+        .dashboard-card {
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%) !important;
+            border: 1px solid rgba(0, 0, 0, 0.05) !important;
+            border-radius: 15px !important;
+            transition: all 0.3s ease !important;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1) !important;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-3px) !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+        }
+        
+        /* Dashboard card content with flex layout for statistics */
+        .dashboard-card .d-flex {
+            height: 100% !important;
+            min-height: 100px !important;
+        }
+        
+        /* Statistics cards inside dashboard-card */
+        .col-md-3 .dashboard-card {
+            height: 120px !important;
+            min-height: 120px !important;
+            display: flex !important;
+            align-items: center !important;
+            padding: 20px !important;
+        }
+        
+        .col-md-3 .dashboard-card .d-flex {
+            width: 100% !important;
+            align-items: center !important;
+        }
+        
+        .col-md-3 .dashboard-card h5 {
+            font-size: 1.8rem !important;
+            font-weight: 700 !important;
+            margin-bottom: 5px !important;
+            line-height: 1.1 !important;
+        }
+        
+        .col-md-3 .dashboard-card small {
+            font-size: 0.75rem !important;
+            font-weight: 500 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+            line-height: 1.2 !important;
+        }
+        
+        .col-md-3 .dashboard-card i {
+            font-size: 2.2rem !important;
+            opacity: 0.8 !important;
+        }
+        
+        /* Quick Action Cards Standardization */
+        .quick-action-card {
+            height: 120px !important;
+            min-height: 120px !important;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .quick-action-card:hover {
+            color: inherit;
+            text-decoration: none;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        /* Mobile Responsive Adjustments */
+        @media (max-width: 768px) {
+            .stat-card-theme {
+                height: 120px !important;
+                min-height: 120px !important;
+                max-height: 120px !important;
+                padding: 15px !important;
+            }
+            
+            .stat-card-theme .stat-icon {
+                font-size: 1.8rem !important;
+                margin-bottom: 8px !important;
+            }
+            
+            .stat-card-theme .stat-number {
+                font-size: 1.5rem !important;
+            }
+            
+            .stat-card-theme .stat-label {
+                font-size: 0.7rem !important;
+            }
+            
+            .quick-action-card {
+                height: 100px !important;
+                min-height: 100px !important;
+            }
+            
+            /* Navbar mobile adjustments */
+            .navbar.fixed-top {
+                height: auto !important;
+                min-height: 70px !important;
+            }
+            
+            main.pt-5 {
+                padding-top: 80px !important;
+            }
+        }
+        
+        /* Prevent ATS analysis cards from disappearing */
+        .analysis-sections {
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: block !important;
+        }
+        .analysis-card {
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: block !important;
+        }
+        .col-lg-4 {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        /* Ensure proper spacing */
+        .analysis-container {
+            min-height: calc(100vh - 200px);
+        }
+        
+        /* FORCE AUTH CONTAINER FIXES - CACHE OVERRIDE */
+        .auth-container {
+            padding-top: 90px !important;
+            padding-bottom: 20px !important;
+            min-height: 100vh !important;
+        }
+        
+        .auth-card {
+            margin: 20px 0 !important;
+        }
+        
+        /* FORCE AUTH PAGES LAYOUT - NO CACHE */
+        body:not(.authenticated) .auth-container {
+            padding-top: 90px !important;
+        }
+        
+        /* FORCE OVERRIDE FOR AUTH MAIN CONTENT */
+        body:not(.authenticated) main {
+            padding-top: 0 !important;
+        }
+        
+        /* MOBILE FORCE FIXES */
+        @media (max-width: 768px) {
+            .auth-container {
+                padding-top: 80px !important;
+                padding-left: 15px !important;
+                padding-right: 15px !important;
+            }
+        }
+    </style>
+    
     {% block head %}{% endblock %}
 </head>
-<body class="{% if current_user.is_authenticated %}{% if current_user.is_applicant() %}theme-applicant{% elif current_user.is_recruiter() %}theme-recruiter{% endif %}{% endif %}">
+<body class="h-100 d-flex flex-column {% if current_user.is_authenticated %}authenticated {% if current_user.is_applicant() %}theme-applicant{% elif current_user.is_recruiter() %}theme-recruiter{% endif %}{% endif %}">
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark {% if current_user.is_authenticated %}navbar-theme{% else %}bg-primary{% endif %} fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark {% if current_user.is_authenticated %}navbar-theme{% else %}navbar-gradient{% endif %} fixed-top">
         <div class="container">
             <!-- Brand -->
             <a class="navbar-brand fw-bold" href="{{ url_for('main.index') }}">
-                <i class="bi bi-briefcase-fill me-2"></i>JobMate
+                <i class="bi bi-robot me-2" style="font-size: 1.3rem; color: #ffc107;"></i>JobMate
                 {% if current_user.is_authenticated %}
                     <small class="badge {% if current_user.is_applicant() %}bg-light text-dark{% else %}bg-light text-dark{% endif %} ms-2">
                         {{ current_user.user_type.title() }}
@@ -187,10 +522,10 @@
     </main>
     
     <!-- Footer -->
-    <footer class="py-5 mt-5" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: #ecf0f1;">
+    <footer class="py-3" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: #ecf0f1; margin-top: 0;">
         <div class="container">
             <div class="row">
-                <div class="col-lg-4 mb-4">
+                <div class="col-lg-4 mb-3">
                     <h5 class="fw-bold">
                         <i class="bi bi-briefcase-fill me-2"></i>JobMate
                     </h5>
@@ -205,7 +540,7 @@
                     </div>
                 </div>
                 
-                <div class="col-lg-2 col-md-6 mb-4">
+                <div class="col-lg-2 col-md-6 mb-3">
                     <h6 class="fw-semibold">Platform</h6>
                     <ul class="list-unstyled">
                         <li><a href="{{ url_for('main.features') }}" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='#3498db'" onmouseout="this.style.color='#bdc3c7'">Features</a></li>
@@ -214,7 +549,7 @@
                     </ul>
                 </div>
                 
-                <div class="col-lg-2 col-md-6 mb-4">
+                <div class="col-lg-2 col-md-6 mb-3">
                     <h6 class="fw-semibold">Support</h6>
                     <ul class="list-unstyled">
                         <li><a href="#" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='#3498db'" onmouseout="this.style.color='#bdc3c7'">Help Center</a></li>
@@ -223,7 +558,7 @@
                     </ul>
                 </div>
                 
-                <div class="col-lg-2 col-md-6 mb-4">
+                <div class="col-lg-2 col-md-6 mb-3">
                     <h6 class="fw-semibold">Legal</h6>
                     <ul class="list-unstyled">
                         <li><a href="{{ url_for('main.privacy') }}" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='#3498db'" onmouseout="this.style.color='#bdc3c7'">Privacy</a></li>
@@ -231,7 +566,7 @@
                     </ul>
                 </div>
                 
-                <div class="col-lg-2 col-md-6 mb-4">
+                <div class="col-lg-2 col-md-6 mb-3">
                     <h6 class="fw-semibold">Connect</h6>
                     <ul class="list-unstyled">
                         <li><a href="#" style="color: #bdc3c7; text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='#3498db'" onmouseout="this.style.color='#bdc3c7'">Newsletter</a></li>
@@ -240,7 +575,7 @@
                 </div>
             </div>
             
-            <hr class="my-4" style="border-color: #7f8c8d; opacity: 0.3;">
+            <hr class="my-3" style="border-color: #7f8c8d; opacity: 0.3;">
             
             <div class="row align-items-center">
                 <div class="col-md-6">
@@ -259,6 +594,84 @@
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Cache Clearing Script -->
+    <script>
+        // Force cache clear for auth pages
+        document.addEventListener('DOMContentLoaded', function() {
+            // FORCE NAVBAR FIXES
+            const navbar = document.querySelector('.navbar-theme');
+            if (navbar) {
+                navbar.style.position = 'fixed';
+                navbar.style.top = '0';
+                navbar.style.left = '0';
+                navbar.style.right = '0';
+                navbar.style.width = '100%';
+                navbar.style.zIndex = '1030';
+                navbar.style.minHeight = '70px';
+                navbar.style.height = 'auto';
+                navbar.style.background = 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%)';
+                navbar.style.backdropFilter = 'none';
+                navbar.style.borderBottom = 'none';
+                navbar.style.paddingTop = '0.75rem';
+                navbar.style.paddingBottom = '0.75rem';
+                navbar.style.boxSizing = 'border-box';
+                console.log('🔧 Navbar-theme fixed positioning applied');
+            }
+            
+            // Check if we're on an auth page
+            const isAuthPage = document.querySelector('.auth-container');
+            if (isAuthPage) {
+                // Force apply the CSS fixes
+                const authContainer = document.querySelector('.auth-container');
+                const authCard = document.querySelector('.auth-card');
+                
+                if (authContainer) {
+                    authContainer.style.paddingTop = '90px';
+                    authContainer.style.paddingBottom = '20px';
+                    authContainer.style.minHeight = '100vh';
+                }
+                
+                if (authCard) {
+                    authCard.style.margin = '20px 0';
+                }
+                
+                // Force mobile responsive for smaller screens
+                if (window.innerWidth <= 768) {
+                    if (authContainer) {
+                        authContainer.style.paddingTop = '80px';
+                        authContainer.style.paddingLeft = '15px';
+                        authContainer.style.paddingRight = '15px';
+                    }
+                    if (authCard) {
+                        authCard.style.margin = '10px 0';
+                    }
+                }
+                
+                console.log('🔧 Auth page layout fixes applied');
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            const authContainer = document.querySelector('.auth-container');
+            const authCard = document.querySelector('.auth-card');
+            
+            if (authContainer && authCard) {
+                if (window.innerWidth <= 768) {
+                    authContainer.style.paddingTop = '80px';
+                    authContainer.style.paddingLeft = '15px';
+                    authContainer.style.paddingRight = '15px';
+                    authCard.style.margin = '10px 0';
+                } else {
+                    authContainer.style.paddingTop = '90px';
+                    authContainer.style.paddingLeft = '';
+                    authContainer.style.paddingRight = '';
+                    authCard.style.margin = '20px 0';
+                }
+            }
+        });
+    </script>
     
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

@@ -85,6 +85,8 @@
                     
                     <!-- Upload Form -->
                     <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        
                         <!-- File Drop Zone -->
                         <div class="file-drop-zone mb-4" onclick="document.getElementById('resume_file').click()">
                             <i class="bi bi-file-earmark-arrow-up text-primary mb-3" style="font-size: 3rem;"></i>
@@ -276,13 +278,17 @@ document.addEventListener('DOMContentLoaded', function() {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
     
-    window.clearFile = function() {
+    function clearFile() {
         fileInput.value = '';
         fileInfo.style.display = 'none';
         uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="bi bi-upload me-1"></i>Upload & Analyze';
         progressContainer.style.display = 'none';
         progressBar.style.width = '0%';
-    };
+    }
+    
+    // Make clearFile globally available
+    window.clearFile = clearFile;
 });
 </script>
 {% endblock %} 

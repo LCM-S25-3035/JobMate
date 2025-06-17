@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}{{ resume.title }} - JobMate{% endblock %}
+
+{% block head %}
+<style>
+    .ai-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-left: 8px;
+    }
+    
+    .ats-score {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0;
+    }
+    
+    .score-excellent { color: #28a745; }
+    .score-good { color: #ffc107; }
+    .score-fair { color: #fd7e14; }
+    .score-poor { color: #dc3545; }
+    
+    .skill-tag {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 4px 12px;
+        border-radius: 16px;
+        font-size: 0.85rem;
+        margin: 2px;
+        display: inline-block;
+    }
+    
+    .experience-item {
+        border-left: 3px solid #007bff;
+        padding-left: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .recommendation-item {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 8px;
+    }
+    
+    .strength-item {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2>{{ resume.title }}</h2>
+            {% if resume.ats_score %}
+            <div class="alert alert-info">
+                <strong>ATS Score:</strong> {{ "%.0f"|format(resume.ats_score) }}%
+            </div>
+            {% endif %}
+            
+            {% if resume.ai_analysis and resume.ai_analysis.parsed_data %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5>AI Analysis Results</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Skills Found:</strong> {{ resume.ai_analysis.parsed_data.skills.technical_skills|length }} technical skills</p>
+                    <p><strong>Experience:</strong> {{ resume.ai_analysis.parsed_data.experience|length }} positions</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="mt-3">
+                <a href="{{ url_for('resume.my_resumes') }}" class="btn btn-secondary">Back to My Resumes</a>
+                <a href="{{ url_for('resume.analyze_ats', resume_id=resume.id) }}" class="btn btn-info">Full ATS Analysis</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

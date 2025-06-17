@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block title %}ATS Analysis: {{ resume.title }} - JobMate{% endblock %}
+
+{% block head %}
+<style>
+    .analysis-container {
+        background: #f8f9fa;
+        min-height: calc(100vh - 200px);
+        padding: 30px 0;
+    }
+    
+    .score-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: bold;
+        color: white;
+        margin: 0 auto 20px;
+    }
+    
+    .score-excellent { 
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+    .score-good { 
+        background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    }
+    .score-poor { 
+        background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+    }
+    
+    .analysis-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: block !important;
+    }
+    
+    .analysis-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 10px;
+        text-align: center;
+        padding: 20px 15px;
+        border: 1px solid #e9ecef;
+        height: 100%;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .ai-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    /* Force visibility */
+    .analysis-sections {
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: block !important;
+    }
+    
+    .analysis-sections .row {
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: flex !important;
+    }
+    
+    .analysis-sections .col-lg-4 {
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: block !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analysis-container">
+    <div class="container">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="analysis-card p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h1 class="h2 fw-bold mb-1">
+                                <i class="bi bi-graph-up text-primary me-2"></i>ATS Analysis
+                            </h1>
+                            <p class="text-muted mb-0">{{ resume.title }}</p>
+                            {% if analysis.job_specific %}
+                            <span class="badge bg-info mt-2">
+                                <i class="bi bi-briefcase me-1"></i>Job-Specific Analysis: {{ analysis.job_title }}
+                            </span>
+                            {% endif %}
+                            {% if analysis.ai_powered %}
+                            <span class="ai-badge mt-2 d-inline-block">
+                                <i class="bi bi-cpu me-1"></i>AI-Powered Analysis
+                            </span>
+                            {% endif %}
+                        </div>
+                        <a href="{{ url_for('resume.my_resumes') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Back to Resumes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ATS Score -->
+        <div class="row mb-4">
+            <div class="col-lg-6">
+                <div class="analysis-card p-4 text-center">
+                    <div class="score-circle 
+                        {% if analysis.ats_score >= 80 %}score-excellent
+                        {% elif analysis.ats_score >= 60 %}score-good
+                        {% else %}score-poor{% endif %}">
+                        {{ analysis.ats_score }}%
+                    </div>
+                    <h4 class="fw-bold">ATS Compatibility</h4>
+                    <p class="text-muted mb-0">
+                        {% if analysis.ats_score >= 80 %}
+                            Excellent - Ready for most ATS systems
+                        {% elif analysis.ats_score >= 60 %}
+                            Good - Some improvements recommended
+                        {% else %}
+                            Needs Work - Requires optimization
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="row h-100">
+                    <div class="col-6 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-number text-primary">{{ analysis.keyword_count or 0 }}</div>
+                            <div class="stat-label">Keywords Found</div>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-number text-success">{{ analysis.experience_count or 0 }}</div>
+                            <div class="stat-label">Work Experience</div>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-number text-info">{{ analysis.education_count or 0 }}</div>
+                            <div class="stat-label">Education</div>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-number text-warning">{{ analysis.word_count or 0 }}</div>
+                            <div class="stat-label">Total Words</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if not analysis.job_specific %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="analysis-card p-3 bg-light">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="mb-1 fw-bold">Want a more targeted analysis?</h6>
+                            <p class="mb-0 text-muted small">Analyze your resume against a specific job posting for better insights</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#jobSelectionModal">
+                            <i class="bi bi-briefcase me-1"></i>Analyze vs Job
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Analysis Results - SIMPLIFIED -->
+        <div class="analysis-sections">
+            <div class="row">
+                <!-- Strengths -->
+                {% if analysis.strengths %}
+                <div class="col-lg-4 mb-4">
+                    <div class="analysis-card p-4 h-100">
+                        <h5 class="fw-bold mb-3">
+                            <i class="bi bi-check-circle text-success me-2"></i>Strengths
+                        </h5>
+                        {% for strength in analysis.strengths %}
+                        <div class="alert alert-success d-flex align-items-start mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2 mt-1"></i>
+                            <span>{{ strength }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Areas to Improve -->
+                {% if analysis.weaknesses %}
+                <div class="col-lg-4 mb-4">
+                    <div class="analysis-card p-4 h-100">
+                        <h5 class="fw-bold mb-3">
+                            <i class="bi bi-x-circle text-danger me-2"></i>Areas to Improve
+                        </h5>
+                        {% for weakness in analysis.weaknesses %}
+                        <div class="alert alert-danger d-flex align-items-start mb-2">
+                            <i class="bi bi-exclamation-triangle-fill text-danger me-2 mt-1"></i>
+                            <span>{{ weakness }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Recommendations -->
+                {% if analysis.recommendations %}
+                <div class="col-lg-4 mb-4">
+                    <div class="analysis-card p-4 h-100">
+                        <h5 class="fw-bold mb-3">
+                            <i class="bi bi-lightbulb text-warning me-2"></i>Recommendations
+                        </h5>
+                        {% for recommendation in analysis.recommendations %}
+                        <div class="alert alert-warning d-flex align-items-start mb-2">
+                            <i class="bi bi-lightbulb-fill text-warning me-2 mt-1"></i>
+                            <span>{{ recommendation }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Keywords Found -->
+        {% if analysis.keywords_found %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="analysis-card p-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-tags text-primary me-2"></i>Keywords Found
+                    </h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for keyword in analysis.keywords_found %}
+                        <span class="badge bg-primary">{{ keyword }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Action Buttons -->
+        <div class="row">
+            <div class="col-12 text-center">
+                <a href="{{ url_for('resume.view_resume', resume_id=resume.id) }}" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-eye me-1"></i>View Resume
+                </a>
+                <a href="{{ url_for('resume.my_resumes') }}" class="btn btn-primary">
+                    <i class="bi bi-arrow-left me-1"></i>Back to My Resumes
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Job Selection Modal -->
+<div class="modal fade" id="jobSelectionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Select Job for Analysis</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">Choose a job posting to analyze your resume against:</p>
+                <div id="jobsList">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading jobs...</span>
+                        </div>
+                        <p class="mt-2">Loading available jobs...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Simplified script - only for modal functionality
+console.log('🔍 ATS Analysis page loaded');
+
+// Analysis data for debugging
+var analysisData = {
+    strengths: {{ analysis.strengths|tojson if analysis.strengths else '[]' }},
+    weaknesses: {{ analysis.weaknesses|tojson if analysis.weaknesses else '[]' }},
+    recommendations: {{ analysis.recommendations|tojson if analysis.recommendations else '[]' }}
+};
+console.log('📊 Analysis data:', analysisData);
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ DOM loaded - checking visibility');
+    
+    // Simple visibility check
+    const strengthsSection = document.querySelector('.analysis-sections .col-lg-4:has(.bi-check-circle)');
+    const weaknessesSection = document.querySelector('.analysis-sections .col-lg-4:has(.bi-x-circle)');
+    const recommendationsSection = document.querySelector('.analysis-sections .col-lg-4:has(.bi-lightbulb)');
+    
+    console.log('Sections found:', {
+        strengths: !!strengthsSection,
+        weaknesses: !!weaknessesSection,
+        recommendations: !!recommendationsSection
+    });
+    
+    // Modal functionality
+    const jobModal = document.getElementById('jobSelectionModal');
+    const jobsList = document.getElementById('jobsList');
+    
+    if (jobModal) {
+        jobModal.addEventListener('show.bs.modal', function() {
+            loadAvailableJobs();
+        });
+    }
+    
+    function loadAvailableJobs() {
+        fetch('/api/available-jobs')
+            .then(response => response.json())
+            .then(data => {
+                if (data.jobs && data.jobs.length > 0) {
+                    displayJobs(data.jobs);
+                } else {
+                    jobsList.innerHTML = `
+                        <div class="text-center text-muted">
+                            <i class="bi bi-briefcase fs-1 mb-3"></i>
+                            <p>No active job postings available.</p>
+                            <p class="small">Job postings will appear here once recruiters add them.</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading jobs:', error);
+                jobsList.innerHTML = `
+                    <div class="alert alert-danger">
+                        Error loading job postings. Please try again.
+                    </div>
+                `;
+            });
+    }
+    
+    function displayJobs(jobs) {
+        const resumeId = {{ resume.id }};
+        let html = '';
+        
+        jobs.forEach(job => {
+            html += `
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="card-title mb-1">${job.title}</h6>
+                                <p class="text-muted small mb-2">
+                                    <i class="bi bi-building me-1"></i>${job.company_name}
+                                    <span class="mx-2">•</span>
+                                    <i class="bi bi-geo-alt me-1"></i>${job.location}
+                                </p>
+                                <p class="card-text small text-truncate" style="max-width: 400px;">
+                                    ${job.description.substring(0, 100)}...
+                                </p>
+                                <div class="small">
+                                    <span class="badge bg-secondary">${job.experience_level}</span>
+                                    <span class="badge bg-info">${job.job_type}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <a href="/resume/analyze-ats/${resumeId}/${job.id}" 
+                                   class="btn btn-primary btn-sm">
+                                    <i class="bi bi-graph-up me-1"></i>Analyze
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        jobsList.innerHTML = html;
+    }
+});
+</script>
+{% endblock %}

@@ -9,6 +9,7 @@ from app.main import bp
 from app.models.user import User
 from app.models.application import Application
 from app.models.job_posting import JobPosting
+from datetime import datetime, timedelta
 
 
 @bp.route('/')
@@ -93,18 +94,48 @@ def recruiter_dashboard():
         JobPosting.created_at.desc()
     ).limit(10).all()
     
-    # Get recent applications to recruiter's jobs
-    recent_applications = []  # TODO: Implement applications query
+    # Calculate statistics
+    total_jobs = current_user.job_postings.count()
+    active_jobs = current_user.job_postings.filter_by(status='active').count()
     
-    # Get candidate matches (placeholder)
-    candidate_matches = []  # TODO: Implement candidate matching
+    # Get recent applications to recruiter's jobs
+    job_ids = [job.id for job in current_user.job_postings.all()]
+    recent_applications = []
+    total_applications = 0
+    new_applications = 0
+    
+    if job_ids:
+        recent_applications = Application.query.filter(
+            Application.job_posting_id.in_(job_ids)
+        ).order_by(Application.created_at.desc()).limit(5).all()
+        
+        total_applications = Application.query.filter(
+            Application.job_posting_id.in_(job_ids)
+        ).count()
+        
+        # Applications from last 7 days
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        new_applications = Application.query.filter(
+            Application.job_posting_id.in_(job_ids),
+            Application.created_at >= seven_days_ago
+        ).count()
+    
+    # Mock data for demonstration
+    stats = {
+        'active_jobs': active_jobs,
+        'total_applications': total_applications,
+        'new_applications': new_applications,
+        'total_views': 1250,  # Mock data
+        'interview_scheduled': 8  # Mock data
+    }
     
     return render_template('dashboard/recruiter.html',
                          title='Recruiter Dashboard',
                          user=current_user,
                          job_postings=job_postings,
                          recent_applications=recent_applications,
-                         candidate_matches=candidate_matches)
+                         current_date=datetime.now().strftime('%b %d'),
+                         **stats)
 
 
 @bp.route('/about')
@@ -186,6 +217,35 @@ def notifications():
     ]
     
     return jsonify(notifications)
+
+
+@bp.route('/api/available-jobs')
+@login_required
+def available_jobs():
+    """Get list of available job postings for ATS analysis"""
+    try:
+        # Get active job postings with basic info
+        jobs = JobPosting.query.filter_by(status='active').order_by(
+            JobPosting.created_at.desc()
+        ).limit(20).all()
+        
+        jobs_data = []
+        for job in jobs:
+            jobs_data.append({
+                'id': job.id,
+                'title': job.title,
+                'company_name': job.company_name,
+                'location': job.location,
+                'description': job.description[:200] if job.description else '',
+                'experience_level': job.experience_level,
+                'job_type': job.job_type,
+                'created_at': job.created_at.isoformat() if job.created_at else None
+            })
+        
+        return jsonify({'jobs': jobs_data})
+        
+    except Exception as e:
+        return jsonify({'error': str(e), 'jobs': []}), 500
 
 
 @bp.route('/api/search')

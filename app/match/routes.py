@@ -234,9 +234,9 @@ def calculate_job_match_score(job, user, resume=None, preferences=None):
             score += 10
     
     # Skills matching (30 points max)
-    if resume and resume.content:
+    if resume and resume.parsed_content:
         job_skills = extract_skills_from_text(job.description + " " + (job.requirements or ""))
-        resume_skills = extract_skills_from_text(resume.content)
+        resume_skills = extract_skills_from_text(resume.parsed_content)
         
         if job_skills and resume_skills:
             matching_skills = job_skills.intersection(resume_skills)
@@ -303,9 +303,9 @@ def calculate_detailed_match_analysis(job, user, resume=None, preferences=None):
         analysis['factors']['salary']['details'] = 'No salary information available'
     
     # Skills analysis
-    if resume and resume.content:
+    if resume and resume.parsed_content:
         job_skills = extract_skills_from_text(job.description + " " + (job.requirements or ""))
-        resume_skills = extract_skills_from_text(resume.content)
+        resume_skills = extract_skills_from_text(resume.parsed_content)
         
         if job_skills and resume_skills:
             matching_skills = job_skills.intersection(resume_skills)

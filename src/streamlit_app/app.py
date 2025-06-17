@@ -2,7 +2,6 @@ import streamlit as st
 import os
 import shutil
 
-
 st.set_page_config(page_title="AutoApply App", layout="wide")
 
 # CSS for styling
@@ -13,7 +12,6 @@ st.markdown("""
             text-align: center !important;
             color: #FF5733 !important;
         }
-
         p {
             font-size: 20px !important;
             text-align: left !important;
@@ -23,26 +21,19 @@ st.markdown("""
 
 def ensure_folders_exist():
     """Ensure that required folders exist."""
-    # Get the absolute path to the project root
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-    
-    # Define the folders to create
     folders = ["resume", "output", "data", "parquet"]
-    
     for folder in folders:
         folder_path = os.path.join(project_root, folder)
         os.makedirs(folder_path, exist_ok=True)
-        print(f"Ensured folder exists: {folder_path}")
 
 if "app_initialized" not in st.session_state:
     st.session_state.app_initialized = True  
     ensure_folders_exist()
 
-
 # Initialize session state
 if "page" not in st.session_state:
     st.session_state.page = "Home" 
-
 
 def go_to_page(page_name):
     st.session_state.page = page_name
@@ -51,21 +42,23 @@ def go_to_page(page_name):
 if st.session_state.page == "Home":
     st.markdown("<h1 style='font-size: 60px; text-align: center; color: #FF5733;'>Welcome to AutoApply App</h1>", unsafe_allow_html=True)
     st.markdown("<p style='font-size: 24px; text-align: center;'>Your all-in-one solution for enhancing and customizing your resume to secure your dream job!</p>", unsafe_allow_html=True)
-
     st.write("")  
 
     option = st.radio("What would you like to do?", [
         "Option 1: Tailor my resume for a specific job",
-        "Option 2: Find the best job matches with our AI recommender"
+        "Option 2: Find the best job matches with our AI recommender",
+        "Option 3: Detect Ghost Jobs (Beta)"
     ], index=None, key="paso_0")
-    
+
     if option == "Option 1: Tailor my resume for a specific job":
         go_to_page("Option1")
 
-    if option == "Option 2: Find the best job matches with our AI recommender":
+    elif option == "Option 2: Find the best job matches with our AI recommender":
         go_to_page("Option2")
 
-# Load pages dynamically
+    elif option == "Option 3: Detect Ghost Jobs (Beta)":
+        go_to_page("GhostJobDetector")
+
 elif st.session_state.page == "Option1":
     import option1
     option1.run()
@@ -103,7 +96,6 @@ elif st.session_state.page == "Option2_2":
     option2_2.run()
 
 elif st.session_state.page == "add_skills":
-    print("entro")
     import add_skills
     add_skills.run()
 
@@ -111,3 +103,6 @@ elif st.session_state.page == "customization_cv":
     import customization_cv
     customization_cv.run()
 
+elif st.session_state.page == "GhostJobDetector":
+    import ghost_job_detector_ui
+    ghost_job_detector_ui.run()

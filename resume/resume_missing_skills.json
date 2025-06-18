@@ -1,24 +1,12 @@
 {
     "technical_skills": [
-        "data engineering",
-        "data architecture",
-        "enterprise architecture",
-        "software engineering",
-        "data lakes",
-        "snowflake",
-        "dbt",
-        "fivetran",
-        "looker",
-        "master data management",
-        "data governance",
-        "metadata management",
-        "data lineage",
-        "ci/cd",
-        "devops",
-        "disaster recovery"
+        "ai/ml",
+        "rag pipelines",
+        "llm workflows"
     ],
     "soft_skills": [
-        "stakeholder management",
-        "strategic thinking"
+        "strategic thinking",
+        "sales",
+        "presentation"
     ]
 }

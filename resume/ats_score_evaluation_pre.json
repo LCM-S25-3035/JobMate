@@ -1,74 +1,55 @@
 {
-    "ats_score": 40,
+    "ats_score": 53,
     "matching_technical_skills": [
-        "data warehousing",
-        "airflow",
-        "bigquery",
-        "cloud computing gcp aws azure"
+        "sql"
     ],
     "missing_technical_skills": [
-        "data engineering",
-        "data architecture",
-        "enterprise architecture",
-        "software engineering",
-        "data lakes",
-        "snowflake",
-        "dbt",
-        "fivetran",
-        "looker",
-        "master data management",
-        "data governance",
-        "metadata management",
-        "data lineage",
-        "ci/cd",
-        "devops",
-        "disaster recovery"
+        "ai/ml",
+        "rag pipelines",
+        "llm workflows"
     ],
     "matching_soft_skills": [
         "communication",
-        "ownership",
-        "accountability"
+        "problem-solving"
     ],
     "missing_soft_skills": [
-        "stakeholder management",
-        "strategic thinking"
+        "strategic thinking",
+        "sales",
+        "presentation"
     ],
-    "keywords_matched": [
-        "data architecture",
-        "data engineering",
-        "cloud environments",
-        "bigquery",
-        "snowflake",
-        "airflow",
-        "data warehousing"
-    ],
+    "keywords_matched": [],
     "keywords_missing": [
-        "enterprise architecture",
-        "dbt",
-        "fivetran",
-        "looker",
-        "master data management",
-        "data governance",
-        "metadata management",
-        "data lineage",
-        "ci/cd",
-        "devops",
-        "disaster recovery"
+        "enterprise-grade ai solutions",
+        "large language model",
+        "integrate large language models",
+        "enterprise operations",
+        "co-design solutions",
+        "strategic enterprise accounts",
+        "fortune 500",
+        "large analytic programs",
+        "fast-paced environment",
+        "stack ai platform",
+        "target enterprise customer offices",
+        "go-to-market strategy",
+        "high-value opportunities",
+        "write proposals",
+        "pitch stakeholders",
+        "lead product demos",
+        "evangelize stack ai",
+        "enterprise events"
     ],
-    "years_of_experience_match": "No",
+    "years_of_experience_match": "Yes",
     "education_match": "No",
     "summary_match": "No",
     "responsibility_alignment": "No",
     "recommendations": [
-        "The resume does not reflect the 10+ years of experience requested in the job posting.",
-        "The education section does not reflect 10+ years of experience in data engineering, data architecture, or a related technical role, with strong proficiency in enterprise architecture, data and software engineering.",
-        "The summary should be tailored to highlight experience in designing and implementing enterprise-scale data architectures in cloud environments.",
-        "The resume should include explicit mentions of 'enterprise architecture', 'software engineering', 'data lakes', 'dbt', 'fivetran', 'looker', 'master data management', 'data governance', 'metadata management', 'data lineage', 'ci/cd', 'devops', and 'disaster recovery' if applicable.",
-        "The resume should include explicit mentions of 'stakeholder management' and 'strategic thinking' if applicable.",
-        "The resume should include explicit mentions of 'AWS' and 'Azure' if applicable.",
-        "The resume should include details of responsibilities that align with the key responsibilities mentioned in the job posting.",
-        "The resume should include details of experience in creating scalable designs capable of supporting high workloads and large numbers of simultaneous users, processes and integrations.",
-        "The resume should include details of experience in designing and implementing CI/CD, and DevOps practices in data environments.",
-        "The resume should include details of experience in designing highly scalable, distributed and fault tolerant data architectures ensuring full high availability and disaster recovery capabilities."
+        "The resume does not mention AI/ML, RAG pipelines, or LLM workflows, which are key technical skills for this role. The candidate should explicitly state their experience with these technologies.",
+        "The resume lacks the soft skills 'strategic thinking', 'sales', and 'presentation'. The candidate should provide examples of these skills in their experience descriptions.",
+        "The summary should be tailored to highlight experience with AI solutions and enterprise environments.",
+        "The resume does not mention experience with strategic enterprise accounts or Fortune 500 companies. If the candidate has this experience, it should be highlighted.",
+        "The resume does not mention Stack AI. The candidate should research Stack AI and tailor their resume to show how their skills and experience align with the platform.",
+        "The resume should include keywords from the job posting, such as 'enterprise-grade AI solutions', 'large language model', and 'co-design solutions'.",
+        "The candidate should quantify their achievements whenever possible to demonstrate the impact of their work.",
+        "The candidate should tailor their resume to align with the key responsibilities of the role, such as optimizing solutions, mapping requirements, and pursuing opportunities."
     ]
 }

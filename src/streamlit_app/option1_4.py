@@ -22,9 +22,9 @@ def run():
         return
 
     # MongoDB Connection
-    MONGO_URI = st.secrets["api_keys"]["MONGODB_URI"]
-    MONGO_DB_NAME = st.secrets["api_keys"]["MONGODB_NAME"]
-    MONGO_JOBS_COLLECTION = st.secrets["api_keys"]["MONGODB_JOBS_COLLECTION"]
+    MONGO_URI = st.secrets["database"]["MONGODB_URI"]
+    MONGO_DB_NAME = st.secrets["database"]["MONGODB_DB"]
+    MONGO_JOBS_COLLECTION = st.secrets["database"]["MONGODB_COLLECTION"]
 
     client_mongo = pymongo.MongoClient(MONGO_URI)
     db = client_mongo[MONGO_DB_NAME]
@@ -35,7 +35,7 @@ def run():
     selected_job = collection.find_one({"_id": job_id})
     selected_job["_id"] = str(selected_job["_id"])  # Convert ObjectId to string
     # Ensure the job description field exists
-    job_description = selected_job.get("Job Description", "No description available")
+    job_description = selected_job.get("description", "No description available")
 
     if not selected_job:
         st.error("⚠️ Selected job not found in the database. Please go back and choose another job.")

@@ -1,0 +1,26 @@
+# Core packages
+pandas
+numpy
+
+# Web scraping
+selenium
+beautifulsoup4
+webdriver-manager
+
+# Language detection and translation
+langdetect
+deep-translator
+nltk
+
+# MongoDB connection
+pymongo
+python-dotenv
+
+# Job scraping library
+python-jobspy
+
+# OpenAI-compatible client for LLM (Ollama)
+openai
+
+# Optional logging enhancements
+loguru

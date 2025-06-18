@@ -5,7 +5,7 @@ import google.generativeai as genai
 from io import BytesIO
 import numpy as np
 import re
-from streamlit_app.utils import get_project_root, get_resume_dir, join_all_resume_json, generate_cv, resume_promt_summary, ats_score_evaluation_post #jenny updated
+from utils import get_project_root, get_resume_dir, join_all_resume_json, generate_cv, resume_promt_summary, ats_score_evaluation_post #jenny updated
 import os
 
 

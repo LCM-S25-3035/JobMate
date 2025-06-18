@@ -6,11 +6,12 @@
             "location": "Chennai, India",
             "start_date": "February 2022",
             "end_date": "January 2024",
-            "key": "amazon-ml data associate",
+            "key": "amazon-ML Data Associate",
             "achievement": [
-                "Built anomaly detection and pattern recognition tools to identify data quality issues and operational risks, enhancing integrity of datasets leveraged in risk reporting and regulatory analysis.",
-                "Automated data processing pipelines to streamline repetitive data preparation tasks, improving reporting efficiency and reducing manual errors by 40%.",
-                "Analyzed performance monitoring and reporting accuracy enhancements by developing data visualizations and dashboards in Amazon Quick sight, managing insight generation for operational optimization."
+                "Processed and labelled over 20,000 data samples with 98% accuracy, contributing to training of supervised machine learning models for boosted speech recognition performance and annotation quality.",
+                "Conducted exploratory data analysis (EDA) and collaborated with cross-functional teams to align data pipelines and reporting structures with key business KPIs, restructuring data relevance and decision-making accuracy.",
+                "Developed anomaly detection and pattern recognition tools to identify data inconsistencies and revamp overall data quality, facilitating more reliable analytics and risk assessment across large datasets.",
+                "Automated custom data labelling pipelines using Python, increasing annotation efficiency by 40% and enhancing scalability and consistency in machine learning training workflows."
             ]
         },
         {
@@ -19,7 +20,16 @@
             "location": "Gdansk, Poland",
             "start_date": "December 2020",
             "end_date": "February 2021",
-            "key": "state street-fund accountant intern",
+            "key": "state street-Fund Accountant Intern",
+            "achievement": []
+        },
+        {
+            "job_title": "Customer Service Representative",
+            "company": "Sitel Polska",
+            "location": "Warsaw, Poland",
+            "start_date": "June 2019",
+            "end_date": "June 2021",
+            "key": "sitel polska-Customer Service Representative",
             "achievement": []
         }
     ]

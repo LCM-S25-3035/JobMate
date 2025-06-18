@@ -1,13 +1,9 @@
 {
     "technical_skills": [
-        "data warehousing",
-        "airflow",
-        "bigquery",
-        "cloud computing gcp aws azure"
+        "sql"
     ],
     "soft_skills": [
         "communication",
-        "ownership",
-        "accountability"
+        "problem-solving"
     ]
 }

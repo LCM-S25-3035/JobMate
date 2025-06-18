@@ -76,12 +76,12 @@ def main():
 
     # Clear existing jobs in the collection to avoid duplication
     collection.delete_many({})
-    print(f"Deleted existing jobs in collection '{mongo_collection}'.")
+    print(f"Deleted existing jobs in collection '{MONGO_COLLECTION}'.")
 
     # Insert scraped jobs into MongoDB
     if job_dicts:
         collection.insert_many(job_dicts)
-        print(f"Inserted {len(job_dicts)} new job postings into MongoDB collection '{mongo_collection}'.")
+        print(f"Inserted {len(job_dicts)} new job postings into MongoDB collection '{MONGO_COLLECTION}'.")
     else:
         print("No job postings to insert.")
 

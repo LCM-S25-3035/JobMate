@@ -1,68 +1,56 @@
 {
-    "job_title": "Data Architect",
+    "job_title": "AI Solutions Engineer",
     "company": {
-        "name": "Confidential",
-        "industry": "Data Services",
-        "location": "USA",
+        "name": "Stack AI",
+        "industry": "AI",
+        "location": "San Francisco, CA",
         "remote": true
     },
     "employment_type": "Full-time",
-    "experience_level": "Senior",
-    "years_of_experience_required": 10,
+    "experience_level": "Mid",
+    "years_of_experience_required": 3,
     "salary_range": {
-        "min": null,
-        "max": null,
-        "currency": null,
-        "payment_frequency": null
+        "min": 100000.0,
+        "max": 150000.0,
+        "currency": "USD",
+        "payment_frequency": "Annual"
     },
-    "job_description": "We are seeking a highly experienced Data Architect to design and implement enterprise-scale data architectures in cloud environments.",
-    "responsibilities": [],
+    "job_description": "Experienced engineer needed to deploy enterprise-grade AI solutions, focusing on Retrieval-Augmented Generation (RAG) pipelines and large language model (LLM) workflows. Integrate large language models into enterprise operations and co-design solutions with clients.",
+    "responsibilities": [
+        "Optimize and support solutions within strategic accounts on the Stack AI platform.",
+        "Map requirements and relationships within target enterprise customer offices.",
+        "Pursue opportunities and provide feedback on our go-to-market strategy.",
+        "Forecast and close high-value opportunities.",
+        "Write proposals, pitch stakeholders, and lead product demos.",
+        "Evangelize Stack AI at enterprise events."
+    ],
     "requirements": [
-        "10+ years of experience in data engineering, data architecture, or a related technical role, with strong proficiency in enterprise architecture, data and software engineering.",
-        "Proven experience designing and implementing enterprise-scale data architectures in cloud environments (e.g., GCP, AWS, or Azure).",
-        "Deep understanding of data warehousing, data lakes, and modern data stack tools (e.g., BigQuery, Snowflake, Airflow, dbt, Fivetran, Looker).",
-        "Ability to create scalable designs capable of supporting high workloads and large numbers of simultaneous users, processes and integrations.",
-        "Strong knowledge of master data management, data governance, metadata management, data lineage, and security best practices.",
-        "Fluent designing and working with various data types including structured, semi-structured, and unstructured data.",
-        "Ability to implement operational monitoring and alerting for all aspects of the system.",
-        "Proven experience designing and implementing CI/CD, and DevOps practices in data environments.",
-        "Adept at designing highly scalable, distributed and fault tolerant data architectures ensuring full high availability and disaster recovery capabilities.",
-        "Excellent communication and stakeholder management skills, with the ability to align technical solutions with business needs.",
-        "A strategic mindset with a strong sense of ownership, accountability, and a drive to build future-proof systems."
+        "3+ years of experience in data science, software development, or generative AI.",
+        "Experience with strategic enterprise accounts, preferably Fortune 500.",
+        "Expertise in AI/ML, RAG pipelines, LLM workflows, or large analytic programs.",
+        "Eagerness to build a business in a fast-paced environment.",
+        "Ability to travel 10-20% of the time."
     ],
     "technical_skills": [
-        "Data Engineering",
-        "Data Architecture",
-        "Enterprise Architecture",
-        "Software Engineering",
-        "Cloud Computing (GCP, AWS, Azure)",
-        "Data Warehousing",
-        "Data Lakes",
-        "BigQuery",
-        "Snowflake",
-        "Airflow",
-        "dbt",
-        "Fivetran",
-        "Looker",
-        "Master Data Management",
-        "Data Governance",
-        "Metadata Management",
-        "Data Lineage",
-        "CI/CD",
-        "DevOps",
-        "Disaster Recovery"
+        "AI/ML",
+        "RAG pipelines",
+        "LLM workflows"
     ],
     "soft_skills": [
+        "Strategic thinking",
         "Communication",
-        "Stakeholder Management",
-        "Strategic Thinking",
-        "Ownership",
-        "Accountability"
+        "Sales",
+        "Presentation",
+        "Problem-solving"
     ],
-    "education_required": [],
-    "certifications_required": [],
-    "languages_required": [],
-    "benefits": [],
+    "benefits": [
+        "Dental insurance",
+        "Health insurance",
+        "Life insurance",
+        "Paid time off",
+        "Vision insurance",
+        "Stock options"
+    ],
     "application_deadline": null,
     "job_posting_date": null,
     "application_link": null

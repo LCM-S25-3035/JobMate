@@ -108,7 +108,7 @@ def run():
     st.write(f"Showing {start_idx + 1} - {min(end_idx, total_rows)} of {total_rows} jobs")
 
     # Display paginated DataFrame
-    st.dataframe(filtered_df.iloc[start_idx:end_idx].drop(columns=["key_word_app","key_words_app"]))
+    st.dataframe(filtered_df.iloc[start_idx:end_idx].drop(columns=["key_word_app","key_words_app"], errors='ignore'))
 
     # Job Selection
     job_id_input = st.text_input("Enter the Job ID to proceed:", key="job_id_input")

@@ -26,7 +26,10 @@ def recommended_jobs():
         return redirect(url_for('main.dashboard'))
     
     # Get user preferences
-    preferences = current_user.job_preferences.first()
+    if current_user.job_preferences:
+        preferences = current_user.job_preferences.first()
+    else:
+        preferences = None
     
     # Get user's primary resume for skills analysis
     primary_resume = current_user.resumes.filter_by(is_primary=True).first()
@@ -391,4 +394,4 @@ def get_match_recommendation(score):
     elif score >= 40:
         return "Moderate match. Review requirements carefully."
     else:
-        return "Low match. Consider developing additional skills." 
+        return "Low match. Consider developing additional skills."

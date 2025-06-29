@@ -31,8 +31,8 @@ class Config:
     }
     
     # MongoDB Configuration
-    MONGODB_URI = os.environ.get('MONGODB_URI') or 'mongodb://localhost:27017/'
-    MONGODB_DB = os.environ.get('MONGODB_DB') or 'jobmate_mongo'
+    MONGODB_URI = os.environ.get('MONGODB_URI') # or 'mongodb://localhost:27017/'
+    MONGODB_DB = os.environ.get('MONGODB_DB') # or 'jobmate_mongo'
     
     # Redis Configuration (for Celery)
     REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
@@ -92,10 +92,10 @@ class DevelopmentConfig(Config):
         'postgresql+psycopg://jobmate_user:jobmate_password@localhost:5432/jobmate_dev'
     
     # Development MongoDB
-    MONGODB_DB = 'jobmate_dev'
+    MONGODB_DB = 'job_automation'
     
     # Disable CSRF for easier development
-    WTF_CSRF_ENABLED = False
+    WTF_CSRF_ENABLED = True
     
     # Less strict security in development
     SESSION_COOKIE_SECURE = False

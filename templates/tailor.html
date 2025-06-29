@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Tailor Resume & Cover Letter for {{ job.title }}</h2>
+<p><strong>Company:</strong> {{ job.company }}</p>
+<p><strong>Description:</strong> {{ job.description }}</p>
+
+<form method="post" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="mb-3">
+    <label for="resume_file" class="form-label">Upload Your Resume (PDF, DOCX, or TXT)</label>
+    <input class="form-control" type="file" id="resume_file" name="resume_file" accept=".pdf,.doc,.docx,.txt" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Tailor Resume & Generate ATS Score</button>
+</form>
+<hr>
+{% if tailored_result %}
+  <h4>Tailored Resume</h4>
+  <form method="post" action="{{ url_for('main.download_tailored', job_id=job._id, doc_type='resume') }}" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="tailored_resume" value="{{ tailored_result.tailored_resume|replace('"', '&quot;')|replace("'", "&#39;") }}">
+    <input type="hidden" name="cover_letter" value="{{ tailored_result.cover_letter|replace('"', '&quot;')|replace("'", "&#39;") }}">
+    <button type="submit" class="btn btn-sm btn-success mb-2">Download Resume</button>
+  </form>
+  <pre style="white-space: pre-wrap;">{{ tailored_result.tailored_resume }}</pre>
+  <h4>Cover Letter</h4>
+  <form method="post" action="{{ url_for('main.download_tailored', job_id=job._id, doc_type='cover_letter') }}" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="tailored_resume" value="{{ tailored_result.tailored_resume|replace('"', '&quot;')|replace("'", "&#39;") }}">
+    <input type="hidden" name="cover_letter" value="{{ tailored_result.cover_letter|replace('"', '&quot;')|replace("'", "&#39;") }}">
+    <button type="submit" class="btn btn-sm btn-success mb-2">Download Cover Letter</button>
+  </form>
+  <pre style="white-space: pre-wrap;">{{ tailored_result.cover_letter }}</pre>
+  <h4>ATS Score</h4>
+  <div class="alert alert-info">ATS Score: <strong>{{ ats_score }}</strong></div>
+  <h4>Suggestions</h4>
+  <ul>
+    {% for suggestion in tailored_result.suggestions %}
+      <li>{{ suggestion }}</li>
+    {% endfor %}
+  </ul>
+{% elif error %}
+  <div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+{% endblock %}

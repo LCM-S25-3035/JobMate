@@ -53,7 +53,7 @@ class User(UserMixin, db.Model):
     # Relationships
     resumes = db.relationship('Resume', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     applications = db.relationship('Application', backref='user', lazy='dynamic', cascade='all, delete-orphan')
-    job_preferences = db.relationship('JobPreference', backref='user', uselist=False, cascade='all, delete-orphan')
+    job_preferences = db.relationship('JobPreference', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     job_postings = db.relationship('JobPosting', backref='recruiter', lazy='dynamic', cascade='all, delete-orphan')
     
     def __init__(self, email, password, first_name, last_name, user_type='applicant', **kwargs):
@@ -70,11 +70,15 @@ class User(UserMixin, db.Model):
                 setattr(self, key, value)
     
     def set_password(self, password):
-        """Hash and set password"""
+        """Hash and set password. Reject empty passwords."""
+        if not password or len(password) < 6:
+            raise ValueError("Password must be at least 6 characters long.")
         self.password_hash = generate_password_hash(password)
-    
+
     def check_password(self, password):
-        """Check if provided password matches hash"""
+        """Check if provided password matches hash. Reject empty passwords."""
+        if not password:
+            return False
         return check_password_hash(self.password_hash, password)
     
     @property
@@ -134,29 +138,28 @@ class User(UserMixin, db.Model):
     
     @classmethod
     def find_by_email(cls, email):
-        """Find user by email address"""
-        return cls.query.filter_by(email=email.lower().strip()).first()
-    
+        """Find user by normalized email address."""
+        if not email:
+            return None
+        return cls.query.filter_by(email=email.strip().lower()).first()
+
     @classmethod
     def create_user(cls, email, password, first_name, last_name, user_type='applicant', **kwargs):
-        """Create a new user with validation"""
-        # Check if email already exists
-        if cls.find_by_email(email):
+        """Create a new user with validation and normalized email."""
+        normalized_email = email.strip().lower()
+        if cls.find_by_email(normalized_email):
             raise ValueError("Email already registered")
-        
-        # Create new user
         user = cls(
-            email=email,
+            email=normalized_email,
             password=password,
             first_name=first_name,
             last_name=last_name,
             user_type=user_type,
             **kwargs
         )
-        
         db.session.add(user)
         db.session.commit()
         return user
     
     def __repr__(self):
-        return f'<User {self.email} ({self.user_type})>' 
+        return f'<User {self.email} ({self.user_type})>'

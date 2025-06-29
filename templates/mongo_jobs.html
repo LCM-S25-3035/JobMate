@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .jobs-table-section {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px 0 rgba(19,170,82,0.08);
+        overflow: hidden;
+        margin-top: 32px;
+    }
+    .jobs-header {
+        background: linear-gradient(120deg, #13aa52 0%, #b4ec51 100%);
+        color: #fff;
+        padding: 32px 24px 24px 24px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+    }
+    .jobs-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: transparent;
+    }
+    .jobs-table th, .jobs-table td {
+        padding: 16px 12px;
+        vertical-align: top;
+        border-bottom: 1px solid #e6f4ea;
+    }
+    .jobs-table th {
+        background: #f6fff7;
+        color: #13aa52;
+        font-weight: 700;
+        font-size: 1rem;
+        border-top: 1px solid #e6f4ea;
+    }
+    .jobs-table tr:last-child td {
+        border-bottom: none;
+    }
+    .jobs-table td {
+        font-size: 0.97rem;
+        color: #222 !important;
+        background: #fff !important;
+    }
+    .jobs-table .btn-success {
+        background: #13aa52;
+        border: none;
+        color: #fff;
+        border-radius: 6px;
+        padding: 6px 16px;
+        font-size: 0.95rem;
+        transition: background 0.2s;
+    }
+    .jobs-table .btn-success:hover {
+        background: #0e8c41;
+    }
+    @media (max-width: 900px) {
+        .jobs-table-section { padding: 0; }
+        .jobs-header { flex-direction: column; align-items: flex-start; }
+        .jobs-table th, .jobs-table td { padding: 10px 6px; }
+    }
+    @media (max-width: 600px) {
+        .jobs-table { font-size: 0.92rem; }
+        .jobs-header { padding: 18px 8px 12px 8px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container jobs-table-section">
+    <div class="jobs-header">
+        <div>
+            <h2 class="fw-bold mb-1" style="color:#fff;">Available Jobs</h2>
+            <p class="mb-0" style="color:#eaffea;">Browse and tailor your resume for jobs that match your profile.</p>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="jobs-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Company</th>
+                    <th>Description</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in jobs %}
+                <tr>
+                    <td class="fw-semibold" style="color:#13aa52;">{{ job.title }}</td>
+                    <td>{{ job.company or job.company_name or 'Unknown Company' }}</td>
+                    <td>
+                        {% set desc = job.description|string if job.description and job.description|trim else 'No description available.' %}
+                        <span title="{{ desc|striptags|replace('\n', ' ') }}">
+                            {{ desc[:120] if desc else 'No description available.' }}{% if desc and desc|length > 120 %}...{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('main.tailor_resume', job_id=job._id) }}" class="btn btn-success btn-sm">
+                            Tailor Resume & Cover Letter
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

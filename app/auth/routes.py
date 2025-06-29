@@ -3,7 +3,7 @@ Authentication Routes for JobMate
 Handles login, registration, logout, and email verification
 """
 
-from flask import render_template, redirect, url_for, flash, request, jsonify
+from flask import render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_user, logout_user, current_user, login_required
 from urllib.parse import urlparse as url_parse
 from app.auth import bp
@@ -21,11 +21,21 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
     
+    # Debug: Print request method and form data
+    print(f'LOGIN DEBUG: request.method={request.method}')
+    
     form = LoginForm()
     
     if form.validate_on_submit():
-        # Find user by email
-        user = User.find_by_email(form.email.data)
+        print("LOGIN DEBUG: Form validated")
+        # Normalize email before searching
+        normalized_email = form.email.data.strip().lower()
+        print(f'LOGIN DEBUG: email={normalized_email}, password={form.password.data}')
+        user = User.find_by_email(normalized_email)
+        if user:
+            print(f'LOGIN DEBUG: Found user, password_hash={user.password_hash}')
+        else:
+            print('LOGIN DEBUG: No user found with that email')
         
         # Check credentials
         if user and user.check_password(form.password.data):
@@ -49,8 +59,10 @@ def login():
             return redirect(next_page)
         else:
             flash('Invalid email or password', 'error')
+    else:
+        print("LOGIN DEBUG: Form errors:", form.errors)
     
-    return render_template('auth/login.html', title='Sign In', form=form)
+    return render_template('auth/login.html', form=form)
 
 
 @bp.route('/register', methods=['GET', 'POST'])
@@ -71,17 +83,17 @@ def register():
                 password=form.password.data,
                 first_name=form.first_name.data,
                 last_name=form.last_name.data,
-                user_type=form.user_type.data
+                user_type=form.user_type.data,
+                is_active=True,
+                is_verified=True
             )
-            
-            # Generate verification token
-            user.verification_token = secrets.token_urlsafe(32)
+            # Generate verification token (optional, but not needed for instant login)
+            user.verification_token = None
             db.session.commit()
-            
-            # TODO: Send verification email
-            
-            flash('Registration successful! Please check your email to verify your account.', 'success')
-            return redirect(url_for('auth.login'))
+            # Log in user immediately after registration
+            login_user(user)
+            flash('Registration successful! You are now logged in.', 'success')
+            return redirect(url_for('main.dashboard'))
             
         except ValueError as e:
             flash(str(e), 'error')
@@ -170,30 +182,40 @@ def check_email():
 # API Routes for frontend integration
 @bp.route('/api/login', methods=['POST'])
 def api_login():
-    """API login endpoint for AJAX requests"""
+    """API login endpoint for AJAX requests (rewritten for reliability)"""
     data = request.get_json()
-    
-    if not data or 'email' not in data or 'password' not in data:
-        return jsonify({'success': False, 'message': 'Email and password required'}), 400
-    
-    user = User.find_by_email(data['email'])
-    
-    if user and user.check_password(data['password']):
-        if not user.is_active:
-            return jsonify({'success': False, 'message': 'Account deactivated'}), 403
-        
-        login_user(user, remember=data.get('remember', False))
-        user.update_last_login()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Login successful',
-            'user': user.to_dict(),
-            'redirect_url': url_for('main.applicant_dashboard' if user.is_applicant() 
-                                  else 'main.recruiter_dashboard')
-        })
-    
-    return jsonify({'success': False, 'message': 'Invalid credentials'}), 401
+    if not data:
+        return jsonify({'success': False, 'message': 'Missing JSON payload.'}), 400
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+    remember = bool(data.get('remember', False))
+
+    if not email or not password:
+        return jsonify({'success': False, 'message': 'Email and password required.'}), 400
+
+    user = User.find_by_email(email)
+    if not user:
+        return jsonify({'success': False, 'message': 'Invalid email or password.'}), 401
+    if not user.is_active:
+        return jsonify({'success': False, 'message': 'Account deactivated.'}), 403
+    if not user.check_password(password):
+        return jsonify({'success': False, 'message': 'Invalid email or password.'}), 401
+
+    login_user(user, remember=remember)
+    user.update_last_login()
+
+    # Choose redirect URL based on user type
+    if user.is_applicant():
+        redirect_url = url_for('main.applicant_dashboard')
+    else:
+        redirect_url = url_for('main.recruiter_dashboard')
+
+    return jsonify({
+        'success': True,
+        'message': 'Login successful.',
+        'user': user.to_dict(),
+        'redirect_url': redirect_url
+    })
 
 
 @bp.route('/api/register', methods=['POST'])
@@ -209,17 +231,19 @@ def api_register():
         user = User.create_user(
             email=data['email'],
             password=data['password'],
+            is_active=True,
+            is_verified=True,
             first_name=data['first_name'],
             last_name=data['last_name'],
             user_type=data['user_type']
         )
         
-        user.verification_token = secrets.token_urlsafe(32)
+        user.verification_token = None
         db.session.commit()
         
         return jsonify({
             'success': True,
-            'message': 'Registration successful! Please verify your email.',
+            'message': 'Registration successful! You are now logged in.',
             'user_id': user.id
         })
         
@@ -227,4 +251,4 @@ def api_register():
         return jsonify({'success': False, 'message': str(e)}), 400
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': 'Registration failed'}), 500 
+        return jsonify({'success': False, 'message': 'Registration failed'}), 500

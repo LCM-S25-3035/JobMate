@@ -51,6 +51,44 @@
         color: white;
         transform: translateY(-2px);
     }
+
+    /* Jobs Section */
+    .job-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .job-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Jobs Section Styles */
+    .jobs-section {
+        background: transparent;
+        box-shadow: 0 4px 24px 0 rgba(19,170,82,0.08);
+        border: none;
+    }
+    .bg-gradient-jobs {
+        background: linear-gradient(120deg, #13aa52 0%, #b4ec51 100%);
+        opacity: 0.13;
+        pointer-events: none;
+    }
+    .job-card {
+        background: rgba(255,255,255,0.85);
+        border-radius: 16px;
+        box-shadow: 0 2px 12px 0 rgba(19,170,82,0.08);
+        transition: transform 0.18s cubic-bezier(.4,2,.6,1), box-shadow 0.18s;
+        border: 1px solid #e6f4ea;
+        backdrop-filter: blur(2px);
+    }
+    .job-card:hover {
+        transform: translateY(-4px) scale(1.03);
+        box-shadow: 0 6px 24px 0 rgba(19,170,82,0.18);
+        border-color: #b4ec51;
+    }
 </style>
 {% endblock %}
 
@@ -172,7 +210,7 @@
                 </div>
                 
                 <div class="completion-bar mb-3">
-                    <div class="completion-fill" style="width: {{ completion_percentage }}%;"></div>
+                    <div class="completion-fill" data-width="{{ completion_percentage }}"></div>
                 </div>
                 
                 <p class="text-muted mb-3">
@@ -290,6 +328,38 @@
         </div>
     </div>
     
+    <!-- Jobs Section -->
+    {% if mongo_jobs %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-card p-4 jobs-section position-relative" style="overflow: hidden;">
+                <div class="bg-gradient-jobs position-absolute top-0 start-0 w-100 h-100" style="z-index:0;"></div>
+                <div class="d-flex align-items-center mb-3 position-relative" style="z-index:1;">
+                    <h5 class="fw-bold mb-0" style="color:#13aa52; letter-spacing:0.5px;">Available Jobs</h5>
+                </div>
+                <div class="row position-relative" style="z-index:1;">
+                    {% for job in mongo_jobs %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 shadow-sm border-0 job-card">
+                            <div class="card-body d-flex flex-column">
+                                <h6 class="fw-bold mb-1" style="color:#13aa52;">{{ job.title }}</h6>
+                                <p class="text-muted mb-1">{{ job.company or "Unknown Company" }}</p>
+                                <p class="small text-muted mb-2">{{ (job.description|string)[:120] if job.description else '' }}...</p>
+                                <div class="mt-auto">
+                                    <a href="{{ url_for('main.tailor_resume', job_id=job._id) }}" class="btn btn-success btn-sm w-100">
+                                        Tailor Resume & Cover Letter
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
     <!-- Tips & Resources -->
     <div class="row">
         <div class="col-12">
@@ -331,8 +401,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Animate completion bar
     const completionFill = document.querySelector('.completion-fill');
     if (completionFill) {
+        const width = completionFill.getAttribute('data-width') || '0';
         setTimeout(() => {
-            completionFill.style.width = '{{ completion_percentage }}%';
+            completionFill.style.width = width + '%';
         }, 500);
     }
     
@@ -344,4 +415,4 @@ document.addEventListener('DOMContentLoaded', function() {
     //     });
 });
 </script>
-{% endblock %} 
+{% endblock %}

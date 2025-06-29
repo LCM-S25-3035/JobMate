@@ -294,13 +294,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': document.querySelector('[name=csrf_token]').value
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     email: formData.get('email'),
                     password: formData.get('password'),
                     remember: formData.get('remember_me') === 'on'
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text); });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     // Show success message
@@ -321,9 +327,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Login error:', error);
-                showAlert('danger', 'An error occurred. Please try again.');
-                
-                // Reset button
+                showAlert('danger', 'An error occurred: ' + error.message);
                 loginBtn.disabled = false;
                 loginSpinner.classList.add('d-none');
             });
@@ -349,17 +353,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Demo credentials quick fill
-    {% if config.FLASK_ENV == 'development' %}
-    document.addEventListener('keydown', function(e) {
-        if (e.altKey && e.key === 'a') { // Alt+A for applicant
-            emailField.value = 'applicant@demo.com';
-            passwordField.value = 'password123';
-        } else if (e.altKey && e.key === 'r') { // Alt+R for recruiter
-            emailField.value = 'recruiter@demo.com';
-            passwordField.value = 'password123';
-        }
-    });
-    {% endif %}
+    const isDev = "{{ 'true' if config.FLASK_ENV == 'development' else 'false' }}" === "true";
+    if (isDev) {
+        document.addEventListener('keydown', function(e) {
+            if (e.altKey && e.key === 'a') { // Alt+A for applicant
+                emailField.value = 'applicant@demo.com';
+                passwordField.value = 'password123';
+            } else if (e.altKey && e.key === 'r') { // Alt+R for recruiter
+                emailField.value = 'recruiter@demo.com';
+                passwordField.value = 'password123';
+            }
+        });
+    }
 });
 </script>
-{% endblock %} 
+{% endblock %}

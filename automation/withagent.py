@@ -104,3 +104,20 @@ class EasyApplyLinkedin:
 
             for job in job_cards:
                 self.submit_application(job)
+                
+      # ------------ LLM AGENT METHODS ------------
+
+    def answer_field_with_llm(self, label, field_type):
+        """Answer for inputs/textarea/selects via LLM or fallback mapping."""
+        if self.api_key and label:
+            try:
+                prompt = f"You're applying for a job as Hazel Portia Elaine Santos. Given the field '{label}' (type: {field_type}), what is the most appropriate value to enter in a real application? Use a professional, direct, and brief answer. If 'phone' field, give a phone number. If motivation or why or cover letter, give a short but strong pitch. If address/location, use 'Germany'."
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.3,
+                    max_tokens=60
+                )
+                return response['choices'][0]['message']['content'].strip()
+            except Exception as e:
+                print(f"⚠️ LLM failed: {e}")

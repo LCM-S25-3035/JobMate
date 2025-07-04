@@ -5,3 +5,4 @@ fpdf>=1.7.2
 Pillow>=9.0.0
 pygments>=2.14.0
 python_version >= 3.10
+os

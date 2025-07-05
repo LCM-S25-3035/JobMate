@@ -54,6 +54,7 @@ class Config:
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     GEMINI_MODEL = os.environ.get('GEMINI_MODEL') or 'gemini-1.5-flash'
     
+    
     # Security Configuration
     WTF_CSRF_ENABLED = True
     WTF_CSRF_TIME_LIMIT = 3600  # 1 hour

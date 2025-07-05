@@ -3,7 +3,7 @@ Main Routes for JobMate
 Landing page, dashboards, and core application routes
 """
 
-from flask import render_template, redirect, url_for, request, jsonify, current_app, send_file
+from flask import render_template, redirect, url_for, request, jsonify, current_app, send_file, session
 from flask_login import current_user, login_required
 from app.main import bp
 from app.models.user import User
@@ -27,6 +27,27 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
 from reportlab.lib.units import inch
 from reportlab.lib.styles import ParagraphStyle
 import re
+
+
+# --- MongoDB tailored resume helpers ---
+def save_best_tailored_resume(mongo_db, user_id, job_id, ats_score, resume_text, cover_letter):
+    collection = mongo_db.tailored_resumes
+    existing = collection.find_one({"user_id": user_id, "job_id": job_id})
+    if not existing or (ats_score and ats_score > existing.get("ats_score", 0)):
+        collection.update_one(
+            {"user_id": user_id, "job_id": job_id},
+            {"$set": {
+                "ats_score": ats_score,
+                "resume_text": resume_text,
+                "cover_letter": cover_letter,
+                "updated_at": datetime.utcnow(),
+                "created_at": existing.get("created_at", datetime.utcnow()) if existing else datetime.utcnow()
+            }},
+            upsert=True
+        )
+
+def get_best_tailored_resumes(mongo_db, user_id):
+    return list(mongo_db.tailored_resumes.find({"user_id": user_id}))
 
 
 @bp.route('/')
@@ -336,6 +357,70 @@ def extract_text_from_file(file_path, file_ext):
         raise ValueError('Unsupported file type')
 
 
+def postprocess_tailored_resume_output(ai_result, user_resume_sections=None):
+    """
+    Post-process and validate the AI output for tailored resume.
+    - Ensures all required sections are present.
+    - Fixes/corrects LinkedIn/contact fields.
+    - Deduplicates and merges with user data if needed.
+    - Cleans up formatting and section order.
+    """
+    import re
+    required_sections = ["Summary", "Skills", "Experience", "Education"]
+    resume_text = ai_result.get("tailored_resume", "")
+    # Parse into sections
+    def parse_sections(text):
+        section_pattern = re.compile(r"^([A-Za-z &]+):$", re.MULTILINE)
+        sections = {}
+        last = None
+        for line in text.splitlines():
+            m = section_pattern.match(line.strip())
+            if m:
+                last = m.group(1).strip()
+                sections[last] = []
+            elif last:
+                sections[last].append(line)
+        return sections
+    ai_sections = parse_sections(resume_text)
+    # Merge with user resume if provided
+    if user_resume_sections:
+        for sec in required_sections:
+            if sec not in ai_sections and sec.upper() in user_resume_sections:
+                ai_sections[sec] = user_resume_sections[sec.upper()]
+    # Ensure all required sections exist
+    for sec in required_sections:
+        if sec not in ai_sections:
+            ai_sections[sec] = ["(Not provided)"]
+    # Fix LinkedIn/contact fields in header
+    header_lines = []
+    for k in ["Name", "Contact", "Location"]:
+        found = False
+        for line in resume_text.splitlines():
+            if line.strip().lower().startswith(f"{k.lower()}:"):
+                val = line.split(":", 1)[-1].strip()
+                if k == "Contact":
+                    # Try to fix LinkedIn if missing protocol
+                    val = re.sub(r"(linkedin\\.com/[^ |]+)", r"https://\\1", val)
+                header_lines.append(f"{k}: {val}")
+                found = True
+                break
+        if not found:
+            header_lines.append(f"{k}: (Not provided)")
+    # Rebuild resume text in canonical order
+    section_order = ["Summary", "Skills", "Experience", "Education"] + [k for k in ai_sections if k not in required_sections]
+    rebuilt = []
+    rebuilt.append("---")
+    rebuilt.extend(header_lines)
+    rebuilt.append("")
+    for sec in section_order:
+        rebuilt.append(f"{sec}:")
+        rebuilt.extend([l for l in ai_sections[sec] if l.strip()])
+        rebuilt.append("")
+    rebuilt.append("---")
+    ai_result["tailored_resume"] = "\n".join(rebuilt)
+    return ai_result
+
+
 @bp.route('/tailor/<job_id>', methods=['GET', 'POST'])
 @login_required
 def tailor_resume(job_id):
@@ -365,6 +450,7 @@ def tailor_resume(job_id):
                 resume_file.save(temp_path)
                 try:
                     resume_text = extract_text_from_file(temp_path, file_ext)
+                    session['user_resume_text'] = resume_text  # Save user resume text for later PDF export
                 except Exception as e:
                     error = f'Failed to extract text from resume: {e}'
                 finally:
@@ -415,12 +501,10 @@ Respond in JSON with keys: tailored_resume (as plain text in the above format), 
                     content = gemini_response['candidates'][0]['content']['parts'][0]['text']
                     # Try to parse as JSON, but if it fails, attempt to extract JSON from text
                     try:
-                        # Try direct parse
                         result = json.loads(content)
                         tailored_result = result
                         ats_score = result.get('ats_score')
                     except Exception as e:
-                        # Try to extract JSON substring from the response
                         import re
                         match = re.search(r'\{.*\}', content, re.DOTALL)
                         if match:
@@ -437,7 +521,25 @@ Respond in JSON with keys: tailored_resume (as plain text in the above format), 
             else:
                 error = gemini_response.get('error', 'Unknown error from Gemini API')
 
-    return render_template('tailor.html', job=job, tailored_result=tailored_result, ats_score=ats_score, error=error)
+            # --- Post-process tailored resume output ---
+            if tailored_result:
+                user_sections = extract_resume_sections(resume_text) if resume_text else None
+                tailored_result = postprocess_tailored_resume_output(tailored_result, user_sections)
+                ats_score = tailored_result.get('ats_score')
+
+            # --- Save best tailored resume in MongoDB ---
+            if tailored_result and ats_score is not None:
+                save_best_tailored_resume(
+                    mongo_db,
+                    str(current_user.id),
+                    str(job_id),
+                    ats_score,
+                    tailored_result.get('tailored_resume', ''),
+                    tailored_result.get('cover_letter', '')
+                )
+
+    return render_template('tailor.html', job=job, tailored_result=tailored_result, ats_score=ats_score, error=error, user_resume_text=resume_text if resume_text else None)
+
 
 @bp.route('/download-tailored/<job_id>/<doc_type>', methods=['POST'])
 @login_required
@@ -467,163 +569,171 @@ def download_tailored(job_id, doc_type):
     normal_style = ParagraphStyle('Normal', parent=styles['Normal'], fontSize=11, leading=15, spaceAfter=6)
     bullet_style = ParagraphStyle('Bullet', parent=styles['Normal'], fontSize=11, leftIndent=15, bulletIndent=5, leading=15)
 
-    # --- REFACTORED LOGIC: Render sections in strict DOCX order and style ---
-    # Parse lines and extract all header fields and section indices first
+    # --- Render AI-optimized resume or cover letter only ---
     lines = [l for l in content.splitlines() if l.strip()]
-    # Header extraction (strict: only contact/location, stop at summary/skills)
-    header_lines = []
+
+    # --- Remove any '---' separator lines and extract name/contact/location ---
     name = ''
-    for i, line in enumerate(lines[:10]):
-        l = line.strip()
-        l_lower = l.lower()
-        # Stop if we hit a section marker
-        if l_lower.startswith('summary') or l_lower.startswith('professional summary') or l_lower.startswith('skills'):
-            break
-        # Only include lines that look like contact/location
-        if (
-            '@' in l or 'linkedin' in l_lower or 'github' in l_lower or '+' in l or
-            l_lower.startswith('contact:') or l_lower.startswith('location:') or
-            re.match(r'.*\b(city|province|state|country|canada|usa|uk|india)\b.*', l_lower)
-        ):
-            header_lines.append(l)
-        # Try to get name if not set and this line is not contact/location/section
-        elif not name and not l_lower.startswith('name:') and not l_lower.startswith('contact:') and not l_lower.startswith('location:') and not l_lower.startswith('summary') and not l_lower.startswith('skills') and not re.match(r'.*\b(city|province|state|country|canada|usa|uk|india)\b.*', l_lower) and not ('@' in l or 'linkedin' in l_lower or 'github' in l_lower or '+' in l):
-            name = l
-    # Parse header fields
     contact = ''
     location = ''
     extra_contact = ''
-    for l in header_lines:
-        if l.lower().startswith('name:'):
-            name = l.split(':', 1)[-1].strip()
-        elif '@' in l or 'linkedin' in l.lower() or 'github' in l.lower() or '+' in l:
-            contact = l
-        elif l.lower().startswith('location:') or re.match(r'.*\b(city|province|state|country|canada|usa|uk|india)\b.*', l.lower()):
-            location = l.split(':', 1)[-1].strip() if ':' in l else l.strip()
-        elif l.lower().startswith('www') or l.lower().startswith('http'):
-            extra_contact = l
-    # Remove any prefixes
-    name = re.sub(r'^(name:|name)', '', name, flags=re.I).strip()
-    contact = re.sub(r'^(contact:|contact)', '', contact, flags=re.I).strip()
-    location = re.sub(r'^(location:|location)', '', location, flags=re.I).strip()
-    # Section titles in order
-    section_titles = [
-        'PROFESSIONAL SUMMARY', 'SUMMARY', 'SKILLS', 'RELEVANT PROJECTS', 'PROJECTS',
-        'PROFESSIONAL EXPERIENCE', 'EXPERIENCE', 'EDUCATION', 'COMMUNITY & INTERESTS', 'INTERESTS'
-    ]
-    # Helper: find section start indices
-    section_indices = {}
-    for idx, line in enumerate(lines):
-        l = line.strip().upper()
-        for title in section_titles:
-            if l.startswith(title):
-                section_indices[title] = idx
-    # Helper: extract lines for a given section
-    def extract_section_lines(section_name):
-        idx = None
-        for t in section_titles:
-            if t.startswith(section_name):
-                idx = section_indices.get(t)
-                if idx is not None:
-                    break
-        if idx is None:
-            return []
-        # Find next section or end
-        next_idx = len(lines)
-        for t, i in section_indices.items():
-            if i > idx and i < next_idx:
-                next_idx = i
-        return [l.strip() for l in lines[idx+1:next_idx] if l.strip()]
-    # Header rendering
+    rest_lines = []
+    for l in lines:
+        l_strip = l.strip()
+        l_lower = l_strip.lower()
+        if l_strip == '---':
+            continue  # skip separator
+        if l_lower.startswith('name:'):
+            name = l_strip.split(':', 1)[-1].strip()
+        elif l_lower.startswith('contact:'):
+            contact = l_strip.split(':', 1)[-1].strip()
+        elif l_lower.startswith('location:'):
+            location = l_strip.split(':', 1)[-1].strip()
+        elif l_lower.startswith('www') or l_lower.startswith('http'):
+            extra_contact = l_strip
+        else:
+            rest_lines.append(l_strip)
+
+    # --- Render name bold and centered at the top (no header) ---
     if name:
-        story.insert(0, Paragraph(f'<b>{name}</b>', name_style))
+        story.append(Paragraph(f'<b>{name}</b>', name_style))
+    # Render contact/location line centered below name (no headers)
     contact_line = ' | '.join(filter(None, [contact, location, extra_contact]))
     if contact_line:
         story.append(Paragraph(contact_line, contact_style))
     story.append(Spacer(1, 8))
-    # PROFESSIONAL SUMMARY
-    summary_lines = extract_section_lines('PROFESSIONAL SUMMARY') or extract_section_lines('SUMMARY')
-    if summary_lines:
-        story.append(Paragraph('PROFESSIONAL SUMMARY', section_style))
-        story.append(Paragraph(' '.join(summary_lines), normal_style))
-    # SKILLS (auto-grouped: detect categories, split comma-separated, bold group headings)
-    skills_lines = extract_section_lines('SKILLS')
-    if skills_lines:
-        story.append(Paragraph('SKILLS', section_style))
-        # Define categories and keywords
-        categories = {
-            'Programming Languages': ['python', 'java', 'c++', 'c#', 'javascript', 'typescript', 'r', 'go', 'ruby', 'php', 'scala', 'swift'],
-            'Frameworks': ['tensorflow', 'pytorch', 'keras', 'scikit-learn', 'django', 'flask', 'react', 'angular', 'vue', 'spring'],
-            'Libraries/Packages': ['numpy', 'pandas', 'matplotlib', 'seaborn', 'scipy', 'sklearn', 'opencv', 'nltk', 'spacy'],
-            'Databases': ['sql', 'mysql', 'postgresql', 'mongodb', 'sqlite', 'redis', 'oracle'],
-            'Cloud/DevOps': ['aws', 'azure', 'gcp', 'docker', 'kubernetes', 'ci/cd', 'jenkins', 'git', 'github', 'gitlab'],
-            'Data Science': ['data analysis', 'data validation', 'data visualization', 'model deployment', 'machine learning', 'deep learning', 'nlp', 'computer vision'],
-            'Soft Skills': ['problem-solving', 'teamwork', 'communication', 'leadership', 'risk assessment', 'agile', 'scrum'],
-            'Other': []
-        }
-        grouped = {cat: [] for cat in categories}
-        # Flatten and split skills
-        for item in skills_lines:
-            line = item.lstrip('-•').strip()
-            # Split comma-separated
-            for skill in re.split(r',|;', line):
-                skill = skill.strip()
-                if not skill:
+
+    # --- Section parsing with experience subheader logic, grouped skills, and section reordering ---
+    section_keywords = [
+        'summary', 'professional summary', 'skills', 'projects', 'relevant projects',
+        'experience', 'professional experience', 'education', 'community & interests', 'interests', 'project experience'
+    ]
+    def is_section_header(line):
+        l = line.strip()
+        if l.endswith(':'):
+            return True
+        if l.isupper() and len(l) > 3:
+            return True
+        l_clean = l.lower().rstrip(':').strip()
+        return l_clean in section_keywords
+
+    subtitle_style = ParagraphStyle('Subtitle', parent=styles['Normal'], fontSize=11, leading=15, spaceBefore=8, spaceAfter=4, fontName='Helvetica-Bold')
+
+    # --- Parse all sections into a dict for reordering ---
+    sections = {}
+    current_section = None
+    section_buffer = []
+    for line in rest_lines:
+        l_strip = line.strip()
+        if is_section_header(l_strip):
+            if current_section:
+                sections[current_section] = section_buffer
+                section_buffer = []
+            current_section = l_strip
+        elif current_section:
+            section_buffer.append(line)
+        else:
+            # If not in a section, treat as intro
+            sections.setdefault('intro', []).append(line)
+    if current_section:
+        sections[current_section] = section_buffer
+
+    # --- Section order: SUMMARY, EXPERIENCE, then others as found ---
+    ordered_section_titles = []
+    for key in sections.keys():
+        if key.lower().startswith('summary'):
+            ordered_section_titles.append(key)
+    for key in sections.keys():
+        if key.lower().startswith('experience'):
+            ordered_section_titles.append(key)
+    for key in sections.keys():
+        # Exclude SUMMARY, EXPERIENCE, and LANGUAGE sections
+        if key.lower().startswith('summary') or key.lower().startswith('experience') or key.lower().startswith('language'):
+            continue
+        ordered_section_titles.append(key)
+
+    def flush_section(title, buffer):
+        if not buffer:
+            return
+        story.append(Spacer(1, 10))
+        story.append(Paragraph(f'<b>{title.rstrip(":").upper()}</b>', section_style))
+        # SKILLS section: group and subtitle logic
+        if title.lower().startswith('skills'):
+            group = None
+            group_buffer = []
+            for line in buffer:
+                line_strip = line.strip()
+                if line_strip.startswith('-') and len(line_strip) > 2 and not line_strip[1].isspace():
+                    if group and group_buffer:
+                        story.append(Paragraph(f'<b>{group.lstrip("- ")}</b>', subtitle_style))
+                        for skill in group_buffer:
+                            story.append(Paragraph(skill.lstrip('-•').strip(), bullet_style, bulletText='•'))
+                        group_buffer = []
+                    group = line_strip
+                elif line_strip.startswith('-') or line_strip.startswith('•'):
+                    group_buffer.append(line_strip)
+                elif line_strip:
+                    group_buffer.append(line_strip)
+            if group and group_buffer:
+                story.append(Paragraph(f'<b>{group.lstrip("- ")}</b>', subtitle_style))
+                for skill in group_buffer:
+                    story.append(Paragraph(skill.lstrip('-•').strip(), bullet_style, bulletText='•'))
+            elif group_buffer:
+                for skill in group_buffer:
+                    story.append(Paragraph(skill.lstrip('-•').strip(), bullet_style, bulletText='•'))
+        # EXPERIENCE section: bold subheader for lines with ' | '
+        elif title.lower().startswith('experience') or title.lower().startswith('professional experience'):
+            for line in buffer:
+                line_strip = line.strip()
+                if '|' in line_strip and not line_strip.startswith('-'):
+                    story.append(Paragraph(f'<b>{line_strip}</b>', normal_style))
+                elif line_strip.startswith('-') or line_strip.startswith('•'):
+                    story.append(Paragraph(line_strip.lstrip('-•').strip(), bullet_style, bulletText='•'))
+                else:
+                    story.append(Paragraph(line_strip, normal_style))
+        # EDUCATION section: bold institution name
+        elif title.lower().startswith('education'):
+            for line in buffer:
+                line_strip = line.strip()
+                # Try to bold the institution name (after first '|')
+                if '|' in line_strip:
+                    parts = [p.strip() for p in line_strip.split('|')]
+                    if len(parts) >= 2:
+                        # Assume institution is the second part
+                        bolded = f"{parts[0]} | <b>{parts[1]}</b>"
+                        if len(parts) > 2:
+                            bolded += ' | ' + ' | '.join(parts[2:])
+                        story.append(Paragraph(bolded, normal_style))
+                    else:
+                        story.append(Paragraph(line_strip, normal_style))
+                else:
+                    story.append(Paragraph(line_strip, normal_style))
+        # PROJECT EXPERIENCE section: bold project titles (first non-bullet line before bullets)
+        elif title.lower().startswith('project experience') or title.lower().startswith('projects'):
+            in_project = False
+            for idx, line in enumerate(buffer):
+                line_strip = line.strip()
+                if not line_strip:
                     continue
-                found = False
-                for cat, keywords in categories.items():
-                    for kw in keywords:
-                        if kw.lower() in skill.lower():
-                            grouped[cat].append(skill)
-                            found = True
-                            break
-                    if found:
-                        break
-                if not found:
-                    grouped['Other'].append(skill)
-        # Render groups (skip empty)
-        for cat, skills in grouped.items():
-            if skills:
-                story.append(Paragraph(f'<b>{cat}:</b>', normal_style))
-                for skill in skills:
-                    story.append(Paragraph(skill, bullet_style, bulletText='•'))
-    # RELEVANT PROJECTS
-    projects_lines = extract_section_lines('RELEVANT PROJECTS') or extract_section_lines('PROJECTS')
-    if projects_lines:
-        story.append(Paragraph('RELEVANT PROJECTS', section_style))
-        current_project = None
-        for line in projects_lines:
-            if not (line.startswith('-') or line.startswith('•')):
-                current_project = line
-                story.append(Paragraph(current_project, bullet_style, bulletText='•'))
-            else:
-                story.append(Paragraph(line.lstrip('-•').strip(), normal_style))
-    # PROFESSIONAL EXPERIENCE
-    experience_lines = extract_section_lines('PROFESSIONAL EXPERIENCE') or extract_section_lines('EXPERIENCE')
-    if experience_lines:
-        story.append(Paragraph('PROFESSIONAL EXPERIENCE', section_style))
-        current_exp = None
-        for line in experience_lines:
-            if not (line.startswith('-') or line.startswith('•')):
-                current_exp = line
-                story.append(Paragraph(current_exp, bullet_style, bulletText='•'))
-            else:
-                story.append(Paragraph(line.lstrip('-•').strip(), normal_style))
-    # EDUCATION
-    education_lines = extract_section_lines('EDUCATION')
-    if education_lines:
-        story.append(Paragraph('EDUCATION', section_style))
-        for line in education_lines:
-            if not (line.startswith('-') or line.startswith('•')):
-                story.append(Paragraph(line, normal_style))
-            else:
-                story.append(Paragraph(line.lstrip('-•').strip(), normal_style))
-    # COMMUNITY & INTERESTS (optional)
-    interests_lines = extract_section_lines('COMMUNITY & INTERESTS') or extract_section_lines('INTERESTS')
-    if interests_lines:
-        story.append(Paragraph('COMMUNITY & INTERESTS', section_style))
-        for item in interests_lines:
-            story.append(Paragraph(item.lstrip('-•').strip(), bullet_style, bulletText='•'))
+                if not (line_strip.startswith('-') or line_strip.startswith('•')):
+                    # Bold project title
+                    story.append(Paragraph(f'<b>{line_strip}</b>', normal_style))
+                    in_project = True
+                else:
+                    story.append(Paragraph(line_strip.lstrip('-•').strip(), bullet_style, bulletText='•'))
+        else:
+            for line in buffer:
+                line_strip = line.strip()
+                if line_strip.startswith('-') or line_strip.startswith('•'):
+                    story.append(Paragraph(line_strip.lstrip('-•').strip(), bullet_style, bulletText='•'))
+                else:
+                    story.append(Paragraph(line_strip, normal_style))
+
+    # Render sections in the new order
+    for section_title in ordered_section_titles:
+        flush_section(section_title, sections[section_title])
+    # Add extra space at end
+    story.append(Spacer(1, 16))
     doc.build(story)
     buffer.seek(0)
     return send_file(
@@ -632,6 +742,182 @@ def download_tailored(job_id, doc_type):
         as_attachment=True,
         download_name=filename
     )
+
+
+@bp.route('/download-my-tailored/<job_id>/<doc_type>', methods=['GET'])
+@login_required
+def download_my_tailored(job_id, doc_type):
+    """Download tailored resume or cover letter for a job from the resume section (MongoDB source)"""
+    mongo_db = current_app.mongo_db
+    tailored = mongo_db.tailored_resumes.find_one({"user_id": str(current_user.id), "job_id": str(job_id)})
+    if not tailored:
+        return "No tailored resume found for this job.", 404
+    if doc_type == 'resume':
+        content = tailored.get('resume_text', '')
+        filename = f'tailored_resume_{job_id}.pdf'
+    elif doc_type == 'cover_letter':
+        content = tailored.get('cover_letter', '')
+        filename = f'cover_letter_{job_id}.pdf'
+    else:
+        return "Invalid document type", 400
+    # PDF generation (reuse logic from download_tailored)
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, leftMargin=0.75*inch, rightMargin=0.75*inch, topMargin=0.75*inch, bottomMargin=0.75*inch)
+    styles = getSampleStyleSheet()
+    story = []
+    name_style = ParagraphStyle('Name', parent=styles['Heading1'], fontSize=22, alignment=TA_CENTER, spaceAfter=10, spaceBefore=10)
+    contact_style = ParagraphStyle('Contact', parent=styles['Normal'], fontSize=11, alignment=TA_CENTER, textColor=colors.black, spaceAfter=10)
+    section_style = ParagraphStyle('Section', parent=styles['Heading2'], fontSize=13, textColor=colors.HexColor('#1a4a7c'), spaceBefore=18, spaceAfter=6, leading=16, fontName='Helvetica-Bold')
+    normal_style = ParagraphStyle('Normal', parent=styles['Normal'], fontSize=11, leading=15, spaceAfter=6)
+    bullet_style = ParagraphStyle('Bullet', parent=styles['Normal'], fontSize=11, leftIndent=15, bulletIndent=5, leading=15)
+    lines = [l for l in content.splitlines() if l.strip()]
+    name = ''
+    contact = ''
+    location = ''
+    extra_contact = ''
+    rest_lines = []
+    for l in lines:
+        l_strip = l.strip()
+        l_lower = l_strip.lower()
+        if l_strip == '---':
+            continue  # skip separator
+        if l_lower.startswith('name:'):
+            name = l_strip.split(':', 1)[-1].strip()
+        elif l_lower.startswith('contact:'):
+            contact = l_strip.split(':', 1)[-1].strip()
+        elif l_lower.startswith('location:'):
+            location = l_strip.split(':', 1)[-1].strip()
+        elif l_lower.startswith('www') or l_lower.startswith('http'):
+            extra_contact = l_strip
+        else:
+            rest_lines.append(l_strip)
+    if name:
+        story.append(Paragraph(f'<b>{name}</b>', name_style))
+    contact_line = ' | '.join(filter(None, [contact, location, extra_contact]))
+    if contact_line:
+        story.append(Paragraph(contact_line, contact_style))
+    story.append(Spacer(1, 8))
+    section_keywords = [
+        'summary', 'professional summary', 'skills', 'projects', 'relevant projects',
+        'experience', 'professional experience', 'education', 'community & interests', 'interests', 'project experience'
+    ]
+    def is_section_header(line):
+        l = line.strip()
+        if l.endswith(':'):
+            return True
+        if l.isupper() and len(l) > 3:
+            return True
+        l_clean = l.lower().rstrip(':').strip()
+        return l_clean in section_keywords
+    subtitle_style = ParagraphStyle('Subtitle', parent=styles['Normal'], fontSize=11, leading=15, spaceBefore=8, spaceAfter=4, fontName='Helvetica-Bold')
+    sections = {}
+    current_section = None
+    section_buffer = []
+    for line in rest_lines:
+        l_strip = line.strip()
+        if is_section_header(l_strip):
+            if current_section:
+                sections[current_section] = section_buffer
+                section_buffer = []
+            current_section = l_strip
+        elif current_section:
+            section_buffer.append(line)
+        else:
+            sections.setdefault('intro', []).append(line)
+    if current_section:
+        sections[current_section] = section_buffer
+    ordered_section_titles = []
+    for key in sections.keys():
+        if key.lower().startswith('summary'):
+            ordered_section_titles.append(key)
+    for key in sections.keys():
+        if key.lower().startswith('experience'):
+            ordered_section_titles.append(key)
+    for key in sections.keys():
+        if key.lower().startswith('summary') or key.lower().startswith('experience') or key.lower().startswith('language'):
+            continue
+        ordered_section_titles.append(key)
+    def flush_section(title, buffer):
+        if not buffer:
+            return
+        story.append(Spacer(1, 10))
+        story.append(Paragraph(f'<b>{title.rstrip(":").upper()}</b>', section_style))
+        if title.lower().startswith('skills'):
+            group = None
+            group_buffer = []
+            for line in buffer:
+                line_strip = line.strip()
+                if line_strip.startswith('-') and len(line_strip) > 2 and not line_strip[1].isspace():
+                    if group and group_buffer:
+                        story.append(Paragraph(f'<b>{group.lstrip("- ")}</b>', subtitle_style))
+                        for skill in group_buffer:
+                            story.append(Paragraph(skill.lstrip('-•').strip(), bullet_style, bulletText='•'))
+                        group_buffer = []
+                    group = line_strip
+                elif line_strip.startswith('-') or line_strip.startswith('•'):
+                    group_buffer.append(line_strip)
+                elif line_strip:
+                    group_buffer.append(line_strip)
+            if group and group_buffer:
+                story.append(Paragraph(f'<b>{group.lstrip("- ")}</b>', subtitle_style))
+                for skill in group_buffer:
+                    story.append(Paragraph(skill.lstrip('-•').strip(), bullet_style, bulletText='•'))
+            elif group_buffer:
+                for skill in group_buffer:
+                    story.append(Paragraph(skill.lstrip('-•').strip(), bullet_style, bulletText='•'))
+        elif title.lower().startswith('experience') or title.lower().startswith('professional experience'):
+            for line in buffer:
+                line_strip = line.strip()
+                if '|' in line_strip and not line_strip.startswith('-'):
+                    story.append(Paragraph(f'<b>{line_strip}</b>', normal_style))
+                elif line_strip.startswith('-') or line_strip.startswith('•'):
+                    story.append(Paragraph(line_strip.lstrip('-•').strip(), bullet_style, bulletText='•'))
+                else:
+                    story.append(Paragraph(line_strip, normal_style))
+        elif title.lower().startswith('education'):
+            for line in buffer:
+                line_strip = line.strip()
+                if '|' in line_strip:
+                    parts = [p.strip() for p in line_strip.split('|')]
+                    if len(parts) >= 2:
+                        bolded = f"{parts[0]} | <b>{parts[1]}</b>"
+                        if len(parts) > 2:
+                            bolded += ' | ' + ' | '.join(parts[2:])
+                        story.append(Paragraph(bolded, normal_style))
+                    else:
+                        story.append(Paragraph(line_strip, normal_style))
+                else:
+                    story.append(Paragraph(line_strip, normal_style))
+        elif title.lower().startswith('project experience') or title.lower().startswith('projects'):
+            in_project = False
+            for idx, line in enumerate(buffer):
+                line_strip = line.strip()
+                if not line_strip:
+                    continue
+                if not (line_strip.startswith('-') or line_strip.startswith('•')):
+                    story.append(Paragraph(f'<b>{line_strip}</b>', normal_style))
+                    in_project = True
+                else:
+                    story.append(Paragraph(line_strip.lstrip('-•').strip(), bullet_style, bulletText='•'))
+        else:
+            for line in buffer:
+                line_strip = line.strip()
+                if line_strip.startswith('-') or line_strip.startswith('•'):
+                    story.append(Paragraph(line_strip.lstrip('-•').strip(), bullet_style, bulletText='•'))
+                else:
+                    story.append(Paragraph(line_strip, normal_style))
+    for section_title in ordered_section_titles:
+        flush_section(section_title, sections[section_title])
+    story.append(Spacer(1, 16))
+    doc.build(story)
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=filename
+    )
+
 
 def calculate_profile_completion(user):
     """Calculate profile completion percentage"""
@@ -649,3 +935,108 @@ def calculate_profile_completion(user):
     total = len(completion_items)
     
     return int((completed / total) * 100)
+
+def extract_resume_sections(resume_text):
+    """
+    Parse resume text into a dict of sections: {section_name: [lines]}
+    """
+    section_headers = [
+        'summary', 'professional summary', 'skills', 'projects', 'relevant projects',
+        'experience', 'professional experience', 'work experience', 'education',
+        'community & interests', 'interests', 'project experience', 'certifications', 'awards'
+    ]
+    def is_section_header(line):
+        l = line.strip()
+        if l.endswith(':'):
+            return True
+        if l.isupper() and len(l) > 3:
+            return True
+        l_clean = l.lower().rstrip(':').strip()
+        return l_clean in section_headers
+    sections = {}
+    current_section = None
+    section_buffer = []
+    for line in resume_text.splitlines():
+        l_strip = line.strip()
+        if is_section_header(l_strip):
+            if current_section:
+                sections[current_section] = section_buffer
+                section_buffer = []
+            current_section = l_strip.rstrip(':').upper()
+        elif current_section:
+            section_buffer.append(line)
+        else:
+            sections.setdefault('INTRO', []).append(line)
+    if current_section:
+        sections[current_section] = section_buffer
+    return sections
+
+def extract_job_keywords(job_description):
+    """
+    Extract keywords and requirements from job description.
+    Returns a dict with keys: skills, qualifications, responsibilities, keywords
+    """
+    # Simple regex/keyword-based extraction (can be improved with AI)
+    skills = re.findall(r"[Ss]kills?[:\-\s]*([\w, .]+)", job_description)
+    qualifications = re.findall(r"[Qq]ualifications?[:\-\s]*([\w, .]+)", job_description)
+    responsibilities = re.findall(r"[Rr]esponsabilit(?:y|ies)[:\-\s]*([\w, .]+)", job_description)
+    # Extract all unique words longer than 3 chars as keywords (can be improved)
+    words = set(w.lower() for w in re.findall(r"\b\w{4,}\b", job_description))
+    return {
+        'skills': skills,
+        'qualifications': qualifications,
+        'responsibilities': responsibilities,
+        'keywords': list(words)
+    }
+
+
+@bp.route('/my-tailored-resumes')
+@login_required
+def my_tailored_resumes():
+    """Show all best tailored resumes and cover letters for the current user (from MongoDB)"""
+    if not current_user.is_applicant():
+        return redirect(url_for('main.dashboard'))
+    mongo_db = current_app.mongo_db
+    tailored_list = get_best_tailored_resumes(mongo_db, str(current_user.id))
+    # Fetch job titles for display
+    job_ids = [t['job_id'] for t in tailored_list]
+    jobs = {str(j['_id']): j for j in mongo_db.jobs.find({'_id': {'$in': [ObjectId(jid) for jid in job_ids]}})}
+    # Build display list
+    display_list = []
+    for t in tailored_list:
+        job = jobs.get(t['job_id'])
+        display_list.append({
+            'job_id': t['job_id'],
+            'job_title': job['title'] if job else '(Job not found)',
+            'ats_score': t.get('ats_score'),
+            'updated_at': t.get('updated_at'),
+            'resume_text': t.get('resume_text', ''),
+            'cover_letter': t.get('cover_letter', '')
+        })
+    return render_template('resume/my_resumes.html', tailored_resumes=display_list, title='My Tailored Resumes')
+
+
+@bp.route('/submit-tailored-feedback/<job_id>', methods=['POST'])
+@login_required
+def submit_tailored_feedback(job_id):
+    """Accept feedback (rating, comments) for a tailored resume/cover letter for a job."""
+    if not current_user.is_applicant():
+        return jsonify({'error': 'Unauthorized'}), 403
+    mongo_db = current_app.mongo_db
+    tailored = mongo_db.tailored_resumes.find_one({"user_id": str(current_user.id), "job_id": str(job_id)})
+    if not tailored:
+        return jsonify({'error': 'No tailored resume found for this job.'}), 404
+    data = request.get_json() or {}
+    rating = data.get('rating')  # e.g., 1-5
+    comments = data.get('comments', '').strip()
+    feedback_entry = {
+        'rating': rating,
+        'comments': comments,
+        'submitted_at': datetime.utcnow()
+    }
+    # Store feedback as a list (history) in the tailored_resumes document
+    mongo_db.tailored_resumes.update_one(
+        {"user_id": str(current_user.id), "job_id": str(job_id)},
+        {"$push": {"feedback": feedback_entry}}
+    )
+    return jsonify({'success': True, 'message': 'Feedback submitted.'})

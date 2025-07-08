@@ -22,7 +22,7 @@ class Config:
     
     # Database Configuration
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        f'postgresql+psycopg://jobmate_user:jobmate_password@localhost:5432/jobmate_db'
+        f'postgresql+psycopg://jobmate_user:jenny@localhost:5432/jobmate_dev'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_size': 10,

@@ -43,6 +43,11 @@ class Application(db.Model):
         name='application_method'
     ), nullable=False, default='manual')
     
+    # Auto-Apply related fields
+    auto_applied = db.Column(db.Boolean, default=False, nullable=False)
+    auto_apply_match_score = db.Column(db.Integer, nullable=True)
+    auto_apply_batch_id = db.Column(db.String(36), nullable=True)  # UUID for grouping auto-applications
+    
     # Contact Information
     recruiter_name = db.Column(db.String(100), nullable=True)
     recruiter_email = db.Column(db.String(120), nullable=True)
@@ -253,4 +258,4 @@ class Application(db.Model):
         }
     
     def __repr__(self):
-        return f'<Application {self.job_title} at {self.company_name} ({self.status})>' 
+        return f'<Application {self.job_title} at {self.company_name} ({self.status})>'

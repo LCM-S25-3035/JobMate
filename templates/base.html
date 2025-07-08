@@ -406,6 +406,11 @@
                                 <i class="bi bi-send me-1"></i>Applications
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-theme" href="{{ url_for('autoapply.dashboard') }}">
+                                <i class="bi bi-magic me-1"></i>Auto-Apply
+                            </a>
+                        </li>
                         {% elif current_user.is_recruiter() %}
                         <li class="nav-item">
                             <a class="nav-link nav-link-theme" href="{{ url_for('recruiter.create_job') }}">

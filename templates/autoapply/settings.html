@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Auto-Apply Settings</h1>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Configure Auto-Apply Preferences</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('autoapply.settings') }}">
+                {{ form.hidden_tag() }}
+                
+                <div class="form-group form-switch">
+                    <input type="checkbox" class="form-check-input" id="enabled" name="enabled" 
+                           {% if settings and settings.enabled %}checked{% endif %}>
+                    <label class="form-check-label" for="enabled">Enable Auto-Apply</label>
+                    <small class="form-text text-muted">
+                        When enabled, JobMate will automatically apply to jobs that match your criteria.
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="max_daily">Maximum Daily Applications</label>
+                    <input type="number" class="form-control" id="max_daily" name="max_daily"
+                           value="{{ settings.max_daily if settings else 5 }}"
+                           min="1" max="20">
+                    <small class="form-text text-muted">
+                        The maximum number of jobs JobMate will automatically apply to per day (1-20).
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="min_match_score">Minimum Match Score (%)</label>
+                    <input type="number" class="form-control" id="min_match_score" name="min_match_score"
+                           value="{{ settings.min_match_score if settings else 80 }}"
+                           min="50" max="100">
+                    <small class="form-text text-muted">
+                        JobMate will only apply to jobs with at least this match score (50-100%).
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="cover_letter_type">Cover Letter Generation</label>
+                    <select class="form-control" id="cover_letter_type" name="cover_letter_type">
+                        <option value="none" {% if settings and settings.cover_letter_type == 'none' %}selected{% endif %}>No cover letter</option>
+                        <option value="generic" {% if not settings or settings.cover_letter_type == 'generic' %}selected{% endif %}>Generic cover letter</option>
+                        <option value="custom" {% if settings and settings.cover_letter_type == 'custom' %}selected{% endif %}>Custom AI-generated cover letter per job</option>
+                    </select>
+                    <small class="form-text text-muted">
+                        Choose how JobMate should handle cover letters for your auto-applications.
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="preferred_job_types">Preferred Job Types</label>
+                    <select class="form-control" id="preferred_job_types" name="preferred_job_types">
+                        <option value="all" {% if not settings or settings.preferred_job_types == 'all' %}selected{% endif %}>All job types</option>
+                        <option value="full_time" {% if settings and settings.preferred_job_types == 'full_time' %}selected{% endif %}>Full-time only</option>
+                        <option value="remote" {% if settings and settings.preferred_job_types == 'remote' %}selected{% endif %}>Remote only</option>
+                        <option value="full_time_remote" {% if settings and settings.preferred_job_types == 'full_time_remote' %}selected{% endif %}>Full-time remote only</option>
+                    </select>
+                    <small class="form-text text-muted">
+                        Filter jobs by employment type for auto-application.
+                    </small>
+                </div>
+                
+                <div class="form-group mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-1"></i> Save Settings
+                    </button>
+                    <a href="{{ url_for('autoapply.dashboard') }}" class="btn btn-secondary ml-2">
+                        <i class="fas fa-times mr-1"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

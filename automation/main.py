@@ -186,3 +186,124 @@ class EasyApplyLinkedin:
                         return
                         
                 except: pass
+
+                try:
+                    review_btn = self.driver.find_element(By.XPATH, "//button[@aria-label='Review your application']")
+                    if review_btn.is_displayed():
+                        review_btn.click()
+                        print("➡️ Clicked Review")
+                        time.sleep(2)
+                        if hash(self.driver.page_source) == page_before:
+                            print("⚠️ Review did not change the page. Discarding.")
+                            self.close_modal_if_present(discard=True)
+                            self.failed_apps.append((title, "N/A", "N/A", job_url, "Stuck on Review"))
+                            return
+                        continue
+                except: pass
+
+                try:
+                    next_btn = self.driver.find_element(By.XPATH, "//button[@aria-label='Continue to next step']")
+                    if next_btn.is_displayed():
+                        next_btn.click()
+                        print("➡️ Clicked Next")
+                        time.sleep(2)
+                        if hash(self.driver.page_source) == page_before:
+                            print("⚠️ Next did not change the page. Discarding.")
+                            self.close_modal_if_present(discard=True)
+                            self.failed_apps.append((title, "N/A", "N/A", job_url, "Stuck on Next"))
+                            return
+                        continue
+                except: pass
+
+                print("⚠️ No actionable buttons found. Discarding.")
+                self.close_modal_if_present(discard=True)
+                self.failed_apps.append((title, "N/A", "N/A", job_url, "No actionable buttons"))
+                return
+
+        except Exception as e:
+            print(f"❌ An unexpected error occurred: {e}")
+            self.failed_apps.append((title, "N/A", "N/A", self.driver.current_url, str(e)))
+            self.close_modal_if_present(discard=True)
+
+
+    def close_modal_if_present(self, discard=False):
+        """Closes or discards the application modal."""
+        try:
+            close_button = self.driver.find_element(By.XPATH, "//button[contains(@class, 'artdeco-modal__dismiss')]")
+            close_button.click()
+            print("-> Clicked modal close button 'X'.")
+            time.sleep(1.5)
+            if discard:
+                try:
+                    discard_button = self.driver.find_element(By.XPATH, "//button[.//span[text()='Discard']]")
+                    discard_button.click()
+                    print("🗑️ Confirmed Discard.")
+                except NoSuchElementException:
+                    print("- No discard confirmation pop-up found, assuming modal is closed.")
+            return
+        except (NoSuchElementException, TimeoutException):
+            pass
+
+        try:
+            done_button = self.driver.find_element(By.XPATH, "//button[text()='Done']")
+            done_button.click()
+            print("✔️ Clicked 'Done'.")
+        except (NoSuchElementException, TimeoutException):
+            print("- No 'Done' button found.")
+            pass
+
+
+    def close_browser(self):
+        """Closes the browser."""
+        try:
+            self.driver.quit()
+        except Exception as e:
+            print(f"Browser already closed or an error occurred during quit: {e}")
+
+def write_log_file(bot):
+    """Writes the results of the bot's run to a CSV file."""
+    print("\n" + "="*50)
+    print("Writing log file...")
+    print(f"Successful applications: {len(bot.successful_apps)}")
+    print(f"Failed/Skipped applications: {len(bot.failed_apps)}")
+    print("="*50)
+    
+    filename = "successful_applications_log.csv"
+    log_exists = isfile(filename)
+    
+    try:
+        with open(filename, 'a', newline='', encoding='utf-8') as f:
+            # --- HEADERS AND ROW CORRECTED TO REMOVE COMPANY ---
+            headers = ['Date', 'Job Title', 'Job URL']
+            writer = csv.writer(f)
+            
+            if not log_exists:
+                writer.writerow(headers)
+            
+            # The loop still unpacks 'company' and 'location' but they are ignored
+            for title, company, location, url in bot.successful_apps:
+                writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), title, url])
+            # --- END OF CHANGE ---
+        print(f"✓ Log successfully written to {filename}")
+    except Exception as e:
+        print(f"⚠️ Could not write log file: {e}")
+
+
+if __name__ == "__main__":
+    with open('config.json') as config_file:
+        data = json.load(config_file)
+
+    bot = EasyApplyLinkedin(data)
+    
+    try:
+        bot.login_linkedin()
+        bot.job_search()
+        bot.filter()
+        bot.paginate_and_apply()
+    except Exception as e:
+        print(f"\n--- An unexpected error occurred in the main process: {e} ---")
+    finally:
+        print("\n--- Script ending. Writing logs and closing browser. ---")
+        write_log_file(bot)
+        bot.close_browser()
+###last working version

@@ -102,3 +102,87 @@ class EasyApplyLinkedin:
         except Exception as e:
             print(f"❌ Could not find or scroll job cards list: {e}")
             return []
+
+    def paginate_and_apply(self):
+        """Paginates through job listings and applies to each one."""
+        base_url = self.driver.current_url.split('&start=')[0]
+        total_results = self.get_total_results()
+        total_pages = (total_results // 25) + 1
+        print(f"Total pages to process: {total_pages}")
+
+        for page_num in range(total_pages):
+            start = page_num * 25
+            paginated_url = f"{base_url}&start={start}"
+            self.driver.get(paginated_url)
+            print(f"📄 Navigated to page {page_num + 1}/{total_pages}")
+            
+            print("Pausing to prevent bot detection...")
+            time.sleep(random.uniform(5, 10)) 
+            
+            job_cards = self.extract_job_cards()
+
+            for job in job_cards:
+                self.submit_application(job)
+                time.sleep(random.uniform(2, 5))
+
+    def submit_application(self, job_ad):
+        """Handles the application process for a single job, skipping external 'Apply' links."""
+        print("="*50)
+        
+        try: 
+            title = job_ad.find_element(By.CSS_SELECTOR, 'a.job-card-list__title').text.strip()
+            print(f"🔍 Processing application for: {title}")
+        except NoSuchElementException:
+            title = job_ad.text.splitlines()[0]
+            print(f"🔍 Processing application for: {title} (fallback)")
+
+        try:
+            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", job_ad)
+            WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable(job_ad)).click()
+            
+            # We no longer fetch company name here to simplify the process.
+            # We only need the URL for logging.
+            time.sleep(1) # Short pause for the URL to update
+            job_url = self.driver.current_url
+
+            if any(elem.is_displayed() for elem in self.driver.find_elements(
+                    By.XPATH, "//span[contains(text(), 'Applied') or contains(text(), 'Application submitted')]")):
+                print("🛑 Job already applied. Skipping.")
+                # Note: "company" and "location" are placeholders now
+                self.failed_apps.append((title, "N/A", "N/A", job_url, "Already applied"))
+                return
+
+            try:
+                apply_button = self.driver.find_element(By.XPATH, "//button[contains(@class, 'jobs-apply-button')]")
+                apply_button_text = apply_button.text.strip()
+                if "easy" not in apply_button_text.lower():
+                    print("⚠️ Detected external ‘Apply’ button. Skipping job.")
+                    self.failed_apps.append((title, "N/A", "N/A", job_url, "External Apply Button"))
+                    return
+            except NoSuchElementException:
+                print("❌ Could not find apply button. Skipping job.")
+                self.failed_apps.append((title, "N/A", "N/A", job_url, "Apply button not found"))
+                return
+
+            apply_button.click()
+            time.sleep(random.uniform(2.5, 4.0))
+
+            while True:
+                time.sleep(2)
+                page_before = hash(self.driver.page_source)
+
+                try:
+                    submit_btn = self.driver.find_element(By.XPATH, "//button[@aria-label='Submit application']")
+                    if submit_btn.is_displayed():
+                        submit_btn.click()
+                        print("✅ Application submitted successfully.")
+                        # Note: "company" and "location" are placeholders now
+                        self.successful_apps.append((title, "N/A", "N/A", job_url))
+                        
+                        print("    - Pausing for 3 seconds...")
+                        time.sleep(3)
+                        
+                        self.close_modal_if_present()
+                        return
+                        
+                except: pass

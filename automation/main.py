@@ -43,3 +43,16 @@ class EasyApplyLinkedin:
         print("Please log in manually if required (e.g., captcha). Waiting for 15 seconds...")
         time.sleep(15) # Wait for login and potential manual captcha
         self.driver.get("https://www.linkedin.com/jobs/")
+
+    def job_search(self):
+        """Searches for jobs based on keywords and location."""
+        wait = WebDriverWait(self.driver, 15)
+        search_keyword = wait.until(EC.presence_of_element_located((By.XPATH, "//input[starts-with(@id,'jobs-search-box-keyword')]")))
+        search_keyword.clear()
+        search_keyword.send_keys(self.keywords)
+        time.sleep(3)
+        search_location = wait.until(EC.presence_of_element_located((By.XPATH, "//input[starts-with(@id,'jobs-search-box-location')]")))
+        search_location.clear()
+        search_location.send_keys(self.location)
+        time.sleep(3)
+        search_location.send_keys(Keys.RETURN)

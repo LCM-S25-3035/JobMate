@@ -56,3 +56,49 @@ class EasyApplyLinkedin:
         search_location.send_keys(self.location)
         time.sleep(3)
         search_location.send_keys(Keys.RETURN)
+
+    def filter(self):
+        """Applies the 'Easy Apply' filter."""
+        try:
+            easy_apply_button = WebDriverWait(self.driver, 10).until(
+                EC.element_to_be_clickable((By.ID, "searchFilter_applyWithLinkedin"))
+            )
+            easy_apply_button.click()
+            time.sleep(2)
+        except Exception as e:
+            print(f"❌ Easy Apply filter not found: {e}")
+        time.sleep(2)
+
+    def get_total_results(self):
+        """Gets the total number of job results found."""
+        try:
+            results_element = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, "//div[contains(@class, 'jobs-search-results-list__subtitle')]//span"))
+            )
+            total_results = int(results_element.text.split()[0].replace(",", ""))
+            print(f"🔎 Total job results found: {total_results}")
+            return total_results
+        except Exception as e:
+            print(f"❌ Could not fetch total results count: {e}")
+            return 0
+
+    def extract_job_cards(self):
+        """Extracts all job card elements from the current page by scrolling until all are loaded."""
+        try:
+            print("Scrolling to load all job cards...")
+            
+            job_cards = self.driver.find_elements(By.CSS_SELECTOR, "div.job-card-container--clickable")
+            
+            while True:
+                self.driver.execute_script("arguments[0].scrollIntoView();", job_cards[-1])
+                time.sleep(2)
+                new_job_cards = self.driver.find_elements(By.CSS_SELECTOR, "div.job-card-container--clickable")
+                if len(new_job_cards) == len(job_cards):
+                    break
+                job_cards = new_job_cards
+
+            print(f"✓ All job cards loaded ({len(job_cards)} found).")
+            return job_cards
+        except Exception as e:
+            print(f"❌ Could not find or scroll job cards list: {e}")
+            return []

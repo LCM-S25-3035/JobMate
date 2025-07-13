@@ -1,0 +1,16 @@
+{
+    "email": "youremail@example.com",
+    "password": "yourpassword",
+    "keyword": "data analyst",
+    "location": "Remote",
+    "driver_path": "./automation_bot/chromedriver-win64/chromedriver.exe",
+    "profile_path": "C:/temp/JobMateAutoApplyChrome",
+    "original_profile_path": "C:/Users/YOUR_USERNAME/AppData/Local/Google/Chrome/User Data/Default",
+    "use_temp_profile": true,
+    "glassdoor_url": "https://www.glassdoor.ca/Job/jobs.htm",
+    "indeed_url": "https://secure.indeed.com/account/login",
+    "firstName": "John",
+    "lastName": "Doe",
+    "phoneNumber": "1234567890",
+    "city": "Toronto"
+}

@@ -140,6 +140,7 @@ elif st.session_state.page == 'question_generator_gemini':
         level = st.selectbox("Candidate level", ["Entry", "Junior", "Mid", "Senior"])
         type = st.selectbox("Type of questions", ["Technique", "Behavioral", "Logical", "Mixed"])   
         n_questions = st.slider("#️⃣ Number of questions", 1, 10, 5)
+        language = st.selectbox("Language you prefer", ["English", "French", "Spanish"])
 
     with col2:
         level_description = st.text_input("More detailed description of the candidate's level", placeholder="Example: 'recent graduate with little experience', 'professional with 5 years of experience in the sector'.")
@@ -161,7 +162,8 @@ elif st.session_state.page == 'question_generator_gemini':
                     responsibilities=responsibilities,
                     technical_skills=technical_skills,
                     soft_skills=soft_skills,
-                    n=n_questions
+                    n=n_questions,
+                    language=language
                 )
 
             st.markdown("### ✅ Questions generated:")
@@ -195,6 +197,7 @@ elif st.session_state.page == 'question_generator_for_ui':
     rol = st.text_input("Job position 🔍", placeholder="Example: Data Analyst")
     level = st.selectbox("Candidate level", ["Entry", "Junior", "Mid", "Senior"])
     type = st.selectbox("Type of questions", ["technical", "behavioral"])
+    language = st.selectbox("Language you prefer", ["English", "French", "Spanish"])
     n_questions = st.slider("#️⃣ Number of questions", 1, 10, 5)
     level_description = st.text_input("More detailed description of the candidate's level", placeholder="Example: 'recent graduate with little experience', 'professional with 5 years of experience in the sector'.")
     job_description = st.text_area("Full job description or key responsibilities", placeholder="Include main responsibilities, technical and soft skills required...")
@@ -213,6 +216,7 @@ elif st.session_state.page == 'question_generator_for_ui':
                     level=level,
                     previous_experience=level_description,
                     question_type=type,
+                    language=language,
                     n=n_questions
                 )
 

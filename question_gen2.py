@@ -13,11 +13,13 @@ def question_generator_for_ui(
     level: str,
     previous_experience: str,
     question_type: str = "behavioral",
+    language: str = "English",
     n: int = 5
 ) -> str:
     """
     Generates structured interview questions based on a job description,
-    role, candidate level, and desired question type (technical or behavioral).
+    role, candidate level, desired question type (technical or behavioral),
+    and a specified language.
 
     Parameters:
         - job_description: Full job description text.
@@ -26,30 +28,39 @@ def question_generator_for_ui(
         - previous_experience: Detailed level info (e.g., "5 years of experience").
         - question_type: 'technical' or 'behavioral'.
         - n: Number of questions to generate.
+        - language: The desired language for the questions and answers (e.g., 'English', 'Spanish', 'French').
 
     Returns:
-        - A string containing a list of questions in plain text format.
+        - A string containing a list of questions in a structured text format.
     """
+
     prompt = f"""
-You are an expert in talent selection and technical interviewing. Below is the job description:
+You are an expert in talent selection and technical interviewing.
+Generate exactly {n} interview questions for a '{role}' position, targeting a '{level}' candidate with '{previous_experience}' of experience.
 
 ---
+Job Description:
 {job_description}
 ---
 
-Your task is to generate **{n} interview questions** for the **'{role}'** position, targeting candidates at **'{level}'** level ({previous_experience}).
+Question Type: {question_type.capitalize()}
+Language: {language}
 
-Question type requested: **{question_type}**
-- If 'technical': include questions that assess technical knowledge, and at least one that requires writing code if programming languages are mentioned If applicable, include a code snippet in a formatted code block (e.g., ```python).
-- If 'behavioral': focus on soft skills, decision-making, conflict resolution, leadership, etc.
+Instructions:
+- For '{question_type.capitalize()}' questions, focus on assessing:
+    - **Technical:** Core technical knowledge, problem-solving, and (if applicable and programming languages are mentioned in the job description) include at least one question requiring a code snippet example.
+    - **Behavioral:** Soft skills, decision-making, conflict resolution, leadership, and collaboration.
+- Ensure a diverse mix of questions covering:
+    - Core responsibilities of the role.
+    - Essential technical skills (frameworks, tools, programming languages).
+    - Crucial soft skills (communication, teamwork, adaptability).
+- All questions, ideal answers, and explanations must be in {language}.
 
-Diversity of questions:
-Include a mix that assesses:
-- Core responsibilities of the role.
-- Technical skills (frameworks, tools, programming languages).
-- Soft skills (collaboration, autonomy, communication, leadership).
+Format each question as a separate entry, clearly labeling the Question, an Ideal Answer (brief but comprehensive), and a concise Explanation of what the question aims to assess. Use a clear, readable text format, like this example:
 
-Output format must be plain text, like the following: **Question**, **Ideal answer**, **Explanation**.
+Question 1: [Your question here]
+Ideal Answer: [A concise, exemplary answer]
+Explanation: [What this question evaluates]
 """
 
     try:

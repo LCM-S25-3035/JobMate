@@ -11,7 +11,8 @@ from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm
 from app.models.user import User
 from app import db
 import secrets
-
+from app.extensions import db
+from app.models.user import User
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():

@@ -145,6 +145,15 @@ def create_app(config_class=None):
     from app.main import bp as main_bp
     app.register_blueprint(main_bp)
     
+    # Custom template filters
+    @app.template_filter('format_number')
+    def format_number(value):
+        """Format numbers with commas as thousand separators"""
+        try:
+            return "{:,}".format(int(value))
+        except (ValueError, TypeError):
+            return value
+    
     # Error handlers
     @app.errorhandler(404)
     def not_found_error(error):

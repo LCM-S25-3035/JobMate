@@ -1,0 +1,77 @@
+/* 
+ * Job Description Styles
+ * Enhanced formatting for the job description display
+ */
+
+/* Job description card */
+.job-description {
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.job-description h6 {
+    font-weight: 600;
+    margin-top: 1rem;
+    color: #2c3e50;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 0.35rem;
+}
+
+.formatted-description p {
+    margin-bottom: 0.75rem;
+}
+
+/* Requirements list */
+.requirements-list {
+    padding-left: 1.25rem;
+}
+
+.requirements-list li {
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+.requirements-list li::before {
+    content: "•";
+    color: #007bff;
+    font-weight: bold;
+    position: absolute;
+    left: -1.25rem;
+}
+
+/* Job meta information */
+.job-meta {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px dashed #dee2e6;
+}
+
+/* Toggle button styling */
+.btn-outline-primary {
+    border-color: #007bff;
+    color: #007bff;
+}
+
+.btn-outline-primary:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Toggle button specific styling */
+#toggleDetailsBtn {
+    min-width: 125px;
+    text-align: center;
+}
+
+/* Enhanced section styling */
+.section-title {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    color: #495057;
+}
+
+.section-title i {
+    margin-right: 0.5rem;
+    color: #007bff;
+}

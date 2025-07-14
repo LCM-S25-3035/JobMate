@@ -18,6 +18,24 @@ JobMate is a modern job matching platform for Ontario's tech sector, built with 
 - ✅ **Real-time Validation**: Immediate feedback in forms
 - ✅ **Toast Notifications**: Elegant alert system
 
+### 🤖 **AI-Powered Features**
+- ✅ **Resume Tailoring**: Customize your resume for specific job postings
+- ✅ **ATS Score Analysis**: Get feedback on how your resume will perform with ATS systems
+- ✅ **Cover Letter Generation**: AI-generated cover letters based on your resume and the job
+- ✅ **One-Click Application**: Apply to jobs directly with tailored materials
+- ✅ **Job Recommendations**: Smart matching of your skills with available positions
+
+### 📨 **One-Click Application Feature**
+The One-Click Application feature allows job seekers to:
+- Tailor their resume and cover letter for a specific job
+- Send application directly via email with properly formatted attachments
+- Track application status in their dashboard
+- Apply to jobs with minimal effort
+
+This feature uses the following MongoDB job fields:
+- `job_url_direct`: Direct URL to apply on company website
+- `application_email`: Email address for sending applications
+
 ### 👥 **User Types**
 
 #### 🎯 **Applicant (Job Seekers)**
@@ -26,6 +44,7 @@ JobMate is a modern job matching platform for Ontario's tech sector, built with 
 - AI recommendations
 - Application history
 - Resume upload and management
+- One-click job applications
 
 #### 🏢 **Recruiter (Hiring Managers)**
 - Dashboard with hiring metrics
@@ -81,7 +100,19 @@ mongosh < database/mongo-init.js
 flask db upgrade
 ```
 
-7. **Start the application**
+7. **Create sample data**
+```bash
+# Create a recruiter user
+python create_recruiter_user.py
+
+# Create sample jobs in SQL database
+python create_sample_jobs.py
+
+# Create sample jobs in MongoDB with correct application URLs
+python create_mongo_sample_jobs.py
+```
+
+8. **Start the application**
 ```bash
 python run.py
 ```

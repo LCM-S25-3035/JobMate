@@ -1,0 +1,23 @@
+<!-- templates/ghost_job.html -->
+<!DOCTYPE html>
+<html>
+<head><title>Ghost Job Detector</title></head>
+<body>
+  <h1>🕵️ Ghost Jobs</h1>
+  {% if not ghost_jobs %}
+    <p>No ghost jobs found.</p>
+  {% endif %}
+  {% for job in ghost_jobs %}
+    <div style="border: 1px solid #ccc; margin:10px; padding:10px;">
+      <h2>{{ job.title or 'Untitled' }}</h2>
+      <p><strong>Company:</strong> {{ job.company or 'N/A' }} · <strong>Date:</strong> {{ job.date }} · <strong>Location:</strong> {{ job.location or 'N/A' }}</p>
+      <ul>
+        {% for reason in job.ghost_reason %}
+          <li style="color: red;">{{ reason }}</li>
+        {% endfor %}
+      </ul>
+      <pre>{{ job.description or 'No description' }}</pre>
+    </div>
+  {% endfor %}
+</body>
+</html>

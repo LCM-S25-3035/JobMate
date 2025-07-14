@@ -11,7 +11,7 @@ services:
       - MONGODB_URI=mongodb://mongodb:27017/
       - MONGODB_DB=jobmate_mongo
       - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=your-super-secret-key-change-in-production
+      - SECRET_KEY=HqH2cEuuVJDBe8yEGKMEFAI6gPj5XU_3jtgx5Qt9rrI
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - ./uploads:/app/uploads
@@ -89,7 +89,7 @@ services:
       - MONGODB_URI=mongodb://mongodb:27017/
       - MONGODB_DB=jobmate_mongo
       - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=your-super-secret-key-change-in-production
+      - SECRET_KEY=HqH2cEuuVJDBe8yEGKMEFAI6gPj5XU_3jtgx5Qt9rrI
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - ./uploads:/app/uploads
@@ -113,7 +113,7 @@ services:
       - MONGODB_URI=mongodb://mongodb:27017/
       - MONGODB_DB=jobmate_mongo
       - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=your-super-secret-key-change-in-production
+      - SECRET_KEY=HqH2cEuuVJDBe8yEGKMEFAI6gPj5XU_3jtgx5Qt9rrI
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - ./uploads:/app/uploads

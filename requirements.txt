@@ -98,3 +98,5 @@ python-decouple==3.8
 # AI & ML - Additional packages (commented for now, install if needed)
 # langchain==0.1.0
 # spacy==3.7.2
+
+reportlab

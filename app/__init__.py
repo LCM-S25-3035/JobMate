@@ -135,6 +135,9 @@ def create_app(config_class=None):
     from app.match import bp as match_bp
     app.register_blueprint(match_bp, url_prefix='/match')
     
+    from app.search import bp as search_bp
+    app.register_blueprint(search_bp, url_prefix='/search')
+    
     from app.autoapply import bp as autoapply_bp
     app.register_blueprint(autoapply_bp, url_prefix='/autoapply')
     

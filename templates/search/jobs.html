@@ -1,0 +1,775 @@
+{% extends "base.html" %}
+
+{% block title %}Search Jobs - JobMate{% endblock %}
+
+{% block head %}
+<style>
+    .search-header {
+        background: var(--gradient-primary);
+        color: white;
+        border-radius: 0 0 20px 20px;
+        margin-top: -20px;
+        padding: 40px 0;
+    }
+    
+    .search-form {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        margin-top: -20px;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .search-input {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 15px 20px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
+    
+    .search-input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .search-btn {
+        background: var(--gradient-primary);
+        border: none;
+        color: white;
+        padding: 15px 30px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .search-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+    }
+    
+    .filters-sidebar {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        position: sticky;
+        top: 20px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .filter-section {
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .filter-section:last-child {
+        border-bottom: none;
+    }
+    
+    .filter-title {
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 15px;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .job-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .job-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    
+    .job-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 5px;
+    }
+    
+    .job-company {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 15px;
+    }
+    
+    .job-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .job-meta-item {
+        display: flex;
+        align-items: center;
+        color: #666;
+        font-size: 14px;
+    }
+    
+    .job-meta-item i {
+        margin-right: 8px;
+        color: var(--primary-color);
+    }
+    
+    .job-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .job-tag {
+        background: rgba(0, 123, 255, 0.1);
+        color: var(--primary-color);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    .job-tag.featured {
+        background: linear-gradient(135deg, #ffd700, #ffed4a);
+        color: #b7791f;
+    }
+    
+    .job-tag.urgent {
+        background: linear-gradient(135deg, #ff6b6b, #ff8a80);
+        color: #c62828;
+    }
+    
+    .job-description {
+        color: #666;
+        line-height: 1.6;
+        margin-bottom: 15px;
+    }
+    
+    .job-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+    
+    .search-stats {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .pagination-custom {
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    
+    .pagination-custom .page-item {
+        margin: 0 5px;
+    }
+    
+    .pagination-custom .page-link {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 10px 15px;
+        color: var(--primary-color);
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .pagination-custom .page-link:hover {
+        border-color: var(--primary-color);
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .pagination-custom .page-item.active .page-link {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+    }
+    
+    .no-results i {
+        font-size: 4rem;
+        color: #ddd;
+        margin-bottom: 20px;
+    }
+    
+    .autocomplete-suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 0 0 10px 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        z-index: 1000;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .autocomplete-item {
+        padding: 10px 15px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    
+    .autocomplete-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .salary-range {
+        color: #28a745;
+        font-weight: 600;
+    }
+    
+    .match-score {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Search Header -->
+<div class="search-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-5 fw-bold mb-2">
+                    <i class="bi bi-search me-3"></i>Find Your Perfect Job
+                </h1>
+                <p class="lead mb-0 opacity-90">
+                    {% if results.total %}
+                        {{ results.total }} jobs found
+                        {% if query %}for "{{ query }}"{% endif %}
+                    {% else %}
+                        Discover opportunities that match your skills and aspirations
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <a href="{{ url_for('search.advanced_search') }}" class="btn btn-light btn-lg">
+                    <i class="bi bi-sliders me-2"></i>Advanced Search
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <!-- Search Form -->
+    <div class="search-form">
+        <form method="GET" action="{{ url_for('search.search_jobs') }}">
+            <div class="row">
+                <div class="col-lg-5">
+                    <div class="position-relative">
+                        <input type="text" 
+                               name="query" 
+                               class="form-control search-input" 
+                               placeholder="Job title, company, or keywords..." 
+                               value="{{ query or '' }}"
+                               id="search-input"
+                               autocomplete="off">
+                        <div id="autocomplete-suggestions" class="autocomplete-suggestions" style="display: none;"></div>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <input type="text" 
+                           name="location" 
+                           class="form-control search-input" 
+                           placeholder="Location" 
+                           value="{{ form.location.data or '' }}">
+                </div>
+                <div class="col-lg-2">
+                    <select name="remote_type" class="form-select search-input">
+                        <option value="">Any Type</option>
+                        <option value="remote" {% if form.remote_type.data == 'remote' %}selected{% endif %}>Remote</option>
+                        <option value="hybrid" {% if form.remote_type.data == 'hybrid' %}selected{% endif %}>Hybrid</option>
+                        <option value="onsite" {% if form.remote_type.data == 'onsite' %}selected{% endif %}>On-site</option>
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <button type="submit" class="btn search-btn w-100">
+                        <i class="bi bi-search me-2"></i>Search
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quick Filters -->
+            <div class="row mt-3">
+                <div class="col-lg-2">
+                    <select name="employment_type" class="form-select">
+                        <option value="">All Types</option>
+                        <option value="full_time" {% if form.employment_type.data == 'full_time' %}selected{% endif %}>Full-time</option>
+                        <option value="part_time" {% if form.employment_type.data == 'part_time' %}selected{% endif %}>Part-time</option>
+                        <option value="contract" {% if form.employment_type.data == 'contract' %}selected{% endif %}>Contract</option>
+                        <option value="internship" {% if form.employment_type.data == 'internship' %}selected{% endif %}>Internship</option>
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <select name="experience_level" class="form-select">
+                        <option value="">All Levels</option>
+                        <option value="entry" {% if form.experience_level.data == 'entry' %}selected{% endif %}>Entry Level</option>
+                        <option value="junior" {% if form.experience_level.data == 'junior' %}selected{% endif %}>Junior</option>
+                        <option value="mid" {% if form.experience_level.data == 'mid' %}selected{% endif %}>Mid Level</option>
+                        <option value="senior" {% if form.experience_level.data == 'senior' %}selected{% endif %}>Senior</option>
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <input type="number" 
+                           name="salary_min" 
+                           class="form-control" 
+                           placeholder="Min Salary" 
+                           value="{{ form.salary_min.data or '' }}">
+                </div>
+                <div class="col-lg-2">
+                    <input type="text" 
+                           name="skills" 
+                           class="form-control" 
+                           placeholder="Skills (comma-separated)" 
+                           value="{{ form.skills.data or '' }}">
+                </div>
+                <div class="col-lg-2">
+                    <select name="sort_by" class="form-select">
+                        <option value="relevance" {% if form.sort_by.data == 'relevance' %}selected{% endif %}>Relevance</option>
+                        <option value="date" {% if form.sort_by.data == 'date' %}selected{% endif %}>Newest</option>
+                        <option value="salary" {% if form.sort_by.data == 'salary' %}selected{% endif %}>Salary</option>
+                        <option value="featured" {% if form.sort_by.data == 'featured' %}selected{% endif %}>Featured</option>
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="featured_only" id="featured_only" {% if form.featured_only.data %}checked{% endif %}>
+                        <label class="form-check-label" for="featured_only">
+                            Featured Only
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Filters Sidebar -->
+        <div class="col-lg-3">
+            <div class="filters-sidebar">
+                <h5 class="mb-4">
+                    <i class="bi bi-funnel me-2"></i>Filters
+                </h5>
+                
+                <!-- Location Filter -->
+                {% if facets.locations %}
+                <div class="filter-section">
+                    <div class="filter-title">Location</div>
+                    {% for location in facets.locations[:10] %}
+                    <div class="form-check">
+                        <input class="form-check-input filter-checkbox" 
+                               type="checkbox" 
+                               name="location_filter" 
+                               value="{{ location.key }}"
+                               id="loc_{{ loop.index }}">
+                        <label class="form-check-label" for="loc_{{ loop.index }}">
+                            {{ location.key }} ({{ location.count }})
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Skills Filter -->
+                {% if facets.required_skills %}
+                <div class="filter-section">
+                    <div class="filter-title">Required Skills</div>
+                    {% for skill in facets.required_skills[:15] %}
+                    <div class="form-check">
+                        <input class="form-check-input filter-checkbox" 
+                               type="checkbox" 
+                               name="skills_filter" 
+                               value="{{ skill.key }}"
+                               id="skill_{{ loop.index }}">
+                        <label class="form-check-label" for="skill_{{ loop.index }}">
+                            {{ skill.key }} ({{ skill.count }})
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Industry Filter -->
+                {% if facets.industries %}
+                <div class="filter-section">
+                    <div class="filter-title">Industry</div>
+                    {% for industry in facets.industries[:10] %}
+                    <div class="form-check">
+                        <input class="form-check-input filter-checkbox" 
+                               type="checkbox" 
+                               name="industry_filter" 
+                               value="{{ industry.key }}"
+                               id="ind_{{ loop.index }}">
+                        <label class="form-check-label" for="ind_{{ loop.index }}">
+                            {{ industry.key }} ({{ industry.count }})
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Company Size Filter -->
+                {% if facets.company_sizes %}
+                <div class="filter-section">
+                    <div class="filter-title">Company Size</div>
+                    {% for size in facets.company_sizes %}
+                    <div class="form-check">
+                        <input class="form-check-input filter-checkbox" 
+                               type="checkbox" 
+                               name="company_size_filter" 
+                               value="{{ size.key }}"
+                               id="size_{{ loop.index }}">
+                        <label class="form-check-label" for="size_{{ loop.index }}">
+                            {{ size.key|title }} ({{ size.count }})
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Salary Range -->
+                {% if facets.salary_stats and facets.salary_stats.max %}
+                <div class="filter-section">
+                    <div class="filter-title">Salary Range</div>
+                    <div class="mb-2">
+                        <label for="salary_range" class="form-label">
+                            ${{ "{:,.0f}".format(facets.salary_stats.min or 0) }} - ${{ "{:,.0f}".format(facets.salary_stats.max or 0) }}
+                        </label>
+                    </div>
+                    <input type="range" 
+                           class="form-range" 
+                           id="salary_range" 
+                           min="{{ facets.salary_stats.min or 0 }}"
+                           max="{{ facets.salary_stats.max or 0 }}"
+                           step="5000">
+                </div>
+                {% endif %}
+                
+                <button type="button" class="btn btn-outline-secondary btn-sm w-100 mt-3" id="clear-filters">
+                    <i class="bi bi-x-circle me-2"></i>Clear All Filters
+                </button>
+            </div>
+        </div>
+        
+        <!-- Results -->
+        <div class="col-lg-9">
+            <!-- Search Stats -->
+            {% if results.total %}
+            <div class="search-stats">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <strong>{{ results.total }}</strong> jobs found
+                        {% if query %}for "<strong>{{ query }}</strong>"{% endif %}
+                        {% if results.filters %}
+                        with filters applied
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 text-end">
+                        Page {{ results.page }} of {{ results.pages }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Job Results -->
+            {% if results.jobs %}
+                {% for job in results.jobs %}
+                <div class="job-card">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h3 class="job-title">{{ job.title }}</h3>
+                            <div class="job-company">
+                                <i class="bi bi-building me-2"></i>{{ job.company_name }}
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            {% if job.featured %}
+                            <span class="job-tag featured">
+                                <i class="bi bi-star-fill me-1"></i>Featured
+                            </span>
+                            {% endif %}
+                            {% if job.urgent %}
+                            <span class="job-tag urgent">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>Urgent
+                            </span>
+                            {% endif %}
+                            {% if job.score and job.score > 0 %}
+                            <span class="match-score">
+                                {{ "%.0f"|format(job.score * 100) }}% match
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="job-meta">
+                        <div class="job-meta-item">
+                            <i class="bi bi-geo-alt"></i>
+                            {{ job.location or 'Location not specified' }}
+                        </div>
+                        <div class="job-meta-item">
+                            <i class="bi bi-briefcase"></i>
+                            {{ job.employment_type|replace('_', ' ')|title }}
+                        </div>
+                        <div class="job-meta-item">
+                            <i class="bi bi-person-badge"></i>
+                            {{ job.experience_level|title }} Level
+                        </div>
+                        {% if job.remote_type %}
+                        <div class="job-meta-item">
+                            <i class="bi bi-laptop"></i>
+                            {{ job.remote_type|title }}
+                        </div>
+                        {% endif %}
+                        {% if job.salary_min and job.salary_max %}
+                        <div class="job-meta-item salary-range">
+                            <i class="bi bi-currency-dollar"></i>
+                            ${{ "{:,}".format(job.salary_min) }} - ${{ "{:,}".format(job.salary_max) }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if job.required_skills %}
+                    <div class="job-tags">
+                        {% for skill in job.required_skills[:5] %}
+                        <span class="job-tag">{{ skill }}</span>
+                        {% endfor %}
+                        {% if job.required_skills|length > 5 %}
+                        <span class="job-tag">+{{ job.required_skills|length - 5 }} more</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="job-description">
+                        {{ job.description[:300] }}{% if job.description|length > 300 %}...{% endif %}
+                    </div>
+                    
+                    <div class="job-actions">
+                        <a href="{{ url_for('search.job_detail', job_id=job.id) }}" class="btn btn-outline-primary">
+                            <i class="bi bi-eye me-2"></i>View Details
+                        </a>
+                        {% if current_user.is_authenticated and current_user.is_applicant() %}
+                        <button class="btn btn-primary" onclick="quickApply({{ job.id }})">
+                            <i class="bi bi-send me-2"></i>Quick Apply
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Pagination -->
+                {% if results.pages > 1 %}
+                <nav aria-label="Job search pagination">
+                    <ul class="pagination pagination-custom">
+                        {% if results.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('search.search_jobs', query=query, page=results.page-1, **results.filters) }}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in range(1, results.pages + 1) %}
+                        {% if page_num == results.page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% elif page_num <= 3 or page_num > results.pages - 3 or (page_num >= results.page - 1 and page_num <= results.page + 1) %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('search.search_jobs', query=query, page=page_num, **results.filters) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                        {% elif page_num == 4 or page_num == results.pages - 3 %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                        
+                        {% if results.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('search.search_jobs', query=query, page=results.page+1, **results.filters) }}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+            {% else %}
+                <!-- No Results -->
+                <div class="no-results">
+                    <i class="bi bi-search"></i>
+                    <h4>No jobs found</h4>
+                    <p>
+                        {% if query %}
+                        We couldn't find any jobs matching "<strong>{{ query }}</strong>".
+                        {% else %}
+                        No jobs match your current filters.
+                        {% endif %}
+                    </p>
+                    <div class="mt-3">
+                        <a href="{{ url_for('search.search_jobs') }}" class="btn btn-primary">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Clear Search
+                        </a>
+                        <a href="{{ url_for('search.advanced_search') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-sliders me-2"></i>Advanced Search
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Autocomplete functionality
+    const searchInput = document.getElementById('search-input');
+    const suggestionsContainer = document.getElementById('autocomplete-suggestions');
+    let debounceTimer;
+    
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            suggestionsContainer.style.display = 'none';
+            return;
+        }
+        
+        debounceTimer = setTimeout(() => {
+            fetch(`{{ url_for('search.autocomplete') }}?query=${encodeURIComponent(query)}&limit=5`)
+                .then(response => response.json())
+                .then(data => {
+                    displaySuggestions(data.suggestions);
+                })
+                .catch(error => {
+                    console.error('Autocomplete error:', error);
+                });
+        }, 300);
+    });
+    
+    function displaySuggestions(suggestions) {
+        if (!suggestions || suggestions.length === 0) {
+            suggestionsContainer.style.display = 'none';
+            return;
+        }
+        
+        suggestionsContainer.innerHTML = '';
+        suggestions.forEach(suggestion => {
+            const item = document.createElement('div');
+            item.className = 'autocomplete-item';
+            item.textContent = suggestion;
+            item.addEventListener('click', function() {
+                searchInput.value = suggestion;
+                suggestionsContainer.style.display = 'none';
+            });
+            suggestionsContainer.appendChild(item);
+        });
+        
+        suggestionsContainer.style.display = 'block';
+    }
+    
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!searchInput.contains(event.target) && !suggestionsContainer.contains(event.target)) {
+            suggestionsContainer.style.display = 'none';
+        }
+    });
+    
+    // Filter checkboxes
+    const filterCheckboxes = document.querySelectorAll('.filter-checkbox');
+    filterCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            applyFilters();
+        });
+    });
+    
+    function applyFilters() {
+        const url = new URL(window.location);
+        const params = new URLSearchParams(url.search);
+        
+        // Clear existing filter params
+        params.delete('location_filter');
+        params.delete('skills_filter');
+        params.delete('industry_filter');
+        params.delete('company_size_filter');
+        
+        // Add selected filters
+        filterCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                params.append(checkbox.name, checkbox.value);
+            }
+        });
+        
+        // Reset to page 1 when applying filters
+        params.set('page', '1');
+        
+        // Update URL and reload
+        url.search = params.toString();
+        window.location.href = url.toString();
+    }
+    
+    // Clear filters
+    document.getElementById('clear-filters').addEventListener('click', function() {
+        const url = new URL(window.location);
+        const params = new URLSearchParams();
+        
+        // Keep only query parameter
+        if (url.searchParams.get('query')) {
+            params.set('query', url.searchParams.get('query'));
+        }
+        
+        url.search = params.toString();
+        window.location.href = url.toString();
+    });
+    
+    // Quick apply function
+    window.quickApply = function(jobId) {
+        if (!{{ 'true' if current_user.is_authenticated else 'false' }}) {
+            window.location.href = "{{ url_for('auth.login') }}";
+            return;
+        }
+        
+        // Implement quick apply logic here
+        alert('Quick apply functionality coming soon!');
+    };
+});
+</script>
+{% endblock %} 

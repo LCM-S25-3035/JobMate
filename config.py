@@ -37,6 +37,12 @@ class Config:
     # Redis Configuration (for Celery)
     REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
     
+    # Elasticsearch Configuration
+    ELASTICSEARCH_URL = os.environ.get('ELASTICSEARCH_URL') or 'http://localhost:9200'
+    ELASTICSEARCH_INDEX_PREFIX = os.environ.get('ELASTICSEARCH_INDEX_PREFIX') or 'jobmate'
+    ELASTICSEARCH_TIMEOUT = int(os.environ.get('ELASTICSEARCH_TIMEOUT') or 30)
+    ELASTICSEARCH_MAX_RETRIES = int(os.environ.get('ELASTICSEARCH_MAX_RETRIES') or 3)
+    
     # Mail Configuration
     MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.gmail.com'
     MAIL_PORT = int(os.environ.get('MAIL_PORT') or 587)

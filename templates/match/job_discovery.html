@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Job Discovery - JobMate{% endblock %}
+
+{% block head %}
+<style>
+    .job-discovery-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0 0 20px 20px;
+        margin-top: -20px;
+        padding: 40px 0;
+    }
+    
+    .filter-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .job-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        transition: transform 0.3s ease;
+    }
+    
+    .job-card:hover {
+        transform: translateY(-3px);
+    }
+    
+    .badge-salary {
+        background: #28a745;
+        color: white;
+    }
+    
+    .badge-remote {
+        background: #17a2b8;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="job-discovery-header">
+    <div class="container">
+        <h1 class="display-5 fw-bold mb-2">
+            <i class="bi bi-compass me-3"></i>Job Discovery
+        </h1>
+        <p class="lead mb-0 opacity-90">
+            Explore job opportunities with advanced filtering
+        </p>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <!-- Filters -->
+    <div class="filter-card">
+        <form method="GET" action="{{ url_for('match.job_discovery') }}">
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">Keywords</label>
+                    <input type="text" name="keywords" class="form-control" placeholder="Job title, skills..." value="{{ keywords }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Location</label>
+                    <input type="text" name="location" class="form-control" placeholder="City, Province..." value="{{ location }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Job Type</label>
+                    <select name="job_type" class="form-select">
+                        <option value="">Any</option>
+                        <option value="full_time" {% if job_type == 'full_time' %}selected{% endif %}>Full-time</option>
+                        <option value="part_time" {% if job_type == 'part_time' %}selected{% endif %}>Part-time</option>
+                        <option value="contract" {% if job_type == 'contract' %}selected{% endif %}>Contract</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Experience</label>
+                    <select name="experience_level" class="form-select">
+                        <option value="">Any</option>
+                        <option value="entry" {% if experience_level == 'entry' %}selected{% endif %}>Entry</option>
+                        <option value="mid" {% if experience_level == 'mid' %}selected{% endif %}>Mid</option>
+                        <option value="senior" {% if experience_level == 'senior' %}selected{% endif %}>Senior</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Remote</label>
+                    <select name="remote" class="form-select">
+                        <option value="">Any</option>
+                        <option value="yes" {% if remote == 'yes' %}selected{% endif %}>Yes</option>
+                        <option value="no" {% if remote == 'no' %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-3">
+                    <label class="form-label">Min Salary</label>
+                    <input type="number" name="salary_min" class="form-control" placeholder="50000" value="{{ salary_min or '' }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search me-2"></i>Search Jobs
+                        </button>
+                        <a href="{{ url_for('match.job_discovery') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Clear
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Results -->
+    <div class="row">
+        <div class="col-12">
+            {% if jobs.items %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Found {{ jobs.total }} jobs</h5>
+                    <div class="text-muted">
+                        Page {{ jobs.page }} of {{ jobs.pages }}
+                    </div>
+                </div>
+                
+                {% for job in jobs.items %}
+                <div class="job-card">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5 class="fw-bold mb-2">{{ job.title }}</h5>
+                            <h6 class="text-muted mb-2">{{ job.company_name }}</h6>
+                            <p class="text-muted mb-2">
+                                <i class="bi bi-geo-alt me-1"></i>{{ job.location }}
+                                {% if job.is_remote %}
+                                    <span class="badge badge-remote ms-2">Remote</span>
+                                {% endif %}
+                            </p>
+                            <p class="mb-2">{{ job.description[:200] }}...</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            {% if job.salary_min and job.salary_max %}
+                                <div class="badge badge-salary mb-2">
+                                    ${{ "{:,}".format(job.salary_min) }} - ${{ "{:,}".format(job.salary_max) }}
+                                </div>
+                            {% endif %}
+                            <div class="text-muted small mb-2">
+                                {{ job.experience_level|title if job.experience_level }}
+                            </div>
+                            <div class="text-muted small mb-3">
+                                Posted {{ job.created_at.strftime('%b %d, %Y') }}
+                            </div>
+                            <div class="d-flex gap-2 justify-content-end">
+                                <a href="#" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye me-1"></i>View
+                                </a>
+                                <a href="#" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-send me-1"></i>Apply
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Pagination -->
+                {% if jobs.pages > 1 %}
+                <nav aria-label="Job search pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if jobs.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('match.job_discovery', page=jobs.prev_num, keywords=keywords, location=location, job_type=job_type, experience_level=experience_level, salary_min=salary_min, remote=remote) }}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in jobs.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != jobs.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('match.job_discovery', page=page_num, keywords=keywords, location=location, job_type=job_type, experience_level=experience_level, salary_min=salary_min, remote=remote) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if jobs.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('match.job_discovery', page=jobs.next_num, keywords=keywords, location=location, job_type=job_type, experience_level=experience_level, salary_min=salary_min, remote=remote) }}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-search display-1 text-muted mb-3"></i>
+                    <h5 class="text-muted">No jobs found</h5>
+                    <p class="text-muted">Try adjusting your search criteria or keywords.</p>
+                    <a href="{{ url_for('match.job_discovery') }}" class="btn btn-primary">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Clear Filters
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

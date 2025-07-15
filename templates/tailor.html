@@ -1,9 +1,100 @@
 {% extends "base.html" %}
 {% block content %}
+<!-- Add Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<!-- Add job description styling -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/job-description.css') }}" />
 <a href="{{ url_for('main.mongo_jobs') }}" class="btn btn-outline-secondary mb-3">&larr; Back to Jobs</a>
 <h2>Tailor Resume & Cover Letter for {{ job.title }}</h2>
-<p><strong>Company:</strong> {{ job.company }}</p>
-<p><strong>Description:</strong> {{ job.description }}</p>
+
+<div class="row mb-3">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+          <span>
+            <strong><i class="fas fa-building me-2"></i>{{ job.company }}</strong>
+            {% if job.location %}<span class="ms-3"><i class="fas fa-map-marker-alt me-1"></i> {{ job.location }}</span>{% endif %}
+          </span>
+          <button id="toggleDetailsBtn" class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#jobDetailsCollapse" aria-expanded="true">
+            <i class="fas fa-minus-circle me-1"></i> Hide Details
+          </button>
+        </div>
+      </div>
+      <div class="collapse show" id="jobDetailsCollapse">
+        <div class="card-body">
+          <div class="job-description mb-3">
+            <h5><i class="fas fa-tasks me-2"></i>Job Description</h5>
+            <div class="formatted-description">
+              {% set sections = job.description.split('**') %}
+              {% for section in sections %}
+                {% if ':**' in section %}
+                  {% set parts = section.split(':**') %}
+                  <div class="mt-3">
+                    <h6 class="text-primary">{{ parts[0].strip() }}</h6>
+                    <p>{{ parts[1].strip() }}</p>
+                  </div>
+                {% elif section.strip() %}
+                  <p>{{ section.strip() }}</p>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+          
+          {% if job.requirements %}
+          <div class="job-requirements mb-3">
+            <h5><i class="fas fa-clipboard-list me-2"></i>Requirements</h5>
+            <ul class="requirements-list">
+              {% for requirement in job.requirements.split('*') %}
+                {% if requirement.strip() %}
+                <li>{{ requirement.strip() }}</li>
+                {% endif %}
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+          
+          <div class="job-meta">
+            <div class="row">
+              {% if job.experience_level %}
+              <div class="col-md-4 mb-2">
+                <small class="text-muted">Experience Level</small>
+                <div><i class="fas fa-user-clock me-1"></i> {{ job.experience_level }}</div>
+              </div>
+              {% endif %}
+              
+              {% if job.remote_allowed is defined %}
+              <div class="col-md-4 mb-2">
+                <small class="text-muted">Work Type</small>
+                <div><i class="fas fa-laptop-house me-1"></i> {% if job.remote_allowed %}Remote Available{% else %}On-site{% endif %}</div>
+              </div>
+              {% endif %}
+              
+              {% if job.salary_min and job.salary_max %}
+              <div class="col-md-4 mb-2">
+                <small class="text-muted">Salary Range</small>
+                <div><i class="fas fa-money-bill-wave me-1"></i> ${{ job.salary_min|int|format_number }} - ${{ job.salary_max|int|format_number }}</div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Progress indicator -->
+<div class="progress mb-4" style="height: 30px;">
+  {% if not tailored_result %}
+    <!-- Step 1: Upload -->
+    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">Upload Resume</div>
+  {% else %}
+    <!-- Steps 2-4: After tailoring -->
+    <div class="progress-bar bg-success" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">Upload Resume ✓</div>
+    <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">Review & Apply</div>
+  {% endif %}
+</div>
 
 <form method="post" enctype="multipart/form-data" id="tailor-form">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -11,7 +102,7 @@
     <label for="resume_file" class="form-label">Upload Your Resume (PDF, DOCX, or TXT)</label>
     <input class="form-control" type="file" id="resume_file" name="resume_file" accept=".pdf,.doc,.docx,.txt" required>
   </div>
-  <button type="submit" class="btn btn-primary">Tailor Resume & Generate ATS Score</button>
+  <button type="submit" class="btn btn-primary">Tailor Resume &amp; Generate ATS Score</button>
   <div id="loading-spinner" class="text-center mt-3" style="display:none;">
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
@@ -21,39 +112,326 @@
 </form>
 <hr>
 {% if tailored_result %}
-  {% if ats_score %}
-    <div class="card mb-3 shadow-sm" style="max-width: 400px;">
-      <div class="card-body text-center">
-        <span class="badge bg-primary mb-2" style="font-size:1.1rem;">ATS Score</span>
-        <div style="font-size:2.5rem; font-weight:700; color:#1a4a7c;">{{ ats_score }}</div>
-        <div class="text-muted" style="font-size:0.95rem;">(Higher is better for job matching)</div>
-      </div>
-    </div>
-  {% endif %}
-  <h4 class="mt-4">Tailored Resume</h4>
-  <form method="post" action="{{ url_for('main.download_tailored', job_id=job._id, doc_type='resume') }}" style="display:inline;">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="tailored_resume" value="{{ tailored_result.tailored_resume|replace('"', '&quot;')|replace("'", "&#39;") }}">
-    <input type="hidden" name="cover_letter" value="{{ tailored_result.cover_letter|replace('"', '&quot;')|replace("'", "&#39;") }}">
-    <input type="hidden" name="user_resume_text" value="{{ user_resume_text|e }}">
-    <button type="submit" class="btn btn-sm btn-success mb-2">Download Resume</button>
-  </form>
-  <pre class="p-3 bg-light border rounded" style="white-space: pre-wrap; font-size:1rem;">{{ tailored_result.tailored_resume }}</pre>
-  <h4 class="mt-4">Cover Letter</h4>
-  <form method="post" action="{{ url_for('main.download_tailored', job_id=job._id, doc_type='cover_letter') }}" style="display:inline;">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="tailored_resume" value="{{ tailored_result.tailored_resume|replace('"', '&quot;')|replace("'", "&#39;") }}">
-    <input type="hidden" name="cover_letter" value="{{ tailored_result.cover_letter|replace('"', '&quot;')|replace("'", "&#39;") }}">
-    <input type="hidden" name="user_resume_text" value="{{ user_resume_text|e }}">
-    <button type="submit" class="btn btn-sm btn-success mb-2">Download Cover Letter</button>
-  </form>
-  <pre class="p-3 bg-light border rounded" style="white-space: pre-wrap; font-size:1rem;">{{ tailored_result.cover_letter }}</pre>
-  <h4 class="mt-4">Suggestions</h4>
-  <ul class="list-group mb-4">
-    {% for suggestion in tailored_result.suggestions %}
-      <li class="list-group-item">{{ suggestion }}</li>
-    {% endfor %}
+  <!-- Tabs navigation -->
+  <ul class="nav nav-tabs mb-3" id="resultTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="resume-tab" data-bs-toggle="tab" data-bs-target="#resume" type="button" role="tab" aria-controls="resume" aria-selected="true">Resume</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="cover-tab" data-bs-toggle="tab" data-bs-target="#cover" type="button" role="tab" aria-controls="cover" aria-selected="false">Cover Letter</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="suggestions-tab" data-bs-toggle="tab" data-bs-target="#suggestions" type="button" role="tab" aria-controls="suggestions" aria-selected="false">
+        Suggestions <span class="badge bg-info">{{ tailored_result.suggestions|length }}</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="apply-tab" data-bs-toggle="tab" data-bs-target="#apply" type="button" role="tab" aria-controls="apply" aria-selected="false">Apply</button>
+    </li>
   </ul>
+
+  <!-- Tab content -->
+  <div class="tab-content" id="resultTabsContent">
+    <!-- Resume tab content -->
+    <div class="tab-pane fade show active" id="resume" role="tabpanel" aria-labelledby="resume-tab">
+      {% if ats_score %}
+        <div class="card mb-3 shadow-sm" style="max-width: 400px;">
+          <div class="card-body text-center">
+            <span class="badge bg-primary mb-2" style="font-size:1.1rem;">ATS Score</span>
+            <div style="font-size:2.5rem; font-weight:700; color:#1a4a7c;">{{ ats_score }}</div>
+            <div class="text-muted" style="font-size:0.95rem;">(Higher is better for job matching)</div>
+          </div>
+        </div>
+      {% endif %}
+      <h4 class="mt-4">Tailored Resume</h4>
+      <div class="d-flex align-items-center mb-2">
+        <form id="download-resume-form" method="post" action="{{ url_for('main.download_tailored', job_id=job._id, doc_type='resume') }}" style="display:inline; margin-right:8px;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" id="resume-text-input" name="tailored_resume" value="{{ tailored_result.tailored_resume|replace('"', '&quot;')|replace("'", "&#39;") }}">
+          <input type="hidden" name="cover_letter" value="{{ tailored_result.cover_letter|replace('"', '&quot;')|replace("'", "&#39;") }}">
+          <input type="hidden" name="user_resume_text" value="{{ user_resume_text|e }}">
+          <button type="submit" class="btn btn-sm btn-success">Download Resume</button>
+        </form>
+        <button id="edit-resume-btn" class="btn btn-sm btn-outline-primary" style="margin-right:8px;">Edit</button>
+        <button id="recalculate-ats-btn" class="btn btn-sm btn-outline-info">
+          <i class="fas fa-sync-alt"></i> Recalculate ATS Score
+        </button>
+      </div>
+      <textarea id="resume-textarea" class="form-control mb-3" style="display:none; min-height:200px; font-size:1rem;">{{ tailored_result.tailored_resume }}</textarea>
+      <pre id="tailored-resume-content" class="p-3 bg-light border rounded" style="white-space: pre-wrap; font-size:1rem;">{{ tailored_result.tailored_resume }}</pre>
+
+    </div><!-- End resume tab content -->
+
+    <!-- Cover Letter tab content -->
+    <div class="tab-pane fade" id="cover" role="tabpanel" aria-labelledby="cover-tab">
+      <h4 class="mt-4">Cover Letter</h4>
+      <div class="d-flex align-items-center mb-2">
+        <form id="download-cover-form" method="post" action="{{ url_for('main.download_tailored', job_id=job._id, doc_type='cover_letter') }}" style="display:inline; margin-right:8px;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="tailored_resume" value="{{ tailored_result.tailored_resume|replace('"', '&quot;')|replace("'", "&#39;") }}">
+          <input type="hidden" id="cover-text-input" name="cover_letter" value="{{ tailored_result.cover_letter|replace('"', '&quot;')|replace("'", "&#39;") }}">
+          <input type="hidden" name="user_resume_text" value="{{ user_resume_text|e }}">
+          <button type="submit" class="btn btn-sm btn-success">Download Cover Letter</button>
+        </form>
+        <button id="edit-cover-btn" class="btn btn-sm btn-outline-primary">Edit</button>
+      </div>
+      <textarea id="cover-textarea" class="form-control mb-3" style="display:none; min-height:200px; font-size:1rem;">{{ tailored_result.cover_letter }}</textarea>
+      <pre id="tailored-cover-letter-content" class="p-3 bg-light border rounded" style="white-space: pre-wrap; font-size:1rem;">{{ tailored_result.cover_letter }}</pre>
+    </div><!-- End cover letter tab content -->
+
+    <!-- Suggestions tab content -->
+    <div class="tab-pane fade" id="suggestions" role="tabpanel" aria-labelledby="suggestions-tab">
+      <div class="d-flex justify-content-between align-items-center">
+        <h4 class="mt-4">Suggestions</h4>
+        <div>
+          <button id="auto-optimize-resume-btn" class="btn btn-success">
+            <i class="fas fa-magic"></i> Auto-Optimize to 90%+ ATS Score
+          </button>
+        </div>
+      </div>
+      
+      <div id="optimization-progress" class="alert alert-info mt-3" style="display: none;">
+        <div class="d-flex align-items-center">
+          <div class="spinner-border spinner-border-sm me-2" role="status">
+            <span class="visually-hidden">Optimizing...</span>
+          </div>
+          <span>Optimizing your resume to achieve 90%+ ATS score...</span>
+        </div>
+      </div>
+      
+      <div class="row">
+        {% for suggestion in tailored_result.suggestions %}
+          <div class="col-md-6 mb-3 suggestion-card" data-suggestion-id="{{ loop.index }}">
+            <div class="card h-100">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                {% if suggestion is string %}
+                  {% if suggestion.strip().startswith('{') %}
+                    {% set parsed = suggestion | safe | loads %}
+                    <strong>{{ parsed.area }}</strong>
+                  {% else %}
+                    <strong>Suggestion</strong>
+                  {% endif %}
+                {% elif suggestion.area is defined %}
+                  <strong>{{ suggestion.area }}</strong>
+                {% else %}
+                  <strong>Suggestion</strong>
+                {% endif %}
+                <span class="badge bg-light text-dark suggestion-status">Open</span>
+              </div>
+              <div class="card-body">
+                {% if suggestion is string %}
+                  {% if suggestion.strip().startswith('{') %}
+                    {% set parsed = suggestion | safe | loads %}
+                    <p>{{ parsed.suggestion }}</p>
+                  {% else %}
+                    <p>{{ suggestion }}</p>
+                  {% endif %}
+                {% elif suggestion.suggestion is defined %}
+                  <p>{{ suggestion.suggestion }}</p>
+                {% else %}
+                  <p>{{ suggestion }}</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div><!-- End suggestions tab content -->
+
+    <!-- Apply tab content -->
+    <div class="tab-pane fade" id="apply" role="tabpanel" aria-labelledby="apply-tab">
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+              <i class="fas fa-clipboard"></i> Quick Copy
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <button id="copy-resume-btn" class="btn btn-outline-primary w-100 mb-2">
+                  <i class="fas fa-copy"></i> Copy Resume to Clipboard
+                </button>
+                <button id="copy-cover-btn" class="btn btn-outline-primary w-100">
+                  <i class="fas fa-copy"></i> Copy Cover Letter to Clipboard
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header bg-success text-white">
+              <i class="fas fa-paper-plane"></i> Email Application
+            </div>
+            <div class="card-body">
+              <!-- External application URL button -->
+              {% if application_url %}
+                <a href="{{ application_url }}" class="btn btn-primary w-100" target="_blank">
+                  <i class="fas fa-external-link-alt"></i> Go to Application Page
+                </a>
+                <div class="text-center my-2">- OR -</div>
+              {% endif %}
+              
+              <!-- Email application options -->
+              {% if application_email %}
+                <!-- Standard email preparation -->
+                <a href="mailto:{{ application_email }}?subject=Application for {{ job.title }}&body=Dear Hiring Manager,%0D%0A%0D%0AI am writing to apply for the {{ job.title }} position at {{ job.company }}. Please find my resume and cover letter attached.%0D%0A%0D%0AThank you for your consideration.%0D%0A%0D%0ASincerely," 
+                   class="btn btn-success mb-2 w-100" target="_blank">
+                  <i class="fas fa-envelope"></i> Prepare Email Application
+                </a>
+                
+                <!-- One-Click Application feature -->
+                {% if tailored_result %}
+                <button id="send-application-btn" class="btn btn-info w-100">
+                  <i class="fas fa-paper-plane"></i> Send Application with One Click
+                </button>
+                
+                <div id="application-status" class="mt-2" style="display:none;"></div>
+                
+                <script>
+                  document.getElementById('send-application-btn').addEventListener('click', function() {
+                    const btn = this;
+                    const statusDiv = document.getElementById('application-status');
+                    const originalBtnText = btn.innerHTML;
+                    
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                    statusDiv.style.display = 'none';
+                    
+                    // Get the tailored resume and cover letter content
+                    const resumeText = document.getElementById('tailored-resume-content').innerText;
+                    const coverLetterText = document.getElementById('tailored-cover-letter-content').innerText;
+                    
+                    // Send the application
+                    fetch('{{ url_for("main.send_application", job_id=job._id) }}', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                      },
+                      body: JSON.stringify({
+                        resume_text: resumeText,
+                        cover_letter_text: coverLetterText
+                      })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                      btn.disabled = false;
+                      btn.innerHTML = originalBtnText;
+                      statusDiv.style.display = 'block';
+                      
+                      if (data.success) {
+                        statusDiv.innerHTML = '<div class="alert alert-success"><i class="fas fa-check-circle"></i> ' + data.message + '</div>';
+                      } else {
+                        statusDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> ' + data.error + '</div>';
+                      }
+                    })
+                    .catch(error => {
+                      btn.disabled = false;
+                      btn.innerHTML = originalBtnText;
+                      statusDiv.style.display = 'block';
+                      statusDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> Error sending application. Please try again.</div>';
+                      console.error('Error:', error);
+                    });
+                  });
+                </script>
+                {% endif %}
+              {% endif %}
+              
+              {% if not application_email and not application_url %}
+                <div class="alert alert-info">
+                  <i class="fas fa-info-circle"></i> No application link available. Please check the job description for application instructions.
+                </div>
+              {% endif %}
+              
+              <div class="form-text mt-2">
+                <i class="fas fa-info-circle"></i> Remember to attach your downloaded resume and cover letter when applying externally!
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card mb-3">
+        <div class="card-header bg-info text-white">
+          <i class="fas fa-list-check"></i> Application Checklist
+        </div>
+        <div class="card-body">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="check1">
+            <label class="form-check-label" for="check1">Tailored resume for this position</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="check2">
+            <label class="form-check-label" for="check2">Customized cover letter</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="check3">
+            <label class="form-check-label" for="check3">Applied suggestions to improve matching</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="check4">
+            <label class="form-check-label" for="check4">Reviewed final documents before submission</label>
+          </div>
+        </div>
+      </div>
+    </div><!-- End apply tab content -->
+
+<script>
+// Resume edit toggle
+const editResumeBtn = document.getElementById('edit-resume-btn');
+const resumeTextarea = document.getElementById('resume-textarea');
+const resumePre = document.getElementById('resume-pre');
+const resumeInput = document.getElementById('resume-text-input');
+editResumeBtn.addEventListener('click', function() {
+  if (resumeTextarea.style.display === 'none') {
+    // Switching to edit mode
+    resumeTextarea.style.display = 'block';
+    resumePre.style.display = 'none';
+    editResumeBtn.textContent = 'Done';
+    resumeTextarea.value = resumePre.textContent;
+    
+    // Store original text to check if changes were made
+    resumeTextarea.setAttribute('data-original', resumeTextarea.value);
+  } else {
+    // Switching back to view mode
+    resumeTextarea.style.display = 'none';
+    resumePre.style.display = 'block';
+    editResumeBtn.textContent = 'Edit';
+    resumePre.textContent = resumeTextarea.value;
+    resumeInput.value = resumeTextarea.value;
+    
+    // Check if content changed and offer to recalculate
+    if (resumeTextarea.value !== resumeTextarea.getAttribute('data-original')) {
+      const recalculate = confirm('You made changes to your resume. Would you like to recalculate your ATS score?');
+      if (recalculate && document.getElementById('recalculate-ats-btn')) {
+        // Trigger the recalculate function
+        document.getElementById('recalculate-ats-btn').click();
+      }
+    }
+  }
+});
+// Cover letter edit toggle
+const editCoverBtn = document.getElementById('edit-cover-btn');
+const coverTextarea = document.getElementById('cover-textarea');
+const coverPre = document.getElementById('cover-pre');
+const coverInput = document.getElementById('cover-text-input');
+editCoverBtn.addEventListener('click', function() {
+  if (coverTextarea.style.display === 'none') {
+    coverTextarea.style.display = 'block';
+    coverPre.style.display = 'none';
+    editCoverBtn.textContent = 'Done';
+    coverTextarea.value = coverPre.textContent;
+  } else {
+    coverTextarea.style.display = 'none';
+    coverPre.style.display = 'block';
+    editCoverBtn.textContent = 'Edit';
+    coverPre.textContent = coverTextarea.value;
+    coverInput.value = coverTextarea.value;
+  }
+});
+</script>
 {% elif error %}
   <div class="alert alert-danger mt-4">{{ error }}</div>
 {% endif %}
@@ -66,5 +444,420 @@ if (form) {
     document.getElementById('loading-spinner').style.display = 'block';
   });
 }
+
+// Only run if we have tailored results
+if (document.getElementById('resultTabs')) {
+  // Copy functions for resume and cover letter
+  document.getElementById('copy-resume-btn')?.addEventListener('click', function() {
+    const resumeText = document.getElementById('tailored-resume-content').textContent;
+    navigator.clipboard.writeText(resumeText)
+      .then(() => {
+        this.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        setTimeout(() => {
+          this.innerHTML = '<i class="fas fa-copy"></i> Copy Resume to Clipboard';
+        }, 2000);
+      });
+  });
+
+  document.getElementById('copy-cover-btn')?.addEventListener('click', function() {
+    const coverText = document.getElementById('tailored-cover-letter-content').textContent;
+    navigator.clipboard.writeText(coverText)
+      .then(() => {
+        this.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        setTimeout(() => {
+          this.innerHTML = '<i class="fas fa-copy"></i> Copy Cover Letter to Clipboard';
+        }, 2000);
+      });
+  });
+
+  // No suggestion application logic here - removed
+  
+  // ATS Score recalculation
+  document.getElementById('recalculate-ats-btn')?.addEventListener('click', function() {
+    // Get the current resume text
+    const currentResumeText = document.getElementById('tailored-resume-content').textContent;
+    const jobId = '{{ job._id }}';
+    
+    // Show a loading indicator on the button
+    const originalButtonText = this.innerHTML;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Recalculating...';
+    this.disabled = true;
+    
+    // Show a loading indicator in the ATS score area
+    const atsScoreElement = document.querySelector('.card-body div[style*="font-size:2.5rem"]');
+    const originalScore = atsScoreElement.textContent;
+    atsScoreElement.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
+    
+    // Send AJAX request to recalculate
+    fetch('{{ url_for("main.recalculate_ats_score") }}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token() }}'
+      },
+      body: JSON.stringify({
+        job_id: jobId,
+        resume_text: currentResumeText
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      // Update the ATS score on the page
+      if (data.success) {
+        // Update the ATS score display
+        atsScoreElement.textContent = data.ats_score;
+        
+        // Show success message
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+        alertDiv.innerHTML = `
+          <strong>Success!</strong> ATS score updated to ${data.ats_score}.
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('#resume').insertBefore(alertDiv, document.querySelector('#resume h4'));
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+          alertDiv.classList.remove('show');
+          setTimeout(() => alertDiv.remove(), 500);
+        }, 5000);
+      } else {
+        // Show error
+        atsScoreElement.textContent = originalScore;
+        alert('Error recalculating ATS score: ' + data.error);
+      }
+      
+      // Reset button
+      this.innerHTML = originalButtonText;
+      this.disabled = false;
+    })
+    .catch(error => {
+      // Handle errors
+      console.error('Error:', error);
+      atsScoreElement.textContent = originalScore;
+      this.innerHTML = originalButtonText;
+      this.disabled = false;
+      
+      // Show error alert
+      const alertDiv = document.createElement('div');
+      alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+      alertDiv.innerHTML = `
+        <strong>Error!</strong> Failed to recalculate ATS score. Please try again.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      `;
+      document.querySelector('#resume').insertBefore(alertDiv, document.querySelector('#resume h4'));
+    });
+  });
+}
 </script>
+
+<!-- Auto-optimize resume script -->
+<script>
+document.getElementById('auto-optimize-resume-btn')?.addEventListener('click', function() {
+  // Get current ATS score - find the element with the score
+  const atsScoreElement = document.querySelector('.card-body div[style*="font-size:2.5rem"]');
+  const currentAtsScore = parseInt(atsScoreElement?.textContent || "0");
+  
+  // If already 90+, alert user and exit
+  if (currentAtsScore >= 90) {
+    alert('Your resume already has a ' + currentAtsScore + '% ATS score! No optimization needed.');
+    return;
+  }
+  
+  // Store original button text
+  const originalButtonText = this.innerHTML;
+  
+  // Disable button and show loading
+  this.disabled = true;
+  this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Optimizing...';
+  
+  // Show progress message
+  const progressElement = document.getElementById('optimization-progress');
+  if (progressElement) {
+    progressElement.style.display = 'block';
+  } else {
+    console.warn("Progress element not found");
+  }
+  
+  // Get the current resume text
+  const resumeText = document.getElementById('resume-pre').textContent;
+  // Try to get job ID from URL or from the download form
+  let jobId = new URLSearchParams(window.location.search).get('job_id');
+  if (!jobId) {
+    // Try to extract from the download form action
+    const downloadForm = document.getElementById('download-resume-form');
+    if (downloadForm) {
+      const actionUrl = downloadForm.getAttribute('action');
+      if (actionUrl) {
+        const match = actionUrl.match(/\/job\/([^\/]+)\/download/);
+        if (match && match[1]) {
+          jobId = match[1];
+        }
+      }
+    }
+  }
+  // If still no job ID, use the one embedded in the page
+  if (!jobId) {
+    jobId = '{{ job._id }}'
+  }
+  
+  // Debug logging
+  console.log("Starting resume optimization request:");
+  console.log("- Job ID:", jobId);
+  console.log("- Resume length:", resumeText ? resumeText.length : 0);
+  
+  // Call the optimization endpoint
+  fetch('{{ url_for("main.auto_optimize_resume") }}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': '{{ csrf_token() }}'
+    },
+    body: JSON.stringify({
+      job_id: jobId,
+      resume_text: resumeText,
+      target_score: 90
+    })
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log("Received optimization response:", data);
+    if (data.success) {
+      // Update the resume text
+      console.log("Optimized resume received:", data.optimized_resume ? data.optimized_resume.substring(0, 100) + "..." : "empty");
+      
+      // Make sure we have valid content
+      if (!data.optimized_resume) {
+        console.error("Empty optimized resume received from server");
+        alert("Error: Received empty resume content from server");
+        return;
+      }
+      
+      const resumePre = document.getElementById('resume-pre');
+      const resumeTextarea = document.getElementById('resume-textarea');
+      
+      if (!resumePre) {
+        console.error("Could not find resume-pre element");
+      } else {
+        resumePre.textContent = data.optimized_resume;
+      }
+      
+      if (!resumeTextarea) {
+        console.error("Could not find resume-textarea element");
+      } else {
+        resumeTextarea.value = data.optimized_resume;
+      }
+      
+      // Update the hidden input field for form submissions
+      const resumeInput = document.getElementById('resume-text-input');
+      if (resumeInput) {
+        resumeInput.value = data.optimized_resume;
+      } else {
+        console.error("Could not find resume-text-input element");
+      }
+      
+      // Update ATS score
+      const atsScoreElement = document.querySelector('.card-body div[style*="font-size:2.5rem"]');
+      if (atsScoreElement) {
+        atsScoreElement.textContent = data.ats_score;
+      }
+      
+      // Update progress bars
+      const newScore = data.ats_score;
+      document.querySelector('.progress-bar.bg-warning, .progress-bar.bg-danger, .progress-bar.bg-success').style.width = newScore + '%';
+      document.querySelector('.progress-bar.bg-warning, .progress-bar.bg-danger, .progress-bar.bg-success').textContent = newScore + '%';
+      
+      // Adjust progress bar color
+      const progressBar = document.querySelector('.progress-bar.bg-warning, .progress-bar.bg-danger, .progress-bar.bg-success');
+      progressBar.classList.remove('bg-warning', 'bg-danger');
+      progressBar.classList.add('bg-success');
+      
+      // Update suggestion badges
+      if (data.implemented_suggestions && data.implemented_suggestions.length > 0) {
+        data.implemented_suggestions.forEach(index => {
+          const suggestionCard = document.querySelector(`.suggestion-card[data-suggestion-id="${index}"]`);
+          if (suggestionCard) {
+            const badge = suggestionCard.querySelector('.suggestion-status');
+            badge.textContent = 'Implemented';
+            badge.classList.remove('bg-light', 'text-dark');
+            badge.classList.add('bg-success', 'text-white');
+          }
+        });
+      }
+      
+      // Show success message
+      const alertDiv = document.createElement('div');
+      alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+      alertDiv.innerHTML = `
+        <strong>Success!</strong> Your resume has been optimized to achieve a ${data.ats_score}% ATS score.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      `;
+      const suggestionDiv = document.querySelector('#suggestions');
+      const rowDiv = document.querySelector('#suggestions .row');
+      if (suggestionDiv && rowDiv) {
+        suggestionDiv.insertBefore(alertDiv, rowDiv);
+      } else {
+        // Fallback if we can't find the elements
+        document.querySelector('.tab-content').appendChild(alertDiv);
+      }
+      
+      // Auto-dismiss after 5 seconds
+      setTimeout(() => {
+        alertDiv.classList.remove('show');
+        setTimeout(() => alertDiv.remove(), 500);
+      }, 5000);
+      
+      // Switch to the Resume tab
+      const resumeTab = document.querySelector('#resume-tab');
+      if (!resumeTab) {
+        console.error("Could not find resume-tab element");
+        // Alternative approach: directly show the resume tab pane
+        const resumeTabPane = document.querySelector('#resume');
+        if (resumeTabPane) {
+          document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.remove('show', 'active');
+          });
+          resumeTabPane.classList.add('show', 'active');
+        }
+      } else {
+        resumeTab.click();
+      }
+      
+    } else {
+      // Show error
+      console.error('Optimization error:', data.error);
+      alert('Error optimizing resume: ' + data.error);
+      
+      // Show detailed error in the UI
+      const alertDiv = document.createElement('div');
+      alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+      alertDiv.innerHTML = `
+        <strong>Error!</strong> Failed to optimize resume.<br>
+        <small>Details: ${data.error}</small>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      `;
+      const suggestionDiv = document.querySelector('#suggestions');
+      if (suggestionDiv) {
+        const rowDiv = document.querySelector('#suggestions .row');
+        suggestionDiv.insertBefore(alertDiv, rowDiv || suggestionDiv.firstChild);
+      }
+    }
+    
+    // Reset button and hide progress
+    this.innerHTML = originalButtonText;
+    this.disabled = false;
+    if (progressElement) {
+      progressElement.style.display = 'none';
+    }
+  })
+  .catch(error => {
+    // Handle errors
+    console.error('Error:', error);
+    this.innerHTML = originalButtonText;
+    this.disabled = false;
+    if (progressElement) {
+      progressElement.style.display = 'none';
+    }
+    
+    // Show error alert with more details
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+    alertDiv.innerHTML = `
+      <strong>Error!</strong> Failed to optimize resume. Please try again.<br>
+      <small>Technical details: ${error.toString()}</small>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.querySelector('#suggestions').insertBefore(alertDiv, document.querySelector('#suggestions .row'));
+    
+    // Log additional debug info
+    console.log('Debug info:');
+    console.log('Job ID:', jobId);
+    console.log('Resume text length:', resumeText?.length || 0);
+  });
+});
+</script>
+
+<!-- Include job description enhancement script -->
+<script src="{{ url_for('static', filename='js/job-description.js') }}"></script>
+
+<!-- Hide Format and Sections buttons -->
+<style>
+/* Target common format/section button classes and selectors */
+.format-button, 
+.sections-button, 
+button[data-format], 
+button[data-sections],
+.dropdown-item:contains("Format"), 
+.dropdown-item:contains("Sections"),
+.btn-group button:contains("Format"),
+.btn-group button:contains("Sections") {
+  display: none !important;
+}
+
+/* Hide buttons with icons commonly used for formatting */
+button:has(i.fa-file-alt),
+button:has(i.fa-th-large),
+button:has(i.fa-font),
+button:has(i.fa-list) {
+  display: none !important;
+}
+
+/* Hide any dropdown menus related to formatting */
+.dropdown-menu:has(.dropdown-item:contains("Format")),
+.dropdown-menu:has(.dropdown-item:contains("Sections")) {
+  display: none !important;
+}
+</style>
+
+<script>
+// Remove Format and Sections buttons that might be dynamically added
+document.addEventListener('DOMContentLoaded', function() {
+  // Function to hide Format/Sections buttons
+  function hideFormatSectionsButtons() {
+    // Find by text content
+    document.querySelectorAll('button, a, .dropdown-item, .btn').forEach(el => {
+      if (el.textContent && (
+          el.textContent.includes('Format') || 
+          el.textContent.includes('Sections'))) {
+        el.style.display = 'none';
+        
+        // Also hide parent button groups if any
+        let parent = el.parentElement;
+        if (parent && (parent.classList.contains('btn-group') || 
+                      parent.classList.contains('dropdown'))) {
+          parent.style.display = 'none';
+        }
+      }
+    });
+    
+    // Find by common attribute patterns
+    document.querySelectorAll('[class*="format"], [class*="section"], [data-format], [data-sections]').forEach(el => {
+      el.style.display = 'none';
+    });
+  }
+  
+  // Initial hide
+  hideFormatSectionsButtons();
+  
+  // Watch for dynamically added buttons
+  const observer = new MutationObserver(function() {
+    hideFormatSectionsButtons();
+  });
+  
+  // Observe DOM changes
+  observer.observe(document.body, { 
+    childList: true, 
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class', 'style', 'data-format', 'data-sections'] 
+  });
+});
+</script>
+
+<!-- No helper functions needed as Apply functionality was removed -->
 {% endblock %}

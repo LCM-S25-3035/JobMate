@@ -3,7 +3,7 @@ Main Routes for JobMate
 Landing page, dashboards, and core application routes
 """
 
-from flask import render_template, redirect, url_for, request, jsonify, current_app, send_file, session
+from flask import render_template, redirect, url_for, request, jsonify, current_app, send_file, session, flash
 from flask_login import current_user, login_required
 from app.main import bp
 from app.models.user import User
@@ -11,6 +11,10 @@ from app.models.application import Application
 from app.models.job_posting import JobPosting
 from datetime import datetime, timedelta
 from bson import ObjectId
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 from app.ai_agents.gemini_utils import call_gemini_api
 from app.models.resume import Resume
 from werkzeug.utils import secure_filename
@@ -33,7 +37,16 @@ import re
 def save_best_tailored_resume(mongo_db, user_id, job_id, ats_score, resume_text, cover_letter):
     collection = mongo_db.tailored_resumes
     existing = collection.find_one({"user_id": user_id, "job_id": job_id})
-    if not existing or (ats_score and ats_score > existing.get("ats_score", 0)):
+    # Ensure ats_score is treated as a number for comparison
+    try:
+        ats_score_num = float(ats_score) if ats_score is not None else 0
+        existing_score = float(existing.get("ats_score", 0)) if existing else 0
+        should_update = not existing or (ats_score_num > existing_score)
+    except (ValueError, TypeError):
+        # If conversion fails, always update
+        should_update = True
+        
+    if should_update:
         collection.update_one(
             {"user_id": user_id, "job_id": job_id},
             {"$set": {
@@ -434,6 +447,10 @@ def tailor_resume(job_id):
     ats_score = None
     error = None
     resume_text = None
+    
+    # Get application URL from job data using the correct field name
+    application_url = job.get('job_url_direct') or job.get('application_url') or job.get('company_website')
+    application_email = job.get('email') or job.get('application_email') or job.get('contact_email')
 
     if request.method == 'POST':
         # Handle file upload
@@ -459,8 +476,52 @@ def tailor_resume(job_id):
         if resume_text and not error:
             # Prepare prompt for Gemini
             prompt = f"""
-You are an expert career coach and resume writer. Given the following job description and resume, tailor the resume and generate a cover letter for this job. Also, provide an ATS (Applicant Tracking System) compatibility score (0-100) and suggestions for improvement.
+# RESUME TAILORING TASK
 
+You are an expert ATS optimization specialist and resume writer with deep expertise in the tech sector. Your task is to tailor the candidate's resume to maximize ATS match score and appeal to hiring managers for the specific job description.
+
+## JOB DESCRIPTION
+```
+{job.get('description', '')}
+```
+
+## ORIGINAL RESUME
+```
+{resume_text}
+```
+
+## TAILORING INSTRUCTIONS
+
+1. MAINTAIN ACCURACY: Never fabricate experience, education, or skills not mentioned in the original resume.
+
+2. KEYWORD OPTIMIZATION:
+   - Identify primary and secondary keywords from the job description
+   - Naturally integrate these keywords into appropriate sections of the resume
+   - Match phrasing used in the job description where appropriate
+   - Ensure keyword density is optimized but not excessive (aim for 5-8 exact matches per key requirement)
+   - Focus especially on technical skills, tools, and methodologies mentioned in the job
+
+3. FORMATTING & STRUCTURE:
+   - Use clean, ATS-friendly formatting
+   - Prioritize relevant experience and skills based on job requirements
+   - Use standard section headings that ATS systems recognize
+   - Maintain chronological order within sections
+   - Use bullet points for readability
+   - Format the resume using the specified structure below
+
+4. CONTENT ENHANCEMENT:
+   - Transform generic statements into achievement-focused bullets
+   - For EACH job experience, include EXACTLY 5 bullet points - no more, no less
+   - Each bullet point MUST include metrics (numbers, percentages, dollar amounts) and demonstrate clear impact
+   - Use strong action verbs at the beginning of bullet points (e.g., Increased, Developed, Implemented)
+   - Cover different aspects in the 5 bullets: technical skills, leadership, problem-solving, collaboration, and quantifiable business impact
+   - Organize the Skills section with clear subheadings (Programming Languages, Frameworks & Libraries, etc.)
+   - Under each skill subheading, list specific skills separated by commas (not as bullet points)
+   - Match skills specifically to those mentioned in the job description, prioritizing exact keyword matches
+   - Highlight transferable skills that match the job requirements
+   - Emphasize Ontario tech sector experience if available
+
+## REQUIRED OUTPUT FORMAT
 Format the tailored resume as plain text in the following structure:
 
 ---
@@ -469,30 +530,59 @@ Contact: <Email> | <Phone> | <LinkedIn>
 Location: <City, Province>
 
 Summary:
-<Professional summary paragraph>
+<Professional summary paragraph highlighting key qualifications relevant to job>
 
 Skills:
-- Skill 1
-- Skill 2
-- ...
+Programming Languages: <List key programming languages from resume that match job requirements>
+Frameworks & Libraries: <List relevant frameworks and libraries that match job requirements>
+Tools & Technologies: <List relevant tools, platforms, and technologies from resume>
+Cloud & Infrastructure: <List cloud platforms (AWS, Azure, GCP) and infrastructure tools (Terraform, Kubernetes) that match job requirements>
+Databases & Storage: <List databases (SQL, NoSQL, PostgreSQL, MongoDB) and data storage solutions from resume>
+Domain Knowledge: <List industry-specific skills and knowledge areas>
+Soft Skills: <List 3-5 most relevant soft skills for the position>
 
 Experience:
-Company Name | Job Title | Start Date - End Date
-- Key achievement 1
-- Key achievement 2
+<Company Name> | <Job Title> | <Start Date> - <End Date>
+- <Quantified achievement with specific metrics (e.g., "Increased application performance by 40% through database optimization")>
+- <Technical achievement demonstrating skills required in job posting with measurable outcome>
+- <Leadership or collaborative achievement showing teamwork with quantifiable results>
+- <Problem-solving achievement with clear business impact and metrics>
+- <Innovation or project accomplishment directly relevant to job requirements with measurable success>
+
+# REPEAT THE ABOVE FORMAT WITH EXACTLY 5 BULLET POINTS FOR EACH JOB EXPERIENCE
 
 Education:
-Degree | Institution | Graduation Year
+<Degree> | <Institution> | <Graduation Year>
 
 ---
 
-Job Description:
-{job.get('description', '')}
+## OUTPUT REQUIREMENTS
 
-Resume:
-{resume_text}
+Provide your response in JSON format with the following structure:
 
-Respond in JSON with keys: tailored_resume (as plain text in the above format), cover_letter, ats_score, suggestions.
+```json
+{{
+  "tailored_resume": "The complete tailored resume text with appropriate formatting",
+  "cover_letter": "A matching cover letter highlighting key qualifications for this role",
+  "ats_score": "A number between 0-100 representing the estimated ATS match score",
+  "suggestions": [
+    {{
+      "area": "Specific section or aspect of the resume",
+      "suggestion": "Detailed actionable suggestion to further improve the resume"
+    }}
+    // Include 5-8 specific suggestions
+  ]
+}}
+```
+
+For the suggestions, focus on:
+1. Areas where keywords could be better integrated
+2. Achievements that could be better quantified
+3. Skills that should be emphasized based on the job
+4. Format improvements for ATS optimization
+5. Section ordering or content prioritization
+
+Be specific and actionable with each suggestion.
 """
             gemini_response = call_gemini_api(prompt)
             import json
@@ -503,7 +593,15 @@ Respond in JSON with keys: tailored_resume (as plain text in the above format), 
                     try:
                         result = json.loads(content)
                         tailored_result = result
-                        ats_score = result.get('ats_score')
+                        # Ensure ats_score is a number
+                        ats_score_raw = result.get('ats_score')
+                        if isinstance(ats_score_raw, str):
+                            # Try to extract numeric value if it's a string like "85/100" or just "85"
+                            ats_score_match = re.search(r'(\d+)', ats_score_raw)
+                            ats_score = int(ats_score_match.group(1)) if ats_score_match else None
+                        else:
+                            # Keep as is if it's already a number
+                            ats_score = ats_score_raw
                     except Exception as e:
                         import re
                         match = re.search(r'\{.*\}', content, re.DOTALL)
@@ -511,7 +609,15 @@ Respond in JSON with keys: tailored_resume (as plain text in the above format), 
                             try:
                                 result = json.loads(match.group(0))
                                 tailored_result = result
-                                ats_score = result.get('ats_score')
+                                # Ensure ats_score is a number
+                                ats_score_raw = result.get('ats_score')
+                                if isinstance(ats_score_raw, str):
+                                    # Try to extract numeric value if it's a string like "85/100" or just "85"
+                                    ats_score_match = re.search(r'(\d+)', ats_score_raw)
+                                    ats_score = int(ats_score_match.group(1)) if ats_score_match else None
+                                else:
+                                    # Keep as is if it's already a number
+                                    ats_score = ats_score_raw
                             except Exception as e2:
                                 error = f"Failed to parse extracted JSON: {e2}. Raw response: {content}"
                         else:
@@ -525,7 +631,15 @@ Respond in JSON with keys: tailored_resume (as plain text in the above format), 
             if tailored_result:
                 user_sections = extract_resume_sections(resume_text) if resume_text else None
                 tailored_result = postprocess_tailored_resume_output(tailored_result, user_sections)
-                ats_score = tailored_result.get('ats_score')
+                # Get updated ATS score and ensure it's numeric
+                ats_score_raw = tailored_result.get('ats_score')
+                if isinstance(ats_score_raw, str):
+                    # Try to extract numeric value if it's a string like "85/100" or just "85"
+                    ats_score_match = re.search(r'(\d+)', ats_score_raw)
+                    ats_score = int(ats_score_match.group(1)) if ats_score_match else None
+                else:
+                    # Keep as is if it's already a number
+                    ats_score = ats_score_raw
 
             # --- Save best tailored resume in MongoDB ---
             if tailored_result and ats_score is not None:
@@ -538,7 +652,16 @@ Respond in JSON with keys: tailored_resume (as plain text in the above format), 
                     tailored_result.get('cover_letter', '')
                 )
 
-    return render_template('tailor.html', job=job, tailored_result=tailored_result, ats_score=ats_score, error=error, user_resume_text=resume_text if resume_text else None)
+    return render_template(
+        'tailor.html', 
+        job=job,
+        tailored_result=tailored_result, 
+        ats_score=ats_score, 
+        error=error, 
+        user_resume_text=resume_text if resume_text else None,
+        application_url=application_url,
+        application_email=application_email
+    )
 
 
 @bp.route('/download-tailored/<job_id>/<doc_type>', methods=['POST'])
@@ -657,30 +780,37 @@ def download_tailored(job_id, doc_type):
             return
         story.append(Spacer(1, 10))
         story.append(Paragraph(f'<b>{title.rstrip(":").upper()}</b>', section_style))
-        # SKILLS section: group and subtitle logic
+        # SKILLS section: handle subheadings and skill lists
         if title.lower().startswith('skills'):
-            group = None
-            group_buffer = []
+            current_category = None
             for line in buffer:
                 line_strip = line.strip()
-                if line_strip.startswith('-') and len(line_strip) > 2 and not line_strip[1].isspace():
-                    if group and group_buffer:
-                        story.append(Paragraph(f'<b>{group.lstrip("- ")}</b>', subtitle_style))
-                        for skill in group_buffer:
-                            story.append(Paragraph(skill.lstrip('-•').strip(), bullet_style, bulletText='•'))
-                        group_buffer = []
-                    group = line_strip
+                if not line_strip:
+                    continue
+                    
+                # Check if this is a skill category heading (ends with a colon)
+                if ':' in line_strip and not line_strip.startswith('-') and not line_strip.startswith('•'):
+                    # This is a category heading like "Programming Languages: Python, Java"
+                    parts = line_strip.split(':', 1)
+                    if len(parts) == 2:
+                        category = parts[0].strip()
+                        skills = parts[1].strip()
+                        
+                        # Add the category as a subheading
+                        story.append(Paragraph(f'<b>{category}</b>', subtitle_style))
+                        
+                        # Add the skills as normal text (not bullets)
+                        if skills:
+                            story.append(Paragraph(skills, normal_style))
+                    else:
+                        # Just a heading without skills yet
+                        story.append(Paragraph(f'<b>{line_strip}</b>', subtitle_style))
                 elif line_strip.startswith('-') or line_strip.startswith('•'):
-                    group_buffer.append(line_strip)
-                elif line_strip:
-                    group_buffer.append(line_strip)
-            if group and group_buffer:
-                story.append(Paragraph(f'<b>{group.lstrip("- ")}</b>', subtitle_style))
-                for skill in group_buffer:
-                    story.append(Paragraph(skill.lstrip('-•').strip(), bullet_style, bulletText='•'))
-            elif group_buffer:
-                for skill in group_buffer:
-                    story.append(Paragraph(skill.lstrip('-•').strip(), bullet_style, bulletText='•'))
+                    # Handle any bullet points that might still exist in the skills section
+                    story.append(Paragraph(line_strip.lstrip('-•').strip(), bullet_style, bulletText='•'))
+                else:
+                    # Plain text that isn't a category heading
+                    story.append(Paragraph(line_strip, normal_style))
         # EXPERIENCE section: bold subheader for lines with ' | '
         elif title.lower().startswith('experience') or title.lower().startswith('professional experience'):
             for line in buffer:
@@ -1040,3 +1170,127 @@ def submit_tailored_feedback(job_id):
         {"$push": {"feedback": feedback_entry}}
     )
     return jsonify({'success': True, 'message': 'Feedback submitted.'})
+
+
+@bp.route('/send-application/<job_id>', methods=['POST'])
+@login_required
+def send_application(job_id):
+    """Send application email with resume and cover letter"""
+    try:
+        mongo_db = current_app.mongo_db
+        job = mongo_db.jobs.find_one({"_id": ObjectId(job_id)})
+        if not job:
+            return jsonify({"success": False, "error": "Job not found"})
+        
+        # Get application email from job data
+        application_email = job.get('email') or job.get('application_email') or job.get('contact_email')
+        if not application_email:
+            return jsonify({"success": False, "error": "No application email found for this job"})
+        
+        data = request.json
+        resume_text = data.get('resume_text')
+        cover_letter_text = data.get('cover_letter_text')
+        
+        if not resume_text or not cover_letter_text:
+            return jsonify({"success": False, "error": "Resume or cover letter is missing"})
+        
+        # Log the application attempt
+        current_app.logger.info(f"User {current_user.id} is sending application for job {job_id}")
+        
+        # Generate PDF attachments from the text content
+        resume_pdf = io.BytesIO()
+        cover_letter_pdf = io.BytesIO()
+        
+        # Create resume PDF
+        p = canvas.Canvas(resume_pdf, pagesize=letter)
+        p.setTitle(f"Resume for {job.get('title')} at {job.get('company')}")
+        text_object = p.beginText(72, 750)  # 1 inch from top
+        text_object.setFont("Helvetica", 12)
+        for line in resume_text.split('\n'):
+            text_object.textLine(line)
+        p.drawText(text_object)
+        p.save()
+        resume_pdf.seek(0)
+        
+        # Create cover letter PDF
+        p = canvas.Canvas(cover_letter_pdf, pagesize=letter)
+        p.setTitle(f"Cover Letter for {job.get('title')} at {job.get('company')}")
+        text_object = p.beginText(72, 750)  # 1 inch from top
+        text_object.setFont("Helvetica", 12)
+        for line in cover_letter_text.split('\n'):
+            text_object.textLine(line)
+        p.drawText(text_object)
+        p.save()
+        cover_letter_pdf.seek(0)
+        
+        # Prepare email
+        msg = MIMEMultipart()
+        msg['From'] = current_user.email
+        msg['To'] = application_email
+        msg['Subject'] = f"Application for {job.get('title')} position"
+        
+        # Email body
+        body = f"""Dear Hiring Manager,
+
+I am writing to express my interest in the {job.get('title')} position at {job.get('company')}.
+
+Please find my resume and cover letter attached to this email.
+
+Thank you for your consideration.
+
+Sincerely,
+{current_user.first_name} {current_user.last_name}
+{current_user.email}
+"""
+        msg.attach(MIMEText(body, 'plain'))
+        
+        # Attach resume
+        resume_attachment = MIMEApplication(resume_pdf.read(), _subtype="pdf")
+        resume_attachment.add_header('Content-Disposition', f'attachment; filename=resume_{current_user.last_name}.pdf')
+        msg.attach(resume_attachment)
+        
+        # Attach cover letter
+        cover_letter_attachment = MIMEApplication(cover_letter_pdf.read(), _subtype="pdf")
+        cover_letter_attachment.add_header('Content-Disposition', f'attachment; filename=cover_letter_{current_user.last_name}.pdf')
+        msg.attach(cover_letter_attachment)
+        
+        # Get SMTP settings from config
+        smtp_server = current_app.config.get('SMTP_SERVER', 'smtp.gmail.com')
+        smtp_port = current_app.config.get('SMTP_PORT', 587)
+        smtp_user = current_app.config.get('SMTP_USER', current_user.email)
+        smtp_password = current_app.config.get('SMTP_PASSWORD', '')
+        
+        # Send email through SMTP
+        if current_app.config.get('TESTING') or not smtp_password:
+            # In testing mode or if no SMTP password is configured, just log the attempt
+            current_app.logger.info(f"Email would be sent to {application_email} for job {job.get('title')}")
+        else:
+            # Real email sending
+            with smtplib.SMTP(smtp_server, smtp_port) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_password)
+                server.send_message(msg)
+        
+        # Record this application in the database
+        mongo_db.applications.insert_one({
+            "user_id": str(current_user.id),
+            "job_id": str(job_id),
+            "applied_at": datetime.utcnow(),
+            "method": "email",
+            "status": "applied",
+            "email": application_email,
+            "job_title": job.get('title'),
+            "company": job.get('company')
+        })
+        
+        return jsonify({
+            "success": True, 
+            "message": f"Application sent successfully to {application_email}"
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error sending application email: {str(e)}", exc_info=True)
+        return jsonify({
+            "success": False, 
+            "error": "An error occurred while sending your application. Please try again."
+        })

@@ -48,13 +48,41 @@ class User(UserMixin, db.Model):
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    last_login = db.Column(db.DateTime, nullable=True)
     
     # Relationships
     resumes = db.relationship('Resume', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     applications = db.relationship('Application', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     job_preferences = db.relationship('JobPreference', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     job_postings = db.relationship('JobPosting', backref='recruiter', lazy='dynamic', cascade='all, delete-orphan')
+    
+    # Auto-Apply Methods
+    def get_autoapply_settings(self):
+        """Get the user's auto-apply settings as a dictionary"""
+        from app.models.auto_apply_settings import AutoApplySettings
+        
+        settings = AutoApplySettings.query.filter_by(user_id=self.id).first()
+        if not settings:
+            return None
+        return settings.to_dict()
+    
+    def update_autoapply_settings(self, enabled=False, max_daily=5, min_match_score=80, 
+                                cover_letter_type='generic', preferred_job_types='all'):
+        """Update or create auto-apply settings for the user"""
+        from app.models.auto_apply_settings import AutoApplySettings
+        
+        settings = AutoApplySettings.query.filter_by(user_id=self.id).first()
+        if not settings:
+            settings = AutoApplySettings(user_id=self.id)
+            db.session.add(settings)
+            
+        settings.enabled = enabled
+        settings.max_daily = max_daily
+        settings.min_match_score = min_match_score
+        settings.cover_letter_type = cover_letter_type
+        settings.preferred_job_types = preferred_job_types
+        
+        db.session.commit()
+        return settings
     
     def __init__(self, email, password, first_name, last_name, user_type='applicant', **kwargs):
         """Initialize user with required fields"""

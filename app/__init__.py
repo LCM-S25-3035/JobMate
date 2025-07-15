@@ -135,6 +135,9 @@ def create_app(config_class=None):
     from app.match import bp as match_bp
     app.register_blueprint(match_bp, url_prefix='/match')
     
+    from app.autoapply import bp as autoapply_bp
+    app.register_blueprint(autoapply_bp, url_prefix='/autoapply')
+    
     # TODO: Implement dashboard module
     # # from app.dashboard import bp as dashboard_bp
     # # app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
@@ -144,6 +147,15 @@ def create_app(config_class=None):
     
     from app.main import bp as main_bp
     app.register_blueprint(main_bp)
+    
+    # Custom template filters
+    @app.template_filter('format_number')
+    def format_number(value):
+        """Format numbers with commas as thousand separators"""
+        try:
+            return "{:,}".format(int(value))
+        except (ValueError, TypeError):
+            return value
     
     # Error handlers
     @app.errorhandler(404)
@@ -194,4 +206,4 @@ def cleanup_mongo():
     global mongo_client
     if mongo_client:
         mongo_client.close()
-        print("📦 MongoDB connection closed") 
+        print("📦 MongoDB connection closed")

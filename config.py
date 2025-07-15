@@ -45,6 +45,13 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or 'noreply@jobmate.com'
     
+    # SMTP Configuration (for direct email sending)
+    SMTP_SERVER = os.environ.get('SMTP_SERVER') or 'smtp.gmail.com'
+    SMTP_PORT = int(os.environ.get('SMTP_PORT') or 587)
+    SMTP_USER = os.environ.get('SMTP_USER') or MAIL_USERNAME
+    SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD') or MAIL_PASSWORD
+    SMTP_USE_TLS = os.environ.get('SMTP_USE_TLS', 'true').lower() in ['true', 'on', '1']
+    
     # File Upload Configuration
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
     UPLOAD_FOLDER = os.path.join(basedir, 'uploads')

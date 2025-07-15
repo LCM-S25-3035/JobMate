@@ -82,6 +82,11 @@ def create_app(config_class=None):
                 template_folder=template_dir,
                 static_folder=static_dir)
     
+    @app.template_filter('nl2br')
+    def nl2br_filter(s):
+        return s.replace('\n', '<br>\n') if s else ''
+
+    
     from dotenv import load_dotenv
     load_dotenv() 
     

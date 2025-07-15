@@ -1,6 +1,5 @@
 import os
 import json
-from sites.indeed import IndeedBot
 from sites.glassdoor import GlassdoorBot
 
 # Get the directory where the current Python file is

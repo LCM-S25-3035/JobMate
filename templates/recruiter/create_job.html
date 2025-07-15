@@ -264,7 +264,7 @@
             <!-- Form -->
             <div class="form-container">
                 <form method="POST" id="createJobForm">
-                    {{ csrf_token() }}
+                    <input type="hidden" name="csrf_token" value="{{ form.csrf_token._value() }}">
                     
                     <!-- Basic Information Section -->
                     <div class="form-section" id="section-1">
@@ -275,47 +275,49 @@
                         <div class="row mb-3">
                             <div class="col-md-8">
                                 <div class="form-floating">
-                                    <input type="text" class="form-control" id="title" name="title" 
-                                           placeholder="Job Title" required maxlength="100"
-                                           oninput="updateCharacterCount('title', 100)">
-                                    <label for="title">Job Title *</label>
-                                </div>
-                                <div class="character-counter" id="title-counter">0/100 characters</div>
-                                <div class="form-help">
-                                    <i class="bi bi-lightbulb me-1"></i>
-                                    Use clear, specific titles like "Senior Software Developer" rather than "Ninja Coder"
+                                    {{ form.title(class="form-control", placeholder="Job Title") }}
+                                    {{ form.title.label(class="form-label") }}   
+                                    {% if form.title.errors %}      
+                                        <div class="text-danger">{{ form.title.errors[0] }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="form-floating">
-                                    <input type="text" class="form-control" id="company_name" name="company_name" 
-                                           placeholder="Company Name" required maxlength="50">
-                                    <label for="company_name">Company Name *</label>
+                        </div>
+
+                        <div class="row mb-3">
+                           <div class="col-md-4"> 
+                              <div class="form-floating">
+                                  {{ form.company_name(class="form-control", placeholder="Company Name") }}
+                                  {{ form.company_name.label(class="form-label") }}
+                                  {% if form.company_name.errors %}
+                                      <div class="text-danger">{{ form.company_name.errors[0] }}</div>
+                                  {% endif %}
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="row mb-3">
+                          <div class="row mb-3">
                             <div class="col-md-6">
                                 <div class="form-floating">
-                                    <input type="text" class="form-control" id="location" name="location" 
-                                           placeholder="Location" required>
-                                    <label for="location">Location *</label>
-                                </div>
-                                <div class="form-help">
-                                    Examples: "Toronto, ON", "Remote - Canada", "Hybrid - Vancouver, BC"
+                                    {{ form.location(class="form-control", placeholder="Location") }}
+                                    {{ form.location.label(class="form-label") }}
+                                    {% if form.location.errors %}
+                                        <div class="text-danger">{{ form.location.errors[0] }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating">
-                                    <input type="text" class="form-control" id="department" name="department" 
-                                           placeholder="Department">
-                                    <label for="department">Department (Optional)</label>
+                                    {{ form.job_category(class="form-select", placeholder="Department") }}
+                                    {{ form.job_category.label(class="form-label") }}
+                                    {% if form.job_category.errors %}
+                                        <div class="text-danger">{{ form.job_category.errors[0] }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Job Details Section -->
                     <div class="form-section" id="section-2">
                         <h4 class="section-title">
@@ -325,73 +327,55 @@
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <div class="form-floating">
-                                    <select class="form-select" id="employment_type" name="employment_type">
-                                        <option value="full_time" selected>Full-time</option>
-                                        <option value="part_time">Part-time</option>
-                                        <option value="contract">Contract</option>
-                                        <option value="temporary">Temporary</option>
-                                        <option value="internship">Internship</option>
-                                    </select>
-                                    <label for="employment_type">Employment Type</label>
+                                    {{ form.employment_type(class="form-select") }}
+                                    {{ form.employment_type.label(class="form-label") }}
+                                    {% if form.employment_type.errors %}
+                                        <div class="text-danger">{{ form.employment_type.errors[0] }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-floating">
-                                    <select class="form-select" id="remote_type" name="remote_type">
-                                        <option value="office">On-site</option>
-                                        <option value="remote">Remote</option>
-                                        <option value="hybrid" selected>Hybrid</option>
-                                    </select>
-                                    <label for="remote_type">Work Type</label>
+                                    {{ form.work_setting(class="form-select") }}
+                                    {{ form.work_setting.label(class="form-label") }}
+                                    {% if form.work_setting.errors %}
+                                        <div class="text-danger">{{ form.work_setting.errors[0] }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-floating">
-                                    <select class="form-select" id="experience_level" name="experience_level">
-                                        <option value="entry">Entry Level (0-2 years)</option>
-                                        <option value="junior">Junior (2-4 years)</option>
-                                        <option value="mid" selected>Mid Level (4-7 years)</option>
-                                        <option value="senior">Senior (7+ years)</option>
-                                        <option value="lead">Lead/Manager</option>
-                                        <option value="executive">Executive</option>
-                                    </select>
-                                    <label for="experience_level">Experience Level</label>
+                                 {{ form.experience_level(class="form-select") }}
+                                    {{ form.experience_level.label(class="form-label") }}
+                                    {% if form.experience_level.errors %}
+                                        <div class="text-danger">{{ form.experience_level.errors[0] }}</div>
+                                    {% endif %}   
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Salary Information -->
+
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <div class="form-floating">
-                                    <input type="number" class="form-control" id="salary_min" name="salary_min" 
-                                           placeholder="Minimum Salary" min="0" max="500000"
-                                           oninput="updateSalaryRange()">
-                                    <label for="salary_min">Minimum Salary (CAD)</label>
+                                    {{ form.salary_min(class="form-control", placeholder="Minimum Salary") }}
+                                    {{ form.salary_min.label(class="form-label") }}
+                                    {% if form.salary_min.errors %}
+                                        <div class="text-danger">{{ form.salary_min.errors[0] }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating">
-                                    <input type="number" class="form-control" id="salary_max" name="salary_max" 
-                                           placeholder="Maximum Salary" min="0" max="500000"
-                                           oninput="updateSalaryRange()">
-                                    <label for="salary_max">Maximum Salary (CAD)</label>
+                                    {{ form.salary_max(class="form-control", placeholder="Maximum Salary") }}
+                                    {{ form.salary_max.label(class="form-label") }}
+                                    {% if form.salary_max.errors %}
+                                        <div class="text-danger">{{ form.salary_max.errors[0] }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="salary-range-display" id="salaryDisplay" style="display: none;">
-                            Salary Range: <span id="salaryRangeText"></span>
-                        </div>
-                        
-                        <div class="ai-suggestion">
-                            <div class="suggestion-label">
-                                <i class="bi bi-robot me-1"></i>AI Salary Suggestion
-                            </div>
-                            <div>Based on the job title and location, similar positions typically offer: $65,000 - $95,000 CAD</div>
-                        </div>
                     </div>
-                    
+
                     <!-- Description Section -->
                     <div class="form-section" id="section-3">
                         <h4 class="section-title">
@@ -399,45 +383,49 @@
                         </h4>
                         
                         <div class="form-floating mb-4">
-                            <textarea class="form-control" id="description" name="description" 
-                                      placeholder="Job Description" style="height: 200px" required
-                                      maxlength="2000" oninput="updateCharacterCount('description', 2000)"></textarea>
-                            <label for="description">Job Description *</label>
+                            {{ form.description(class="form-control", id="description", placeholder="Job Description", style="height: 200px", maxlength="2000", oninput="updateCharacterCount('description', 2000)") }}
+                            {{ form.description.label(class="form-label") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">{{ form.description.errors[0] }}</div>
+                            {% endif %}
                         </div>
                         <div class="character-counter" id="description-counter">0/2000 characters</div>
-                        
-                        <div class="form-floating mb-4">
-                            <textarea class="form-control" id="requirements" name="requirements" 
-                                      placeholder="Requirements" style="height: 180px"
-                                      maxlength="1500" oninput="updateCharacterCount('requirements', 1500)"></textarea>
-                            <label for="requirements">Requirements & Qualifications</label>
+                        <div class = "form-floating mb-4">
+                            {{ form.requirements(class="form-control", id="requirements", placeholder="Requirements", style="height: 180px", maxlength="1500", oninput="updateCharacterCount('requirements', 1500)") }}
+                            {{ form.requirements.label(class="form-label") }}
+                            {% if form.requirements.errors %}
+                                <div class="text-danger">{{ form.requirements.errors[0] }}</div>
+                            {% endif %}
                         </div>
+                      
                         <div class="character-counter" id="requirements-counter">0/1500 characters</div>
-                        
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control" id="skills" name="skills" 
-                                   placeholder="Required Skills (comma-separated)">
-                            <label for="skills">Required Skills</label>
+
+                        <div class="form-floating mb-4">
+                            {{ form.skills(class="form-control", id="skills", placeholder="Skills (comma-separated)", oninput="updateSkillTags(this.value.split(','))") }}
+                            {{ form.skills.label(class="form-label") }}
+                            {% if form.skills.errors %}
+                                <div class="text-danger">{{ form.skills.errors[0] }}</div>
+                            {% endif %}
                         </div>
                         <div class="form-help">
-                            Enter skills separated by commas (e.g., "Python, React, SQL, Git")
+                            Enter Skills separated by commas. For example: <strong>Python, JavaScript, SQL</strong>
                         </div>
-                        <div class="skill-tags" id="skillTags"></div>
+                        <div class="skill-tags" id="skillTags">
                         
-                        <div class="ai-suggestion mt-3">
-                            <div class="suggestion-label">
-                                <i class="bi bi-robot me-1"></i>Suggested Skills
+                         <div class="ai-suggestion mt-3">
+                             <div class="suggestion-label">
+                                 <i class="bi bi-robot me-1"></i>Suggested Skills
                             </div>
                             <div class="skill-tags">
-                                <span class="skill-tag" onclick="addSkill('JavaScript')">JavaScript</span>
+                                <span class="skill-tag" onclick="addSkill('JavaScript')">JavaScript</span>      
                                 <span class="skill-tag" onclick="addSkill('Python')">Python</span>
-                                <span class="skill-tag" onclick="addSkill('React')">React</span>
-                                <span class="skill-tag" onclick="addSkill('Node.js')">Node.js</span>
                                 <span class="skill-tag" onclick="addSkill('SQL')">SQL</span>
+                                <span class="skill-tag" onclick="addSkill('React')">React</span>
+                                <span class="skill-tag" onclick="addSkill('Node.js')">Node.js
                             </div>
-                        </div>
+                         </div>
                     </div>
-                    
+
                     <!-- Submit Section -->
                     <div class="text-center mt-4">
                         <button type="button" class="btn btn-theme-soft btn-lg me-3" onclick="window.history.back()">

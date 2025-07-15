@@ -14,6 +14,9 @@ import os
 from config import config
 import logging
 
+
+
+
 # Initialize Flask extensions
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -69,11 +72,22 @@ def adjust_database_url(database_url):
 
 def create_app(config_class=None):
     """Application Factory for creating Flask app instances"""
-    
+
+    # Added absolute paths for template and static directories
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    template_dir = os.path.join(base_dir, '..', 'templates')
+    static_dir = os.path.join(base_dir, '..', 'static')
+
     app = Flask(__name__, 
-                template_folder='../templates',
-                static_folder='../static')
+                template_folder=template_dir,
+                static_folder=static_dir)
     
+    from dotenv import load_dotenv
+    load_dotenv() 
+    
+    # CSRF protection from Flask-WTF - To fix “Bad Request – The CSRF token is missing.”
+    app.config['SECRET_KEY']  = os.getenv('SECRET_KEY')  
+
     # Get configuration class
     if config_class is None:
         config_name = os.environ.get('FLASK_ENV') or 'default'
@@ -145,6 +159,9 @@ def create_app(config_class=None):
     from app.main import bp as main_bp
     app.register_blueprint(main_bp)
     
+    from app.jobs import bp as jobs_bp
+    app.register_blueprint(jobs_bp, url_prefix='/jobs')
+
     # Error handlers
     @app.errorhandler(404)
     def not_found_error(error):

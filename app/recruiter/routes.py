@@ -9,7 +9,7 @@ from app.recruiter import bp
 from app.models.user import User
 from app.models.job_posting import JobPosting
 from app.models.application import Application
-from app import db, Job
+from app import db
 from datetime import datetime, timedelta
 from app.recruiter.forms import CreateJobForm
 

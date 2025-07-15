@@ -9,8 +9,9 @@ from app.recruiter import bp
 from app.models.user import User
 from app.models.job_posting import JobPosting
 from app.models.application import Application
-from app import db
+from app import db, Job
 from datetime import datetime, timedelta
+from app.recruiter.forms import CreateJobForm
 
 
 # Removed duplicate dashboard route - using main.recruiter_dashboard instead
@@ -51,61 +52,43 @@ def job_listings():
 @bp.route('/jobs/create', methods=['GET', 'POST'])
 @login_required
 def create_job():
-    """Create a new job posting"""
     if not current_user.is_recruiter():
         flash('Access denied. Recruiter access required.', 'error')
         return redirect(url_for('main.applicant_dashboard'))
-    
-    if request.method == 'POST':
+
+    form = CreateJobForm()
+
+    if form.validate_on_submit():
         try:
-            # Get form data
-            title = request.form.get('title', '').strip()
-            company_name = request.form.get('company_name', '').strip()
-            description = request.form.get('description', '').strip()
-            requirements = request.form.get('requirements', '').strip()
-            location = request.form.get('location', '').strip()
-            salary_min = request.form.get('salary_min', type=int)
-            salary_max = request.form.get('salary_max', type=int)
-            employment_type = request.form.get('employment_type', 'full_time')
-            remote_type = request.form.get('remote_type', 'office')
-            experience_level = request.form.get('experience_level', 'mid')
-            
-            # Basic validation
-            if not all([title, company_name, description, location]):
-                flash('Please fill in all required fields.', 'error')
-                return render_template('recruiter/create_job.html', title='Create Job Posting')
-            
-            # Create job posting
             job = JobPosting(
-                title=title,
-                company_name=company_name,
-                description=description,
-                requirements=requirements,
+                title=form.title.data,
+                company_name=form.company_name.data,
+                description=form.description.data,
+                requirements=form.requirements.data,
                 recruiter_id=current_user.id,
-                location=location,
-                city=location.split(',')[0].strip() if ',' in location else location,
-                province='Ontario',  # Default for Ontario focus
+                location=form.location.data,
+                city=form.location.data.split(',')[0].strip() if ',' in form.location.data else form.location.data,
+                province='Ontario',
                 country='Canada',
-                salary_min=salary_min,
-                salary_max=salary_max,
-                employment_type=employment_type,
-                remote_type=remote_type,
-                experience_level=experience_level,
+                salary_min=form.salary_min.data,
+                salary_max=form.salary_max.data,
+                employment_type=form.employment_type.data,
+                work_setting=form.work_setting.data,
+                experience_level=form.experience_level.data,
                 status='active'
             )
-            
             db.session.add(job)
             db.session.commit()
-            
-            flash(f'Job posting "{title}" created successfully!', 'success')
+            flash(f'Job posting \"{form.title.data}\" created successfully!', 'success')
             return redirect(url_for('recruiter.job_listings'))
-            
         except Exception as e:
             db.session.rollback()
+            print("Exception occurred:", e)
             current_app.logger.error(f"Error creating job posting: {e}")
             flash('Error creating job posting. Please try again.', 'error')
-    
-    return render_template('recruiter/create_job.html', title='Create Job Posting')
+
+    return render_template('recruiter/create_job.html', title='Create Job Posting', form=form)
+
 
 
 @bp.route('/jobs/<int:job_id>')
@@ -171,7 +154,7 @@ def edit_job(job_id):
             job.salary_min = request.form.get('salary_min', type=int)
             job.salary_max = request.form.get('salary_max', type=int)
             job.employment_type = request.form.get('employment_type', 'full_time')
-            job.remote_type = request.form.get('remote_type', 'office')
+            job.work_setting = request.form.get('work_setting', 'office')
             job.experience_level = request.form.get('experience_level', 'mid')
             job.status = request.form.get('status', 'active')
             job.updated_at = datetime.utcnow()

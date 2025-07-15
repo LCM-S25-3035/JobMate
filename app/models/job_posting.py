@@ -6,6 +6,7 @@ Handles job postings from recruiters and job boards
 from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
 from app import db
+from sqlalchemy.dialects.postgresql import ENUM
 
 
 class JobPosting(db.Model):
@@ -66,10 +67,11 @@ class JobPosting(db.Model):
     country = db.Column(db.String(50), default='Canada')
     postal_code = db.Column(db.String(20), nullable=True)
     
-    remote_type = db.Column(db.Enum(
-        'onsite', 'remote', 'hybrid',
-        name='job_remote_type'
-    ), nullable=False, default='onsite')
+    
+    work_setting = db.Column(
+        ENUM('office', 'remote', 'hybrid', name='work_setting_type', create_type=False),
+        nullable=False
+    )
     remote_percentage = db.Column(db.Integer, nullable=True)  # For hybrid jobs
     
     # Salary Information

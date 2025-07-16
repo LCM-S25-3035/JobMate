@@ -1,0 +1,87 @@
+{% extends "layout.html" %}
+
+{% block title %}Question Generator (Job Description){% endblock %}
+
+{% block content %}
+    <h2>⚙️ Question generator using the job description</h2>
+    <p>This section demonstrates the capabilities of your second AI backend.</p>
+
+    <form method="POST">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="rol">Job position 🔍</label>
+                <input type="text" id="rol" name="rol" placeholder="Example: Data Analyst" value="{{ request.form.get('rol', '') }}">
+            </div>
+            <div class="form-group">
+                <label for="level">Candidate level</label>
+                <select id="level" name="level">
+                    <option value="Entry" {% if request.form.get('level') == 'Entry' %}selected{% endif %}>Entry</option>
+                    <option value="Junior" {% if request.form.get('level') == 'Junior' %}selected{% endif %}>Junior</option>
+                    <option value="Mid" {% if request.form.get('level') == 'Mid' %}selected{% endif %}>Mid</option>
+                    <option value="Senior" {% if request.form.get('level') == 'Senior' %}selected{% endif %}>Senior</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="question_type">Type of questions</label>
+                <select id="question_type" name="question_type">
+                    <option value="technical" {% if request.form.get('question_type') == 'technical' %}selected{% endif %}>technical</option>
+                    <option value="behavioral" {% if request.form.get('question_type') == 'behavioral' %}selected{% endif %}>behavioral</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="language">Language you prefer</label>
+                <select id="language" name="language">
+                    <option value="English" {% if request.form.get('language') == 'English' %}selected{% endif %}>English</option>
+                    <option value="French" {% if request.form.get('language') == 'French' %}selected{% endif %}>French</option>
+                    <option value="Spanish" {% if request.form.get('language') == 'Spanish' %}selected{% endif %}>Spanish</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="n_questions">#️⃣ Number of questions</label>
+                <input type="range" id="n_questions" name="n_questions" min="1" max="10" value="{{ request.form.get('n_questions', 5) }}" oninput="this.nextElementSibling.value=this.value">
+                <output>{{ request.form.get('n_questions', 5) }}</output>
+            </div>
+            <div class="form-group">
+                <label for="level_description">More detailed description of the candidate's level</label>
+                <input type="text" id="level_description" name="level_description" placeholder="Example: 'recent graduate with little experience', 'professional with 5 years of experience in the sector'." value="{{ request.form.get('level_description', '') }}">
+            </div>
+        </div>
+        <div class="form-group full-width">
+            <label for="job_description">Full job description or key responsibilities</label>
+            <textarea id="job_description" name="job_description" rows="6" placeholder="Include main responsibilities, technical and soft skills required...">{{ request.form.get('job_description', '') }}</textarea>
+        </div>
+        <button type="submit" class="generate-button">Generate questions</button>
+    </form>
+
+    {% if questions_result %}
+        <h3>✅ Questions generated:</h3>
+        <div class="generated-questions-output">
+            {% set blocks = questions_result.split('\n') %}
+            {% set in_code_block = false %}
+            {% set code_lines = [] %}
+            {% for line in blocks %}
+                {% if line.strip().startswith("```") %}
+                    {% set in_code_block = not in_code_block %}
+                    {% if not in_code_block %}
+                        <pre><code>{{ "\n".join(code_lines) }}</code></pre>
+                        {% set code_lines = [] %}
+                    {% endif %}
+                {% else %}
+                    {% if in_code_block %}
+                        {% set _ = code_lines.append(line) %}
+                    {% elif line.strip() %}
+                        <p>{{ line.strip() }}</p>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+        </div>
+        <form method="POST" action="{{ url_for('download_pdf') }}">
+            <input type="hidden" name="questions_text" value="{{ questions_result }}">
+            <button type="submit" class="download-button">📄 Download questions in PDF</button>
+        </form>
+    {% endif %}
+{% endblock %}

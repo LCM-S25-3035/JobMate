@@ -17,13 +17,8 @@ depends_on = None
 
 
 def upgrade():
-    # Create enum type for cover letter types
-    op.execute("CREATE TYPE cover_letter_types AS ENUM ('none', 'generic', 'custom')")
-    
-    # Create enum type for preferred job types
-    op.execute(
-        "CREATE TYPE preferred_job_types AS ENUM ('all', 'full_time', 'remote', 'full_time_remote')"
-    )
+    # Instead of creating PostgreSQL enum types, we'll use string types with check constraints
+    # This avoids potential conflicts with existing enum types
     
     # Create auto_apply_settings table
     op.create_table(
@@ -33,11 +28,8 @@ def upgrade():
         sa.Column('enabled', sa.Boolean(), nullable=False, server_default='false'),
         sa.Column('max_daily', sa.Integer(), nullable=False, server_default='5'),
         sa.Column('min_match_score', sa.Integer(), nullable=False, server_default='80'),
-        sa.Column('cover_letter_type', sa.Enum('none', 'generic', 'custom', name='cover_letter_types'), 
-                  nullable=False, server_default='generic'),
-        sa.Column('preferred_job_types', sa.Enum('all', 'full_time', 'remote', 'full_time_remote', 
-                                              name='preferred_job_types'), 
-                  nullable=False, server_default='all'),
+        sa.Column('cover_letter_type', sa.String(20), nullable=False, server_default="'generic'"),
+        sa.Column('preferred_job_types', sa.String(20), nullable=False, server_default="'all'"),
         sa.Column('additional_preferences', sa.Text(), nullable=True),
         sa.Column('last_run_at', sa.DateTime(), nullable=True),
         sa.Column('today_application_count', sa.Integer(), nullable=False, server_default='0'),
@@ -45,7 +37,9 @@ def upgrade():
         sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('NOW()')),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
         sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('user_id')
+        sa.UniqueConstraint('user_id'),
+        sa.CheckConstraint("cover_letter_type IN ('none', 'generic', 'custom')", name='check_cover_letter_type'),
+        sa.CheckConstraint("preferred_job_types IN ('all', 'full_time', 'remote', 'full_time_remote')", name='check_preferred_job_types')
     )
     
     # Add auto-apply related columns to applications table
@@ -62,9 +56,7 @@ def downgrade():
         batch_op.drop_column('auto_apply_match_score')
         batch_op.drop_column('auto_applied')
     
-    # Drop auto_apply_settings table
+    # Drop auto_apply_settings table (this will automatically drop the check constraints)
     op.drop_table('auto_apply_settings')
     
-    # Drop enum types
-    op.execute("DROP TYPE preferred_job_types")
-    op.execute("DROP TYPE cover_letter_types")
+    # Note: We don't need to drop enum types since we're using string with check constraints instead

@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Saved Jobs - JobMate{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Saved Jobs</h1>
+                <span class="badge bg-secondary">{{ total_saved }} jobs saved</span>
+            </div>
+
+            {% if jobs %}
+            <div class="row">
+                {% for job in jobs %}
+                <div class="col-12 mb-3">
+                    <div class="card job-card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h5 class="card-title">
+                                        <a href="{{ url_for('jobs.job_detail', job_id=job._id) }}" class="text-decoration-none">
+                                            {{ job.title }}
+                                        </a>
+                                    </h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">{{ job.company }}</h6>
+                                    <p class="card-text">
+                                        {% if job.location %}
+                                        <i class="bi bi-geo-alt"></i> {{ job.location }}
+                                        {% endif %}
+                                        {% if job.job_type %}
+                                            | <i class="bi bi-briefcase"></i> {{ job.job_type }}
+                                        {% endif %}
+                                        {% if job.job_level %}
+                                            | <i class="bi bi-trophy"></i> {{ job.job_level }}
+                                        {% endif %}
+                                    </p>
+                                    {% if job.description %}
+                                    <p class="card-text">{{ job.description[:200] }}{% if job.description|length > 200 %}...{% endif %}</p>
+                                    {% endif %}
+                                    
+                                    <!-- Job Skills/Tags -->
+                                    {% if job.skills %}
+                                    <div class="mt-2">
+                                        {% for skill in job.skills[:5] %}
+                                            <span class="badge bg-light text-dark me-1">{{ skill }}</span>
+                                        {% endfor %}
+                                        {% if job.skills|length > 5 %}
+                                            <span class="text-muted small">+{{ job.skills|length - 5 }} more</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    {% if job.min_amount or job.max_amount %}
+                                    <p class="text-success fw-bold">
+                                        {% if job.min_amount and job.max_amount %}
+                                            ${{ "{:,}".format(job.min_amount|int) }} - ${{ "{:,}".format(job.max_amount|int) }}
+                                        {% elif job.min_amount %}
+                                            ${{ "{:,}".format(job.min_amount|int) }}+
+                                        {% elif job.max_amount %}
+                                            Up to ${{ "{:,}".format(job.max_amount|int) }}
+                                        {% endif %}
+                                    </p>
+                                    {% endif %}
+                                    {% if job.date_posted %}
+                                    <small class="text-muted">Posted: {{ job.date_posted.strftime('%Y-%m-%d') if job.date_posted else 'Recently' }}</small>
+                                    {% endif %}
+                                    <div class="mt-2">
+                                        <a href="{{ url_for('jobs.job_detail', job_id=job._id) }}" class="btn btn-primary btn-sm">View Details</a>
+                                        <a href="{{ url_for('jobs.apply_to_job', job_id=job._id) }}" class="btn btn-success btn-sm">Apply Now</a>
+                                        <button class="btn btn-warning btn-sm" onclick="unsaveJob('{{ job._id }}')" title="Remove from saved">
+                                            <i class="bi bi-bookmark-fill"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="bi bi-bookmark display-1 text-muted"></i>
+                </div>
+                <h4>No Saved Jobs</h4>
+                <p class="text-muted mb-4">You haven't saved any jobs yet. Start exploring and save jobs you're interested in!</p>
+                <a href="{{ url_for('jobs.jobs_list') }}" class="btn btn-primary">Browse Jobs</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.job-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.job-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.job-card .card-title a {
+    color: #333;
+    text-decoration: none !important;
+}
+
+.job-card .card-title a:hover {
+    color: #007bff;
+}
+</style>
+
+<script>
+// Remove job from saved list
+function unsaveJob(jobId) {
+    if (confirm('Remove this job from your saved list?')) {
+        fetch(`/jobs/save/${jobId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the job card from the list
+                event.target.closest('.col-12').remove();
+                
+                // Update the counter
+                const counter = document.querySelector('.badge');
+                const currentCount = parseInt(counter.textContent.split(' ')[0]);
+                counter.textContent = `${currentCount - 1} jobs saved`;
+                
+                // Show empty state if no jobs left
+                const jobsList = document.querySelector('.row');
+                if (!jobsList.children.length) {
+                    location.reload();
+                }
+                
+                showToast('Job removed from saved list', 'success');
+            } else {
+                showToast(data.message || 'An error occurred', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('An error occurred while removing the job', 'error');
+        });
+    }
+}
+
+// Simple toast notification
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 1050;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Find Jobs - JobMate{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Filter Jobs</h5>
+                    <small class="text-muted">{{ pagination.total_jobs }} jobs found</small>
+                </div>
+                <div class="card-body">
+                    <form id="jobFiltersForm" method="GET" action="{{ url_for('jobs.jobs_list') }}">
+                        <!-- Search -->
+                        <div class="mb-3">
+                            <label for="search" class="form-label">Search</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ current_filters.search or '' }}" placeholder="Keywords, skills, title...">
+                        </div>
+
+                        <!-- Location Filter -->
+                        <div class="mb-3">
+                            <label for="location" class="form-label">Location</label>
+                            <select class="form-select" id="location" name="location">
+                                <option value="">All Locations</option>
+                                {% for location in facets.locations %}
+                                    <option value="{{ location._id }}" 
+                                            {% if current_filters.location == location._id %}selected{% endif %}>
+                                        {{ location._id }} ({{ location.count }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Job Type Filter -->
+                        <div class="mb-3">
+                            <label for="job_type" class="form-label">Job Type</label>
+                            <select class="form-select" id="job_type" name="job_type">
+                                <option value="">All Types</option>
+                                {% for job_type in facets.job_types %}
+                                    <option value="{{ job_type._id }}" 
+                                            {% if current_filters.job_type == job_type._id %}selected{% endif %}>
+                                        {{ job_type._id }} ({{ job_type.count }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Job Level Filter -->
+                        <div class="mb-3">
+                            <label for="job_level" class="form-label">Job Level</label>
+                            <select class="form-select" id="job_level" name="job_level">
+                                <option value="">All Levels</option>
+                                {% for level in facets.job_levels %}
+                                    <option value="{{ level._id }}" 
+                                            {% if current_filters.job_level == level._id %}selected{% endif %}>
+                                        {{ level._id }} ({{ level.count }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Company Filter -->
+                        <div class="mb-3">
+                            <label for="company" class="form-label">Company</label>
+                            <select class="form-select" id="company" name="company">
+                                <option value="">All Companies</option>
+                                {% for company in facets.companies %}
+                                    <option value="{{ company._id }}" 
+                                            {% if current_filters.company == company._id %}selected{% endif %}>
+                                        {{ company._id }} ({{ company.count }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Salary Range Filter -->
+                        {% if facets.salary_range.min_salary %}
+                        <div class="mb-3">
+                            <label class="form-label">Salary Range</label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <input type="number" class="form-control" name="salary_min" 
+                                           placeholder="Min" value="{{ current_filters.salary_min or '' }}">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" class="form-control" name="salary_max" 
+                                           placeholder="Max" value="{{ current_filters.salary_max or '' }}">
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                Range: ${{ "{:,}".format(facets.salary_range.min_salary|int) }} - 
+                                ${{ "{:,}".format(facets.salary_range.max_salary|int) }}
+                            </small>
+                        </div>
+                        {% endif %}
+
+                        <!-- Filter Actions -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Apply Filters</button>
+                            <a href="{{ url_for('jobs.jobs_list') }}" class="btn btn-outline-secondary">Clear All</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Jobs List -->
+        <div class="col-md-9">
+            <!-- Active Filters -->
+            {% if current_filters.search or current_filters.location or current_filters.job_type or current_filters.experience_level or current_filters.company or current_filters.salary_min or current_filters.salary_max %}
+            <div class="mb-3">
+                <h6>Active Filters:</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    {% if current_filters.search %}
+                        <span class="badge bg-primary">Search: {{ current_filters.search }}</span>
+                    {% endif %}
+                    {% if current_filters.location %}
+                        <span class="badge bg-secondary">Location: {{ current_filters.location }}</span>
+                    {% endif %}
+                    {% if current_filters.job_type %}
+                        <span class="badge bg-info">Type: {{ current_filters.job_type }}</span>
+                    {% endif %}
+                    {% if current_filters.job_level %}
+                        <span class="badge bg-success">Level: {{ current_filters.job_level }}</span>
+                    {% endif %}
+                    {% if current_filters.company %}
+                        <span class="badge bg-warning">Company: {{ current_filters.company }}</span>
+                    {% endif %}
+                    {% if current_filters.salary_min or current_filters.salary_max %}
+                        <span class="badge bg-danger">
+                            Salary: {% if current_filters.salary_min %}${{ "{:,}".format(current_filters.salary_min) }}+{% endif %}
+                            {% if current_filters.salary_max %} - ${{ "{:,}".format(current_filters.salary_max) }}{% endif %}
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Jobs Results -->
+            <div class="row">
+                {% for job in jobs %}
+                <div class="col-12 mb-3">
+                    <div class="card job-card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h5 class="card-title">
+                                        <a href="{{ url_for('jobs.job_detail', job_id=job._id) }}" class="text-decoration-none">
+                                            {{ job.title }}
+                                        </a>
+                                    </h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">{{ job.company }}</h6>
+                                    <p class="card-text">
+                                        <i class="bi bi-geo-alt"></i> {{ job.location or 'Location not specified' }}
+                                        {% if job.job_type %}
+                                            | <i class="bi bi-briefcase"></i> {{ job.job_type }}
+                                        {% endif %}
+                                        {% if job.job_level %}
+                                            | <i class="bi bi-trophy"></i> {{ job.job_level }}
+                                        {% endif %}
+                                    </p>
+                                    {% if job.description and job.description is string %}
+                                    <p class="card-text">{{ job.description[:200] }}{% if job.description|length > 200 %}...{% endif %}</p>
+                                    {% endif %}
+                                    
+                                    <!-- Job Skills/Tags -->
+                                    {% if job.skills %}
+                                    <div class="mt-2">
+                                        {% for skill in job.skills[:5] %}
+                                            <span class="badge bg-light text-dark me-1">{{ skill }}</span>
+                                        {% endfor %}
+                                        {% if job.skills|length > 5 %}
+                                            <span class="text-muted small">+{{ job.skills|length - 5 }} more</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    {% if job.min_amount or job.max_amount %}
+                                    <p class="text-success fw-bold">
+                                        {% if job.min_amount and job.max_amount %}
+                                            ${{ "{:,}".format(job.min_amount|int) }} - ${{ "{:,}".format(job.max_amount|int) }}
+                                        {% elif job.min_amount %}
+                                            ${{ "{:,}".format(job.min_amount|int) }}+
+                                        {% elif job.max_amount %}
+                                            Up to ${{ "{:,}".format(job.max_amount|int) }}
+                                        {% endif %}
+                                    </p>
+                                    {% endif %}
+                                    {% set date_str = job.date_posted.strftime('%Y-%m-%d') if job.date_posted and job.date_posted.__class__.__name__ == 'datetime' else (job.date_posted if job.date_posted and job.date_posted is string else 'Recently') %}
+                                    <small class="text-muted">Posted: {{ date_str }}</small>
+                                    <div class="mt-2">
+                                        <a href="{{ url_for('jobs.job_detail', job_id=job._id) }}" class="btn btn-primary btn-sm">View Details</a>
+                                        {% if current_user.is_authenticated and current_user.user_type == 'applicant' %}
+                                        <a href="{{ url_for('main.tailor_resume', job_id=job._id) }}" class="btn btn-warning btn-sm">
+                                            <i class="bi bi-magic"></i> Tailor Resume
+                                        </a>
+                                        <a href="{{ url_for('jobs.apply_to_job', job_id=job._id) }}" class="btn btn-success btn-sm">Apply Now</a>
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="saveJob('{{ job._id }}')">
+                                            <i class="bi bi-bookmark"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <h4>No jobs found</h4>
+                        <p class="text-muted">Try adjusting your filters or search terms</p>
+                        <a href="{{ url_for('jobs.jobs_list') }}" class="btn btn-primary">View All Jobs</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination.total_pages > 1 %}
+            <nav aria-label="Job listings pagination">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('jobs.jobs_list', page=pagination.prev_num, **current_filters) }}">Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in range(max(1, pagination.page - 2), min(pagination.total_pages + 1, pagination.page + 3)) %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('jobs.jobs_list', page=page_num, **current_filters) }}">{{ page_num }}</a>
+                        </li>
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('jobs.jobs_list', page=pagination.next_num, **current_filters) }}">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-submit form on filter change
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('jobFiltersForm');
+    const selects = form.querySelectorAll('select');
+    
+    selects.forEach(select => {
+        select.addEventListener('change', function() {
+            form.submit();
+        });
+    });
+    
+    // Debounce search input
+    const searchInput = document.getElementById('search');
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            form.submit();
+        }, 500);
+    });
+});
+
+// Save/unsave job function
+function saveJob(jobId) {
+    fetch(`/jobs/save/${jobId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update button state
+            const button = event.target.closest('button');
+            if (data.saved) {
+                button.innerHTML = '<i class="bi bi-bookmark-fill"></i>';
+                button.classList.remove('btn-outline-secondary');
+                button.classList.add('btn-warning');
+            } else {
+                button.innerHTML = '<i class="bi bi-bookmark"></i>';
+                button.classList.remove('btn-warning');
+                button.classList.add('btn-outline-secondary');
+            }
+            
+            // Show toast or alert
+            showAlert(data.message, 'success');
+        } else {
+            showAlert(data.message || 'An error occurred', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('An error occurred while saving the job', 'error');
+    });
+}
+
+// Simple alert function
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.row'));
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+</script>
+{% endblock %}

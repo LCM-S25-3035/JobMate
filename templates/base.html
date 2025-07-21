@@ -7,6 +7,9 @@
     <meta name="keywords" content="jobs, careers, AI, resume, job matching, Ontario, technology">
     <meta name="author" content="JobMate">
     
+    <!-- CSRF Token for AJAX requests -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    
     <!-- Cache busting meta tags -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -22,6 +25,9 @@
     
     <!-- Custom CSS with cache busting -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}?v=20241220003">
+    
+    <!-- Jobs CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/jobs.css') }}">
     
     <!-- Theme System CSS with cache busting -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}?v=20241220003">
@@ -390,7 +396,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link nav-link-theme" href="{{ url_for('main.mongo_jobs') }}">
+                            <a class="nav-link nav-link-theme" href="{{ url_for('jobs.jobs_list') }}">
                                 <i class="bi bi-briefcase me-1"></i>Jobs
                             </a>
                         </li>
@@ -463,6 +469,13 @@
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><h6 class="dropdown-header">{{ current_user.full_name }}</h6></li>
                                 <li><hr class="dropdown-divider"></li>
+                                {% if current_user.is_applicant() %}
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('jobs.saved_jobs') }}">
+                                        <i class="bi bi-bookmark me-2"></i>Saved Jobs
+                                    </a>
+                                </li>
+                                {% endif %}
                                 <li>
                                     <a class="dropdown-item" href="#" onclick="alert('Profile module coming soon!')">
                                         <i class="bi bi-person me-2"></i>Profile

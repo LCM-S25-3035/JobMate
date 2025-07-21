@@ -5,19 +5,79 @@ from flask import current_app
 def call_gemini_api(prompt, model=None):
     """
     Calls the Gemini API with the given prompt and returns the response.
+    Maintains backward compatibility while adding error handling.
     """
-    api_key = current_app.config.get('GEMINI_API_KEY')
-    model = model or current_app.config.get('GEMINI_MODEL', 'gemini-1.5-flash')
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-    headers = {"Content-Type": "application/json"}
-    data = {
-        "contents": [{"parts": [{"text": prompt}]}]
-    }
-    response = requests.post(url, headers=headers, json=data)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return {"error": response.text, "status_code": response.status_code}
+    try:
+        api_key = current_app.config.get('GEMINI_API_KEY')
+        if not api_key:
+            current_app.logger.error("GEMINI_API_KEY not configured")
+            return {"error": "API key not configured", "status_code": 500}
+        
+        model = model or current_app.config.get('GEMINI_MODEL', 'gemini-1.5-flash')
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        headers = {"Content-Type": "application/json"}
+        data = {
+            "contents": [{"parts": [{"text": prompt}]}]
+        }
+        
+        # Add timeout to prevent infinite hanging (60 seconds should be enough for AI processing)
+        response = requests.post(url, headers=headers, json=data, timeout=60)
+        current_app.logger.info(f"Gemini API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            # Return the original response format for backward compatibility
+            return response.json()
+        else:
+            error_msg = f"Gemini API error: Status {response.status_code}, Response: {response.text}"
+            current_app.logger.error(error_msg)
+            return {"error": response.text, "status_code": response.status_code}
+            
+    except requests.exceptions.Timeout:
+        error_msg = "Gemini API request timed out after 60 seconds"
+        current_app.logger.error(error_msg)
+        return {"error": error_msg, "status_code": 408}
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Gemini API request failed: {str(e)}"
+        current_app.logger.error(error_msg)
+        return {"error": error_msg, "status_code": 500}
+        
+    except Exception as e:
+        error_msg = f"Unexpected error in Gemini API call: {str(e)}"
+        current_app.logger.error(error_msg)
+        return {"error": error_msg, "status_code": 500}
+
+def call_gemini_api_simple(prompt, model=None):
+    """
+    Calls the Gemini API with the given prompt and returns a simplified response.
+    Used by new auto-optimize functionality.
+    """
+    try:
+        # Call the main API function
+        response = call_gemini_api(prompt, model)
+        
+        # Check for errors
+        if 'error' in response:
+            return {"success": False, "error": response['error']}
+        
+        # Extract content from successful response
+        if ('candidates' in response and
+            len(response['candidates']) > 0 and
+            'content' in response['candidates'][0] and
+            'parts' in response['candidates'][0]['content'] and
+            len(response['candidates'][0]['content']['parts']) > 0 and
+            'text' in response['candidates'][0]['content']['parts'][0]):
+            
+            content = response['candidates'][0]['content']['parts'][0]['text']
+            return {"success": True, "content": content}
+        else:
+            current_app.logger.error("Invalid Gemini API response structure")
+            return {"success": False, "error": "Invalid API response format"}
+            
+    except Exception as e:
+        error_msg = f"Error in simple Gemini API call: {str(e)}"
+        current_app.logger.error(error_msg)
+        return {"success": False, "error": error_msg}
 
 def merge_resume_sections(ai_resume, user_resume):
     """

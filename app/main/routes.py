@@ -124,9 +124,18 @@ def applicant_dashboard():
     # Calculate completion percentage
     completion_percentage = calculate_profile_completion(current_user)
     
-    # Fetch MongoDB jobs (limit 5)
-    mongo_db = current_app.mongo_db
-    mongo_jobs = list(mongo_db.jobs.find({}, {"_id": 1, "title": 1, "company": 1, "description": 1}).limit(5))
+    # Fetch MongoDB jobs (limit 5) with error handling
+    mongo_jobs = []
+    
+    if hasattr(current_app, 'mongo_db') and current_app.mongo_db is not None:
+        try:
+            mongo_jobs = list(current_app.mongo_db.jobs.find(
+                {}, {"_id": 1, "title": 1, "company": 1, "description": 1}
+            ).limit(5))
+            current_app.logger.info(f"Retrieved {len(mongo_jobs)} jobs from MongoDB")
+        except Exception as e:
+            current_app.logger.error(f"Error fetching jobs from MongoDB: {str(e)}")
+            flash("Unable to fetch recent job postings. Some features may be limited.", "warning")
     
     return render_template('dashboard/applicant.html',
                          title='Dashboard',
@@ -347,8 +356,33 @@ def mongo_test():
 @login_required
 def mongo_jobs():
     """Show jobs from MongoDB for tailoring resume/cover letter"""
-    mongo_db = current_app.mongo_db
-    jobs = list(mongo_db.jobs.find({}, {"_id": 1, "title": 1, "company": 1, "description": 1}))
+    from app.utils.mongo_health import safe_mongo_operation, reconnect_mongodb
+    
+    jobs = []
+    
+    # Use the safe_mongo_operation helper for reliable MongoDB access
+    try:
+        jobs = safe_mongo_operation('jobs', 'find', 
+                                   options={"projection": {"_id": 1, "title": 1, "company": 1, "description": 1}})
+        
+        if jobs:
+            current_app.logger.info(f"Retrieved {len(jobs)} jobs from MongoDB")
+        else:
+            # Try explicit reconnection if no jobs were returned
+            current_app.logger.warning("No jobs returned from MongoDB, attempting reconnection")
+            if reconnect_mongodb():
+                jobs = safe_mongo_operation('jobs', 'find', 
+                                           options={"projection": {"_id": 1, "title": 1, "company": 1, "description": 1}})
+                if jobs:
+                    current_app.logger.info(f"Retrieved {len(jobs)} jobs after MongoDB reconnection")
+                else:
+                    flash("No job listings found in the database.", "info")
+            else:
+                flash("Job listings temporarily unavailable. MongoDB reconnection failed.", "warning")
+    except Exception as e:
+        current_app.logger.error(f"Error fetching jobs from MongoDB: {str(e)}")
+        flash("Unable to fetch job postings. Please try again later.", "warning")
+    
     return render_template('mongo_jobs.html', jobs=jobs)
 
 

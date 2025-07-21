@@ -138,6 +138,9 @@ def create_app(config_class=None):
     from app.autoapply import bp as autoapply_bp
     app.register_blueprint(autoapply_bp, url_prefix='/autoapply')
     
+    from app.jobs import bp as jobs_bp
+    app.register_blueprint(jobs_bp, url_prefix='/jobs')
+    
     # TODO: Implement dashboard module
     # # from app.dashboard import bp as dashboard_bp
     # # app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
@@ -156,6 +159,48 @@ def create_app(config_class=None):
             return "{:,}".format(int(value))
         except (ValueError, TypeError):
             return value
+    
+    @app.template_filter('nl2br')
+    def nl2br(value):
+        """Convert newlines to HTML line breaks"""
+        if not value:
+            return value
+        return value.replace('\n', '<br>\n')
+    
+    # Mark the nl2br filter as safe HTML
+    from markupsafe import Markup
+    
+    @app.template_filter('nl2br_safe')
+    def nl2br_safe(value):
+        """Convert newlines to HTML line breaks and mark as safe"""
+        if not value:
+            return value
+        # Handle non-string values (like floats/NaN)
+        if not isinstance(value, str):
+            return value
+        return Markup(value.replace('\n', '<br>\n'))
+    
+    @app.template_filter('safe_split')
+    def safe_split(value, delimiter=','):
+        """Safely split a value, handling non-string types and NaN values"""
+        if value is None:
+            return []
+        if not isinstance(value, str):
+            return []
+        if str(value).lower() in ['nan', 'none', '', 'null']:
+            return []
+        try:
+            return [item.strip() for item in str(value).split(delimiter) if item.strip()]
+        except Exception:
+            return []
+    
+    # Add global functions to Jinja2 environment
+    app.jinja_env.globals.update({
+        'max': max,
+        'min': min,
+        'len': len,
+        'range': range
+    })
     
     # Error handlers
     @app.errorhandler(404)

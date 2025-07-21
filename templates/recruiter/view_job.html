@@ -364,9 +364,14 @@
                     <h4>Required Skills</h4>
                 </div>
                 <div class="skills-list">
-                    {% for skill in job.skills.split(',') %}
-                        <span class="badge badge-theme me-2 mb-2">{{ skill.strip() }}</span>
-                    {% endfor %}
+                    {% if job.skills and job.skills is string %}
+                        {% set skills_list = job.skills|safe_split(',') %}
+                        {% for skill in skills_list %}
+                            <span class="badge badge-theme me-2 mb-2">{{ skill.strip() }}</span>
+                        {% endfor %}
+                    {% else %}
+                        <span class="text-muted">No skills listed</span>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}

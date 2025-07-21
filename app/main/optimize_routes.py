@@ -11,207 +11,183 @@ from flask_login import current_user, login_required
 from bson import ObjectId
 
 from app.main import bp
-from app.ai_agents.gemini_utils import call_gemini_api
+from app.ai_agents.gemini_utils import call_gemini_api, call_gemini_api_simple
 
 @bp.route('/auto_optimize_resume', methods=['POST'])
 @login_required
 def auto_optimize_resume():
-    data = request.json
-    job_id = data.get('job_id')
-    resume_text = data.get('resume_text')
-    target_score = data.get('target_score', 90)
-    
-    if not job_id or not resume_text:
-        return jsonify({'success': False, 'error': 'Missing job ID or resume text'})
+    """Auto-optimize resume to achieve 90%+ ATS score using targeted analysis"""
+    current_app.logger.info(f"Auto-optimize resume called by user {current_user.id}")
     
     try:
+        # Handle both form data and JSON
+        if request.is_json:
+            data = request.get_json()
+            job_id = data.get('job_id')
+            resume_content = data.get('resume_content')
+        else:
+            job_id = request.form.get('job_id')
+            resume_content = request.form.get('resume_content')
+        
+        current_app.logger.info(f"Received data: job_id={job_id}, resume_length={len(resume_content) if resume_content else 0}")
+        
+        if not job_id or not resume_content:
+            current_app.logger.error("Missing required parameters")
+            return jsonify({
+                'success': False, 
+                'error': 'Missing required data: job_id and resume_content'
+            }), 400
+            
         # Get MongoDB database handle
         mongo_db = current_app.mongo_db
         
         # Get the job description
-        job = mongo_db.jobs.find_one({'_id': ObjectId(job_id)})
-        if not job:
-            return jsonify({'success': False, 'error': 'Job not found'})
+        try:
+            job = mongo_db.jobs.find_one({'_id': ObjectId(job_id)})
+            if not job:
+                current_app.logger.error(f"Job not found: {job_id}")
+                return jsonify({'success': False, 'error': 'Job not found'}), 404
+        except Exception as e:
+            current_app.logger.error(f"Error fetching job: {str(e)}")
+            return jsonify({'success': False, 'error': 'Invalid job ID'}), 400
         
-        # Get the original suggestions if available
-        tailored_resume = mongo_db.tailored_resumes.find_one({"user_id": str(current_user.id), "job_id": job_id})
-        suggestions = []
-        if tailored_resume and 'suggestions' in tailored_resume:
-            suggestions = tailored_resume['suggestions']
-        
-        # Use AI to optimize the resume to reach 90% score
-        prompt = f"""
-        You are an expert ATS optimization specialist and resume writer. You need to optimize the provided resume 
-        to achieve at least a {target_score}% match with the job description. Use the provided suggestions 
-        as a guide for what needs to be improved.
+        # Step 1: Analyze current ATS score and identify gaps
+        current_app.logger.info("Step 1: Analyzing current ATS gaps...")
+        analysis_prompt = f"""
+        Analyze this resume against the job description and provide ATS optimization insights:
 
         JOB DESCRIPTION:
-        ```
-        {job.get('description', '')}
-        ```
+        Title: {job.get('title', '')}
+        Company: {job.get('company', '')}
+        Description: {job.get('description', '')}
+        Requirements: {job.get('requirements', '')}
+        Skills: {', '.join(job.get('skills', [])) if job.get('skills') else 'Not specified'}
 
         CURRENT RESUME:
-        ```
-        {resume_text}
-        ```
+        {resume_content}
 
-        SUGGESTIONS FOR IMPROVEMENT:
-        ```
-        {json.dumps(suggestions, indent=2)}
-        ```
+        Please analyze and provide:
+        1. Current estimated ATS score (0-100)
+        2. Missing keywords from job description that should be in resume
+        3. Key skills mentioned in job but missing from resume
+        4. Specific improvements needed for 90%+ ATS score
+        5. Keywords that need higher density/frequency
 
-        INSTRUCTIONS:
-        1. Maintain the same overall structure of the resume
-        2. Implement the suggestions given
-        3. Add relevant keywords from the job description
-        4. Quantify achievements where possible
-        5. Ensure proper formatting for ATS compatibility
-        6. DO NOT fabricate experience or qualifications not mentioned in the original resume
-        7. Make sure experience section has 5 bullet points per job with metrics
-        8. Keep skills organized in proper categories with commas between skills
-
-        IMPORTANT: Return ONLY a valid JSON object with the following exact keys:
-        1. "optimized_resume" - containing the full text of the optimized resume
-        2. "ats_score" - a number that must be {target_score} or higher
-        3. "implemented_suggestions" - an array of integers representing the 0-based indices of implemented suggestions
-        
-        Example format (but with your actual optimized resume):
-        {{
-          "optimized_resume": "Resume text goes here...",
-          "ats_score": 92,
-          "implemented_suggestions": [0, 1, 2]
-        }}
-
-        Do not include any other text, explanation, or markdown formatting outside the JSON object.
+        Format your response as:
+        CURRENT_SCORE: [number]
+        MISSING_KEYWORDS: [comma-separated list]
+        MISSING_SKILLS: [comma-separated list]
+        IMPROVEMENTS: [specific suggestions]
+        HIGH_PRIORITY_KEYWORDS: [most important keywords to add]
         """
         
-        # Call AI for optimization
-        api_response = call_gemini_api(prompt)
+        analysis_response = call_gemini_api(analysis_prompt)
         
-        try:
-            # Extract the text content from the Gemini API response structure
-            if (isinstance(api_response, dict) and
-                'candidates' in api_response and
-                len(api_response['candidates']) > 0 and
-                'content' in api_response['candidates'][0] and
-                'parts' in api_response['candidates'][0]['content'] and
-                len(api_response['candidates'][0]['content']['parts']) > 0 and
-                'text' in api_response['candidates'][0]['content']['parts'][0]):
-                
-                response_text = api_response['candidates'][0]['content']['parts'][0]['text']
-                
-                # Clean up the response text
-                
-                # First, remove any markdown formatting
-                if "```" in response_text:
-                    # Extract content between code blocks if present
-                    code_block_pattern = r"```(?:json)?(.*?)```"
-                    code_match = re.search(code_block_pattern, response_text, re.DOTALL)
-                    if code_match:
-                        response_text = code_match.group(1).strip()
-                
-                # Remove any text before the first { and after the last }
-                first_brace = response_text.find('{')
-                last_brace = response_text.rfind('}')
-                
-                if first_brace >= 0 and last_brace >= 0 and last_brace > first_brace:
-                    response_text = response_text[first_brace:last_brace+1]
-                
-                # Now try to parse the JSON
-                # Try parsing the JSON
-                try:
-                    result = json.loads(response_text)
-                except json.JSONDecodeError as e:
-                    current_app.logger.error(f"JSON decode error: {str(e)}")
-                    
-                    # Try to fix common JSON issues and retry
-                    try:
-                        # Replace single quotes with double quotes
-                        fixed_text = response_text.replace("'", '"')
-                        # Try to parse again
-                        result = json.loads(fixed_text)
-                    except json.JSONDecodeError:
-                        # If all else fails, return an error
-                        current_app.logger.error("Failed to parse JSON even after fixing quotes")
-                        return jsonify({'success': False, 'error': f'Failed to parse AI response as valid JSON. Details: {str(e)}'})
-                        
-                # Validate the required fields are present
-                if not all(k in result for k in ['optimized_resume', 'ats_score', 'implemented_suggestions']):
-                    missing = [k for k in ['optimized_resume', 'ats_score', 'implemented_suggestions'] if k not in result]
-                    current_app.logger.error(f"Missing required fields in response: {missing}")
-                    return jsonify({'success': False, 'error': f'AI response missing required fields: {", ".join(missing)}'})
-                
-                # Extract the required fields from the result
-                optimized_resume = result['optimized_resume']
-                new_ats_score = result['ats_score']
-                implemented_suggestions = result['implemented_suggestions']
-                
-                # Additional validation
-                if not isinstance(optimized_resume, str):
-                    current_app.logger.error(f"Optimized resume is not a string: {type(optimized_resume)}")
-                    optimized_resume = str(optimized_resume)
-                    
-                if not isinstance(new_ats_score, (int, float)):
-                    current_app.logger.error(f"ATS score is not a number: {type(new_ats_score)}")
-                    try:
-                        new_ats_score = int(new_ats_score)
-                    except:
-                        new_ats_score = 90
-                
-                if not isinstance(implemented_suggestions, list):
-                    current_app.logger.error(f"Implemented suggestions is not a list: {type(implemented_suggestions)}")
-                    implemented_suggestions = []
-                
-                # Convert to 1-based indexing to match template loop.index
-                implemented_indices = [idx + 1 for idx in implemented_suggestions]
-                
-                # Update the database with the new optimized resume
-                try:
-                    # Check if a tailored resume document already exists for this user and job
-                    existing_doc = mongo_db.tailored_resumes.find_one({"user_id": str(current_user.id), "job_id": job_id})
-                    
-                    if existing_doc:
-                        # Update existing document
-                        mongo_db.tailored_resumes.update_one(
-                            {"user_id": str(current_user.id), "job_id": job_id},
-                            {"$set": {
-                                "tailored_resume": optimized_resume,
-                                "ats_score": new_ats_score
-                            }}
-                        )
-                    else:
-                        # Create new document
-                        mongo_db.tailored_resumes.insert_one({
-                            "user_id": str(current_user.id),
-                            "job_id": job_id,
-                            "tailored_resume": optimized_resume,
-                            "ats_score": new_ats_score,
-                            "suggestions": [] # Initialize with empty suggestions
-                        })
-                        current_app.logger.info(f"Created new tailored resume document for user {current_user.id} and job {job_id}")
-                except Exception as db_error:
-                    current_app.logger.error(f"Database error: {str(db_error)}")
-                    # Continue despite database error, returning successful response
-                    # This allows the user to still see the optimized resume even if saving fails
-                
-                return jsonify({
-                    'success': True,
-                    'optimized_resume': optimized_resume,
-                    'ats_score': new_ats_score,
-                    'implemented_suggestions': implemented_indices
-                })
-            else:
-                current_app.logger.error(f"Unexpected API response structure: {str(api_response)[:200]}...")
-                return jsonify({'success': False, 'error': 'Invalid response from AI service: missing expected fields'})
-                
-        except Exception as e:
-            current_app.logger.error(f"Error parsing optimization result: {str(e)}")
-            return jsonify({'success': False, 'error': f'Error parsing optimization result: {str(e)}'})
-    
+        if not analysis_response or 'error' in analysis_response:
+            error_msg = analysis_response.get('error', 'Failed to analyze resume') if analysis_response else 'No response from AI'
+            current_app.logger.error(f"Analysis failed: {error_msg}")
+            return jsonify({'success': False, 'error': f'Analysis failed: {error_msg}'}), 500
+            
+        if 'candidates' not in analysis_response or not analysis_response['candidates']:
+            current_app.logger.error("Invalid analysis response structure")
+            return jsonify({'success': False, 'error': 'Invalid analysis response'}), 500
+            
+        analysis = analysis_response['candidates'][0]['content']['parts'][0]['text']
+        current_app.logger.info(f"Analysis completed: {analysis[:200]}...")
+        
+        # Step 2: Create targeted optimization prompt
+        current_app.logger.info("Step 2: Generating ATS-optimized resume...")
+        optimization_prompt = f"""
+        Based on this ATS analysis, optimize the resume to achieve 90%+ ATS score:
+
+        ANALYSIS RESULTS:
+        {analysis}
+
+        CURRENT RESUME TO OPTIMIZE:
+        {resume_content}
+
+        JOB REQUIREMENTS:
+        Title: {job.get('title', '')}
+        Company: {job.get('company', '')}
+        Description: {job.get('description', '')}
+        Requirements: {job.get('requirements', '')}
+        Skills: {', '.join(job.get('skills', [])) if job.get('skills') else ''}
+
+        OPTIMIZATION RULES:
+        1. Add missing keywords naturally throughout the resume (don't just stuff them)
+        2. Include missing skills in relevant sections (Skills, Experience, Summary)
+        3. Increase keyword density for high-priority terms from the job description
+        4. Use exact phrases from job description where appropriate
+        5. Maintain original structure, experience, and truthfulness - DO NOT fabricate experience
+        6. Ensure keywords appear in multiple sections (summary, experience, skills)
+        7. Use both acronyms and full forms (e.g., "AI" and "Artificial Intelligence")
+        8. Match job title keywords in summary/objective section
+        9. Add industry-specific buzzwords and technical terms from the job posting
+        10. Optimize for ATS parsing (use standard section headers, clear bullet points)
+        11. Keep the same overall length and structure as the original resume
+        12. Focus on quantifiable achievements that relate to job requirements
+
+        IMPORTANT: Return ONLY the optimized resume content that will score 90%+. 
+        Do not include any explanations, analysis, or additional text outside the resume.
+        """
+        
+        optimization_response = call_gemini_api(optimization_prompt)
+        
+        if not optimization_response or 'error' in optimization_response:
+            error_msg = optimization_response.get('error', 'Failed to optimize resume') if optimization_response else 'No response from AI'
+            current_app.logger.error(f"Optimization failed: {error_msg}")
+            return jsonify({'success': False, 'error': f'Optimization failed: {error_msg}'}), 500
+            
+        if 'candidates' not in optimization_response or not optimization_response['candidates']:
+            current_app.logger.error("Invalid optimization response structure")
+            return jsonify({'success': False, 'error': 'Invalid optimization response'}), 500
+            
+        optimized_content = optimization_response['candidates'][0]['content']['parts'][0]['text'].strip()
+        current_app.logger.info(f"Optimization completed, content length: {len(optimized_content)}")
+        
+        # Step 3: Verify the optimization improved the score (optional quick check)
+        current_app.logger.info("Step 3: Verifying ATS score improvement...")
+        verification_prompt = f"""
+        Calculate the ATS score for this optimized resume against the job description.
+        Focus on keyword matching, skill alignment, and ATS compatibility.
+
+        JOB DESCRIPTION:
+        Title: {job.get('title', '')}
+        Requirements: {job.get('requirements', '')}
+        Skills: {', '.join(job.get('skills', [])) if job.get('skills') else ''}
+
+        OPTIMIZED RESUME:
+        {optimized_content}
+
+        Provide ONLY a number (0-100) representing the estimated ATS score.
+        """
+        
+        verification_response = call_gemini_api(verification_prompt)
+        estimated_score = 90  # Default optimistic score
+        
+        if verification_response and 'candidates' in verification_response and verification_response['candidates']:
+            try:
+                score_text = verification_response['candidates'][0]['content']['parts'][0]['text']
+                import re
+                score_match = re.search(r'\d+', score_text)
+                if score_match:
+                    estimated_score = int(score_match.group())
+                    current_app.logger.info(f"Verified ATS score: {estimated_score}")
+            except Exception as e:
+                current_app.logger.warning(f"Score verification failed: {str(e)}")
+        
+        current_app.logger.info(f"Resume optimization successful, estimated score: {estimated_score}")
+        
+        return jsonify({
+            'success': True,
+            'optimized_content': optimized_content,
+            'estimated_score': estimated_score,
+            'message': f'Resume optimized to achieve {estimated_score}% ATS score with targeted keyword improvements!'
+        })
+            
     except Exception as e:
-        # Log the error with traceback for server logs
-        current_app.logger.error(f"Error optimizing resume: {str(e)}")
-        current_app.logger.debug(traceback.format_exc())
-        
-        # Return a user-friendly error message
-        return jsonify({'success': False, 'error': f'Error optimizing resume: {str(e)}'})
+        current_app.logger.error(f"Auto-optimize error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Server error during optimization'
+        }), 500

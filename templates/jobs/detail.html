@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}{{ job.title }} at {{ job.company }} - JobMate{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Job Header -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h1 class="h2">{{ job.title }}</h1>
+                            <h2 class="h4 text-muted mb-0">{{ job.company }}</h2>
+                        </div>
+                        <div class="text-end">
+                            {% if current_user.is_authenticated and current_user.user_type == 'applicant' %}
+                            <div class="btn-group" role="group">
+                                {% if not has_applied %}
+                                <a href="{{ url_for('main.tailor_resume', job_id=job._id) }}" class="btn btn-warning">
+                                    <i class="bi bi-magic"></i> Tailor Resume
+                                </a>
+                                <a href="{{ url_for('jobs.apply_to_job', job_id=job._id) }}" class="btn btn-primary">
+                                    <i class="bi bi-send"></i> Apply Now
+                                </a>
+                                {% else %}
+                                <button class="btn btn-success" disabled>
+                                    <i class="bi bi-check-circle"></i> Applied
+                                </button>
+                                {% endif %}
+                                <button class="btn btn-outline-secondary" onclick="saveJob('{{ job._id }}')">
+                                    <i class="bi bi-bookmark"></i> Save
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Job Meta Information -->
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            {% if job.location %}
+                            <p class="mb-1"><i class="bi bi-geo-alt text-primary"></i> {{ job.location }}</p>
+                            {% endif %}
+                            {% if job.job_type %}
+                            <p class="mb-1"><i class="bi bi-briefcase text-primary"></i> {{ job.job_type }}</p>
+                            {% endif %}
+                            {% if job.job_level %}
+                            <p class="mb-1"><i class="bi bi-trophy text-primary"></i> {{ job.job_level }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 text-end">
+                            {% if job.min_amount or job.max_amount %}
+                            <p class="h5 text-success mb-1">
+                                {% if job.min_amount and job.max_amount %}
+                                    ${{ "{:,}".format(job.min_amount|int) }} - ${{ "{:,}".format(job.max_amount|int) }}
+                                {% elif job.min_amount %}
+                                    ${{ "{:,}".format(job.min_amount|int) }}+
+                                {% elif job.max_amount %}
+                                    Up to ${{ "{:,}".format(job.max_amount|int) }}
+                                {% endif %}
+                            </p>
+                            {% endif %}
+                            {% set date_str = job.date_posted.strftime('%B %d, %Y') if job.date_posted and job.date_posted.__class__.__name__ == 'datetime' else (job.date_posted if job.date_posted and job.date_posted is string else 'Recently') %}
+                            <p class="text-muted mb-0">Posted: {{ date_str }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Skills/Tags -->
+                    {% if job.skills %}
+                    <div class="mt-3">
+                        <h6>Required Skills:</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for skill in job.skills %}
+                                <span class="badge bg-light text-dark">{{ skill }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Job Description -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Job Description</h5>
+                    {% if job.description and job.description is string %}
+                        <div class="job-description">
+                            {{ job.description | nl2br_safe }}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No description available.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Requirements -->
+            {% if job.requirements %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Requirements</h5>
+                    <div class="job-requirements">
+                        {{ job.requirements | nl2br_safe }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Benefits -->
+            {% if job.benefits %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Benefits</h5>
+                    <div class="job-benefits">
+                        {{ job.benefits | nl2br_safe }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Application Instructions -->
+            {% if job.emails or job.job_url_direct or job.company_url %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">How to Apply</h5>
+                    {% if job.emails and job.emails is string and job.emails != 'nan' and job.emails|length > 0 %}
+                    <p><strong>Email:</strong> 
+                        <a href="mailto:{{ job.emails }}">{{ job.emails }}</a>
+                    </p>
+                    {% elif job.emails and job.emails is not string and job.emails is iterable %}
+                    <p><strong>Email:</strong> 
+                        {% for email in job.emails %}
+                            <a href="mailto:{{ email }}">{{ email }}</a>{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+                    {% if job.job_url_direct %}
+                    <p><strong>Apply Online:</strong> 
+                        <a href="{{ job.job_url_direct }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                            Apply on Company Website <i class="bi bi-box-arrow-up-right"></i>
+                        </a>
+                    </p>
+                    {% endif %}
+                    
+                    {% if current_user.is_authenticated and current_user.user_type == 'applicant' and not has_applied %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-lightbulb"></i> 
+                        <strong>Pro Tip:</strong> Use our AI-powered resume tailoring to increase your chances!
+                        <a href="{{ url_for('jobs.apply_to_job', job_id=job._id) }}" class="btn btn-primary btn-sm ms-2">
+                            Tailor Resume & Apply
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Company Info -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">About {{ job.company }}</h5>
+                    {% if job.company_description and job.company_description is string and job.company_description != 'nan' and job.company_description|length > 0 %}
+                        <p>{{ job.company_description[:300] }}{% if job.company_description|length > 300 %}...{% endif %}</p>
+                    {% endif %}
+                    
+                    {% if job.company_industry %}
+                    <p><strong>Industry:</strong> {{ job.company_industry }}</p>
+                    {% endif %}
+                    
+                    {% if job.company_num_employees %}
+                    <p><strong>Company Size:</strong> {{ job.company_num_employees }} employees</p>
+                    {% endif %}
+                    
+                    {% if job.company_url or job.company_url_direct %}
+                    <a href="{{ job.company_url_direct or job.company_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                        Visit Company Website <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Job Stats -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="card-title">Job Details</h6>
+                    <ul class="list-unstyled">
+                        {% if job.job_type and job.job_type is string %}
+                        <li><strong>Employment Type:</strong> {{ job.job_type.title() }}</li>
+                        {% endif %}
+                        {% if job.is_remote %}
+                        <li><strong>Work Type:</strong> {{ 'Remote' if job.is_remote else 'On-site' }}</li>
+                        {% endif %}
+                        {% if job.company_industry %}
+                        <li><strong>Industry:</strong> {{ job.company_industry }}</li>
+                        {% endif %}
+                        {% if job.job_function %}
+                        <li><strong>Function:</strong> {{ job.job_function }}</li>
+                        {% endif %}
+                        {% if job.site and job.site is string %}
+                        <li><strong>Source:</strong> {{ job.site.title() }}</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Similar Jobs -->
+            {% if similar_jobs %}
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">More jobs at {{ job.company }}</h6>
+                    <div class="list-group list-group-flush">
+                        {% for similar_job in similar_jobs %}
+                        <a href="{{ url_for('jobs.job_detail', job_id=similar_job._id) }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ similar_job.title }}</h6>
+                                {% set similar_date_str = similar_job.date_posted.strftime('%m/%d') if similar_job.date_posted and similar_job.date_posted.__class__.__name__ == 'datetime' else (similar_job.date_posted if similar_job.date_posted and similar_job.date_posted is string else 'New') %}
+                                <small>{{ similar_date_str }}</small>
+                            </div>
+                            {% if similar_job.location %}
+                            <small class="text-muted">{{ similar_job.location }}</small>
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Back to Jobs Button -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{{ url_for('jobs.jobs_list') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Job Listings
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.job-description, .job-requirements, .job-benefits {
+    line-height: 1.6;
+}
+
+.job-description p, 
+.job-requirements p, 
+.job-benefits p {
+    margin-bottom: 1rem;
+}
+
+.job-description ul,
+.job-requirements ul,
+.job-benefits ul {
+    padding-left: 1.5rem;
+}
+
+.job-description li,
+.job-requirements li,
+.job-benefits li {
+    margin-bottom: 0.5rem;
+}
+</style>
+
+<script>
+// Save/unsave job function
+function saveJob(jobId) {
+    fetch(`/jobs/save/${jobId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update button state
+            const button = event.target.closest('button');
+            if (data.saved) {
+                button.innerHTML = '<i class="bi bi-bookmark-fill"></i> Saved';
+                button.classList.remove('btn-outline-secondary');
+                button.classList.add('btn-warning');
+            } else {
+                button.innerHTML = '<i class="bi bi-bookmark"></i> Save';
+                button.classList.remove('btn-warning');
+                button.classList.add('btn-outline-secondary');
+            }
+            
+            // Show toast notification
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.message || 'An error occurred', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred while saving the job', 'error');
+    });
+}
+
+// Simple toast notification
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 1050;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+</script>
+{% endblock %}

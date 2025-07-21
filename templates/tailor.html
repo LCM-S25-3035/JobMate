@@ -26,26 +26,33 @@
           <div class="job-description mb-3">
             <h5><i class="fas fa-tasks me-2"></i>Job Description</h5>
             <div class="formatted-description">
-              {% set sections = job.description.split('**') %}
-              {% for section in sections %}
-                {% if ':**' in section %}
-                  {% set parts = section.split(':**') %}
-                  <div class="mt-3">
-                    <h6 class="text-primary">{{ parts[0].strip() }}</h6>
-                    <p>{{ parts[1].strip() }}</p>
-                  </div>
-                {% elif section.strip() %}
-                  <p>{{ section.strip() }}</p>
-                {% endif %}
-              {% endfor %}
+              {% if job.description and job.description is string %}
+                {% set sections = job.description|safe_split('**') %}
+                {% for section in sections %}
+                  {% if ':**' in section %}
+                    {% set parts = section|safe_split(':**') %}
+                    {% if parts|length >= 2 %}
+                    <div class="mt-3">
+                      <h6 class="text-primary">{{ parts[0].strip() }}</h6>
+                      <p>{{ parts[1].strip() }}</p>
+                    </div>
+                    {% endif %}
+                  {% elif section.strip() %}
+                    <p>{{ section.strip() }}</p>
+                  {% endif %}
+                {% endfor %}
+              {% else %}
+                <p class="text-muted">Job description not available.</p>
+              {% endif %}
             </div>
           </div>
           
-          {% if job.requirements %}
+          {% if job.requirements and job.requirements is string %}
           <div class="job-requirements mb-3">
             <h5><i class="fas fa-clipboard-list me-2"></i>Requirements</h5>
             <ul class="requirements-list">
-              {% for requirement in job.requirements.split('*') %}
+              {% set requirements_list = job.requirements|safe_split('*') %}
+              {% for requirement in requirements_list %}
                 {% if requirement.strip() %}
                 <li>{{ requirement.strip() }}</li>
                 {% endif %}
@@ -553,232 +560,162 @@ if (document.getElementById('resultTabs')) {
 
 <!-- Auto-optimize resume script -->
 <script>
-document.getElementById('auto-optimize-resume-btn')?.addEventListener('click', function() {
-  // Get current ATS score - find the element with the score
-  const atsScoreElement = document.querySelector('.card-body div[style*="font-size:2.5rem"]');
-  const currentAtsScore = parseInt(atsScoreElement?.textContent || "0");
-  
-  // If already 90+, alert user and exit
-  if (currentAtsScore >= 90) {
-    alert('Your resume already has a ' + currentAtsScore + '% ATS score! No optimization needed.');
-    return;
-  }
-  
-  // Store original button text
-  const originalButtonText = this.innerHTML;
-  
-  // Disable button and show loading
-  this.disabled = true;
-  this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Optimizing...';
-  
-  // Show progress message
-  const progressElement = document.getElementById('optimization-progress');
-  if (progressElement) {
-    progressElement.style.display = 'block';
-  } else {
-    console.warn("Progress element not found");
-  }
-  
-  // Get the current resume text
-  const resumeText = document.getElementById('resume-pre').textContent;
-  // Try to get job ID from URL or from the download form
-  let jobId = new URLSearchParams(window.location.search).get('job_id');
-  if (!jobId) {
-    // Try to extract from the download form action
-    const downloadForm = document.getElementById('download-resume-form');
-    if (downloadForm) {
-      const actionUrl = downloadForm.getAttribute('action');
-      if (actionUrl) {
-        const match = actionUrl.match(/\/job\/([^\/]+)\/download/);
-        if (match && match[1]) {
-          jobId = match[1];
-        }
-      }
-    }
-  }
-  // If still no job ID, use the one embedded in the page
-  if (!jobId) {
-    jobId = '{{ job._id }}'
-  }
-  
-  // Debug logging
-  console.log("Starting resume optimization request:");
-  console.log("- Job ID:", jobId);
-  console.log("- Resume length:", resumeText ? resumeText.length : 0);
-  
-  // Call the optimization endpoint
-  fetch('{{ url_for("main.auto_optimize_resume") }}', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': '{{ csrf_token() }}'
-    },
-    body: JSON.stringify({
-      job_id: jobId,
-      resume_text: resumeText,
-      target_score: 90
-    })
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    return response.json();
-  })
-  .then(data => {
-    console.log("Received optimization response:", data);
-    if (data.success) {
-      // Update the resume text
-      console.log("Optimized resume received:", data.optimized_resume ? data.optimized_resume.substring(0, 100) + "..." : "empty");
-      
-      // Make sure we have valid content
-      if (!data.optimized_resume) {
-        console.error("Empty optimized resume received from server");
-        alert("Error: Received empty resume content from server");
-        return;
-      }
-      
-      const resumePre = document.getElementById('resume-pre');
-      const resumeTextarea = document.getElementById('resume-textarea');
-      
-      if (!resumePre) {
-        console.error("Could not find resume-pre element");
-      } else {
-        resumePre.textContent = data.optimized_resume;
-      }
-      
-      if (!resumeTextarea) {
-        console.error("Could not find resume-textarea element");
-      } else {
-        resumeTextarea.value = data.optimized_resume;
-      }
-      
-      // Update the hidden input field for form submissions
-      const resumeInput = document.getElementById('resume-text-input');
-      if (resumeInput) {
-        resumeInput.value = data.optimized_resume;
-      } else {
-        console.error("Could not find resume-text-input element");
-      }
-      
-      // Update ATS score
-      const atsScoreElement = document.querySelector('.card-body div[style*="font-size:2.5rem"]');
-      if (atsScoreElement) {
-        atsScoreElement.textContent = data.ats_score;
-      }
-      
-      // Update progress bars
-      const newScore = data.ats_score;
-      document.querySelector('.progress-bar.bg-warning, .progress-bar.bg-danger, .progress-bar.bg-success').style.width = newScore + '%';
-      document.querySelector('.progress-bar.bg-warning, .progress-bar.bg-danger, .progress-bar.bg-success').textContent = newScore + '%';
-      
-      // Adjust progress bar color
-      const progressBar = document.querySelector('.progress-bar.bg-warning, .progress-bar.bg-danger, .progress-bar.bg-success');
-      progressBar.classList.remove('bg-warning', 'bg-danger');
-      progressBar.classList.add('bg-success');
-      
-      // Update suggestion badges
-      if (data.implemented_suggestions && data.implemented_suggestions.length > 0) {
-        data.implemented_suggestions.forEach(index => {
-          const suggestionCard = document.querySelector(`.suggestion-card[data-suggestion-id="${index}"]`);
-          if (suggestionCard) {
-            const badge = suggestionCard.querySelector('.suggestion-status');
-            badge.textContent = 'Implemented';
-            badge.classList.remove('bg-light', 'text-dark');
-            badge.classList.add('bg-success', 'text-white');
-          }
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, setting up auto-optimize functionality');
+    
+    const autoOptimizeBtn = document.getElementById('auto-optimize-resume-btn');
+    const resumePre = document.getElementById('resume-pre');
+    const resumeTextarea = document.getElementById('resume-textarea');
+    
+    if (autoOptimizeBtn && (resumePre || resumeTextarea)) {
+        console.log('Auto-optimize elements found');
+        
+        autoOptimizeBtn.addEventListener('click', function() {
+            console.log('Auto-optimize button clicked');
+            
+            // Get current resume content from either pre or textarea
+            const resumeContent = resumePre ? resumePre.textContent : (resumeTextarea ? resumeTextarea.value : '');
+            const jobId = '{{ job._id }}'; // Get job ID from template
+            
+            if (!resumeContent.trim()) {
+                alert('Please upload and process a resume first.');
+                return;
+            }
+            
+            // Show loading state
+            const originalText = autoOptimizeBtn.innerHTML;
+            autoOptimizeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Optimizing...';
+            autoOptimizeBtn.disabled = true;
+            
+            // Show progress indicator if it exists
+            const progressElement = document.getElementById('optimization-progress');
+            if (progressElement) {
+                progressElement.style.display = 'block';
+            }
+            
+            // Create form data
+            const formData = new FormData();
+            formData.append('job_id', jobId);
+            formData.append('resume_content', resumeContent);
+            
+            console.log('Sending request with job_id:', jobId, 'resume length:', resumeContent.length);
+            
+            // Make the request
+            fetch('/auto_optimize_resume', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                
+                if (data.success) {
+                    // Update the resume content
+                    if (resumePre) {
+                        resumePre.textContent = data.optimized_content;
+                    }
+                    if (resumeTextarea) {
+                        resumeTextarea.value = data.optimized_content;
+                    }
+                    
+                    // Update hidden input field if it exists
+                    const resumeInput = document.getElementById('resume-text-input');
+                    if (resumeInput) {
+                        resumeInput.value = data.optimized_content;
+                    }
+                    
+                    // Update ATS score display if available
+                    if (data.estimated_score) {
+                        const atsScoreElement = document.querySelector('.card-body div[style*="font-size:2.5rem"]');
+                        if (atsScoreElement) {
+                            atsScoreElement.textContent = data.estimated_score + '%';
+                            console.log('Updated ATS score display to:', data.estimated_score + '%');
+                        }
+                        
+                        // Update progress bars if they exist
+                        const progressBar = document.querySelector('.progress-bar');
+                        if (progressBar) {
+                            const score = parseInt(data.estimated_score);
+                            progressBar.style.width = score + '%';
+                            progressBar.textContent = score + '%';
+                            
+                            // Update progress bar color based on score
+                            progressBar.classList.remove('bg-warning', 'bg-danger');
+                            if (score >= 90) {
+                                progressBar.classList.add('bg-success');
+                            } else if (score >= 70) {
+                                progressBar.classList.add('bg-warning');
+                            } else {
+                                progressBar.classList.add('bg-danger');
+                            }
+                        }
+                    }
+                    
+                    // Show enhanced success message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+                    const scoreText = data.estimated_score ? ` (Estimated ATS Score: ${data.estimated_score}%)` : '';
+                    alertDiv.innerHTML = `
+                        <strong><i class="fas fa-check-circle me-2"></i>Success!</strong> ${data.message}${scoreText}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    
+                    // Insert the success message
+                    const suggestionsSection = document.querySelector('#suggestions');
+                    if (suggestionsSection) {
+                        const rowDiv = document.querySelector('#suggestions .row');
+                        suggestionsSection.insertBefore(alertDiv, rowDiv || suggestionsSection.firstChild);
+                    } else {
+                        autoOptimizeBtn.parentNode.insertBefore(alertDiv, autoOptimizeBtn.nextSibling);
+                    }
+                    
+                    // Auto-dismiss after 7 seconds (longer for more info)
+                    setTimeout(() => {
+                        if (alertDiv.parentNode) {
+                            alertDiv.remove();
+                        }
+                    }, 7000);
+                    
+                    // Switch to Resume tab if it exists
+                    const resumeTab = document.querySelector('#resume-tab');
+                    if (resumeTab) {
+                        resumeTab.click();
+                    }
+                    
+                } else {
+                    // Show error message
+                    console.error('Optimization failed:', data.error);
+                    alert('Optimization failed: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                alert('Network error. Please check your connection and try again.');
+            })
+            .finally(() => {
+                // Reset button state
+                autoOptimizeBtn.innerHTML = originalText;
+                autoOptimizeBtn.disabled = false;
+                
+                // Hide progress indicator
+                if (progressElement) {
+                    progressElement.style.display = 'none';
+                }
+            });
         });
-      }
-      
-      // Show success message
-      const alertDiv = document.createElement('div');
-      alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
-      alertDiv.innerHTML = `
-        <strong>Success!</strong> Your resume has been optimized to achieve a ${data.ats_score}% ATS score.
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-      `;
-      const suggestionDiv = document.querySelector('#suggestions');
-      const rowDiv = document.querySelector('#suggestions .row');
-      if (suggestionDiv && rowDiv) {
-        suggestionDiv.insertBefore(alertDiv, rowDiv);
-      } else {
-        // Fallback if we can't find the elements
-        document.querySelector('.tab-content').appendChild(alertDiv);
-      }
-      
-      // Auto-dismiss after 5 seconds
-      setTimeout(() => {
-        alertDiv.classList.remove('show');
-        setTimeout(() => alertDiv.remove(), 500);
-      }, 5000);
-      
-      // Switch to the Resume tab
-      const resumeTab = document.querySelector('#resume-tab');
-      if (!resumeTab) {
-        console.error("Could not find resume-tab element");
-        // Alternative approach: directly show the resume tab pane
-        const resumeTabPane = document.querySelector('#resume');
-        if (resumeTabPane) {
-          document.querySelectorAll('.tab-pane').forEach(pane => {
-            pane.classList.remove('show', 'active');
-          });
-          resumeTabPane.classList.add('show', 'active');
-        }
-      } else {
-        resumeTab.click();
-      }
-      
     } else {
-      // Show error
-      console.error('Optimization error:', data.error);
-      alert('Error optimizing resume: ' + data.error);
-      
-      // Show detailed error in the UI
-      const alertDiv = document.createElement('div');
-      alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
-      alertDiv.innerHTML = `
-        <strong>Error!</strong> Failed to optimize resume.<br>
-        <small>Details: ${data.error}</small>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-      `;
-      const suggestionDiv = document.querySelector('#suggestions');
-      if (suggestionDiv) {
-        const rowDiv = document.querySelector('#suggestions .row');
-        suggestionDiv.insertBefore(alertDiv, rowDiv || suggestionDiv.firstChild);
-      }
+        console.error('Auto-optimize elements not found:', {
+            button: !!autoOptimizeBtn,
+            resumePre: !!resumePre,
+            resumeTextarea: !!resumeTextarea
+        });
     }
-    
-    // Reset button and hide progress
-    this.innerHTML = originalButtonText;
-    this.disabled = false;
-    if (progressElement) {
-      progressElement.style.display = 'none';
-    }
-  })
-  .catch(error => {
-    // Handle errors
-    console.error('Error:', error);
-    this.innerHTML = originalButtonText;
-    this.disabled = false;
-    if (progressElement) {
-      progressElement.style.display = 'none';
-    }
-    
-    // Show error alert with more details
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
-    alertDiv.innerHTML = `
-      <strong>Error!</strong> Failed to optimize resume. Please try again.<br>
-      <small>Technical details: ${error.toString()}</small>
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    document.querySelector('#suggestions').insertBefore(alertDiv, document.querySelector('#suggestions .row'));
-    
-    // Log additional debug info
-    console.log('Debug info:');
-    console.log('Job ID:', jobId);
-    console.log('Resume text length:', resumeText?.length || 0);
-  });
 });
 </script>
 

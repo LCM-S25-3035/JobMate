@@ -18,11 +18,8 @@
                             {% if current_user.is_authenticated and current_user.user_type == 'applicant' %}
                             <div class="btn-group" role="group">
                                 {% if not has_applied %}
-                                <a href="{{ url_for('main.tailor_resume', job_id=job._id) }}" class="btn btn-warning">
-                                    <i class="bi bi-magic"></i> Tailor Resume
-                                </a>
-                                <a href="{{ url_for('jobs.apply_to_job', job_id=job._id) }}" class="btn btn-primary">
-                                    <i class="bi bi-send"></i> Apply Now
+                                <a href="{{ url_for('main.tailor_resume', job_id=job._id) }}" class="btn btn-primary">
+                                    <i class="bi bi-magic"></i> Tailor Resume & Apply
                                 </a>
                                 {% else %}
                                 <button class="btn btn-success" disabled>
@@ -70,11 +67,24 @@
                     <!-- Skills/Tags -->
                     {% if job.skills %}
                     <div class="mt-3">
-                        <h6>Required Skills:</h6>
+                        <h6><i class="bi bi-gear-fill me-2"></i>Required Skills:</h6>
                         <div class="d-flex flex-wrap gap-2">
-                            {% for skill in job.skills %}
-                                <span class="badge bg-light text-dark">{{ skill }}</span>
-                            {% endfor %}
+                            {% if job.skills is string %}
+                                {% set skills_list = job.skills.split(',') %}
+                                {% for skill in skills_list %}
+                                    {% if skill.strip() %}
+                                        <span class="badge bg-primary">{{ skill.strip() }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            {% elif job.skills is iterable %}
+                                {% for skill in job.skills %}
+                                    {% if skill.strip() %}
+                                        <span class="badge bg-primary">{{ skill.strip() }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <span class="badge bg-primary">{{ job.skills }}</span>
+                            {% endif %}
                         </div>
                     </div>
                     {% endif %}
@@ -83,14 +93,67 @@
 
             <!-- Job Description -->
             <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-text me-2"></i>Job Description
+                    </h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">Job Description</h5>
-                    {% if job.description and job.description is string %}
-                        <div class="job-description">
-                            {{ job.description | nl2br_safe }}
+                    <!-- Try multiple fields for job description -->
+                    {% set description_content = job.description or job.job_description or job.summary or job.details or job.company_description %}
+                    
+                    {% if description_content and description_content|string != 'nan' and description_content|string != '' and description_content|string|length > 10 %}
+                        <div class="job-description-content">
+                            {% set clean_description = description_content|replace('**', '')|replace('###', '')|replace('***', '') %}
+                            {% set description_lines = clean_description.split('\n') %}
+                            
+                            {% for line in description_lines %}
+                                {% if line.strip() %}
+                                    {% if line.strip().startswith('*') and not line.strip().startswith('**') %}
+                                        <!-- Bullet points -->
+                                        <div class="d-flex align-items-start mb-2">
+                                            <i class="bi bi-check-circle-fill text-success me-2 mt-1"></i>
+                                            <span>{{ line.strip()[1:].strip() }}</span>
+                                        </div>
+                                    {% elif 'qualifications' in line.lower() or 'requirements' in line.lower() or 'about the job' in line.lower() or 'responsibilities' in line.lower() %}
+                                        <!-- Section headers -->
+                                        <h6 class="fw-bold text-primary mt-4 mb-2 border-bottom pb-1">
+                                            {{ line.strip().replace('*', '').replace('#', '').strip() }}
+                                        </h6>
+                                    {% else %}
+                                        <!-- Regular paragraphs -->
+                                        <p class="mb-3">{{ line.strip() }}</p>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-muted">No description available.</p>
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>No job description available for this position.</strong>
+                            <br><br>
+                            This commonly happens with jobs sourced from LinkedIn or external job boards. 
+                            {% if job.company_url or job.job_url or job.apply_url or job.job_url_direct %}
+                                Please visit the company website or original job posting for detailed information.
+                            {% else %}
+                                Try searching for this position directly on the company's careers page.
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Debug info for troubleshooting -->
+                        {% if current_user.is_authenticated and ('Canada' in (job.location or '') or 'Toronto' in (job.location or '')) %}
+                            <details class="mt-3">
+                                <summary class="btn btn-sm btn-outline-info">Debug: Show Available Data</summary>
+                                <div class="mt-2 small text-muted">
+                                    <strong>Available fields:</strong> {{ job.keys()|list }}<br>
+                                    <strong>Source:</strong> {{ job.get('source', 'Unknown') }}<br>
+                                    <strong>Description field:</strong> {{ job.get('description', 'Empty')|string|truncate(100) }}<br>
+                                    <strong>Job description field:</strong> {{ job.get('job_description', 'Empty')|string|truncate(100) }}<br>
+                                    <strong>Summary field:</strong> {{ job.get('summary', 'Empty')|string|truncate(100) }}<br>
+                                    <strong>Details field:</strong> {{ job.get('details', 'Empty')|string|truncate(100) }}
+                                </div>
+                            </details>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>
@@ -99,9 +162,23 @@
             {% if job.requirements %}
             <div class="card mb-4">
                 <div class="card-body">
-                    <h5 class="card-title">Requirements</h5>
+                    <h5 class="card-title">
+                        <i class="bi bi-list-check me-2"></i>Requirements
+                    </h5>
                     <div class="job-requirements">
-                        {{ job.requirements | nl2br_safe }}
+                        {% set req_lines = job.requirements.split('\n') %}
+                        {% for line in req_lines %}
+                            {% if line.strip() %}
+                                {% if line.strip().startswith('*') or line.strip().startswith('-') %}
+                                    <div class="d-flex align-items-start mb-2">
+                                        <i class="bi bi-arrow-right-circle text-primary me-2 mt-1"></i>
+                                        <span>{{ line.strip()[1:].strip() }}</span>
+                                    </div>
+                                {% else %}
+                                    <p class="mb-2">{{ line.strip() }}</p>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -120,41 +197,99 @@
             {% endif %}
 
             <!-- Application Instructions -->
-            {% if job.emails or job.job_url_direct or job.company_url %}
             <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-link-45deg me-2"></i>How to Apply
+                    </h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">How to Apply</h5>
-                    {% if job.emails and job.emails is string and job.emails != 'nan' and job.emails|length > 0 %}
-                    <p><strong>Email:</strong> 
-                        <a href="mailto:{{ job.emails }}">{{ job.emails }}</a>
-                    </p>
-                    {% elif job.emails and job.emails is not string and job.emails is iterable %}
-                    <p><strong>Email:</strong> 
-                        {% for email in job.emails %}
-                            <a href="mailto:{{ email }}">{{ email }}</a>{% if not loop.last %}, {% endif %}
-                        {% endfor %}
-                    </p>
-                    {% endif %}
-                    {% if job.job_url_direct %}
-                    <p><strong>Apply Online:</strong> 
-                        <a href="{{ job.job_url_direct }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                            Apply on Company Website <i class="bi bi-box-arrow-up-right"></i>
-                        </a>
-                    </p>
+                    <!-- Try multiple URL fields for Canadian jobs -->
+                    {% set apply_url = job.apply_url or job.job_url_direct or job.job_url or job.linkedin_url %}
+                    {% set company_url = job.company_url or job.company_website %}
+                    
+                    {% if apply_url and apply_url|string != 'nan' and apply_url|string != '' %}
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-external-link text-primary me-2"></i>
+                                <strong>Apply Directly:</strong>
+                            </div>
+                            <a href="{{ apply_url }}" target="_blank" rel="noopener noreferrer" 
+                               class="btn btn-success me-2">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                                Apply on {{ job.get('source', 'Original Site') }}
+                            </a>
+                            <small class="d-block mt-1 text-muted">{{ apply_url }}</small>
+                        </div>
                     {% endif %}
                     
+                    {% if company_url and company_url|string != 'nan' and company_url|string != '' %}
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-building text-primary me-2"></i>
+                                <strong>Company Website:</strong>
+                            </div>
+                            <a href="{{ company_url }}" target="_blank" rel="noopener noreferrer" 
+                               class="btn btn-outline-primary">
+                                <i class="bi bi-house"></i>
+                                Visit {{ job.company }} Website
+                            </a>
+                            <small class="d-block mt-1 text-muted">{{ company_url }}</small>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Email application if available -->
+                    {% if job.emails and job.emails|string != 'nan' and job.emails|string != '' %}
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-envelope text-primary me-2"></i>
+                                <strong>Email Application:</strong>
+                            </div>
+                            {% if job.emails is string %}
+                                <a href="mailto:{{ job.emails }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-envelope"></i> {{ job.emails }}
+                                </a>
+                            {% elif job.emails is iterable %}
+                                {% for email in job.emails %}
+                                    <a href="mailto:{{ email }}" class="btn btn-outline-secondary me-1 mb-1">
+                                        <i class="bi bi-envelope"></i> {{ email }}
+                                    </a>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Manual application guidance for Canadian jobs -->
+                    {% if not apply_url and not company_url and not job.emails %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Manual Application Required</strong><br>
+                            Direct application links are not available for this position.<br><br>
+                            <strong>Recommended steps:</strong>
+                            <ol class="mb-0">
+                                <li>Visit {{ job.company }}'s official careers page</li>
+                                <li>Search for "{{ job.title }}" in {{ job.location }}</li>
+                                <li>Apply directly through their recruitment system</li>
+                            </ol>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Ready to Apply section -->
                     {% if current_user.is_authenticated and current_user.user_type == 'applicant' and not has_applied %}
-                    <div class="alert alert-info">
-                        <i class="bi bi-lightbulb"></i> 
-                        <strong>Pro Tip:</strong> Use our AI-powered resume tailoring to increase your chances!
-                        <a href="{{ url_for('jobs.apply_to_job', job_id=job._id) }}" class="btn btn-primary btn-sm ms-2">
-                            Tailor Resume & Apply
-                        </a>
-                    </div>
+                        <div class="bg-light p-3 rounded mt-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-magic text-success me-2"></i>
+                                <strong>Ready to Apply?</strong>
+                            </div>
+                            <p class="mb-2 small">Use our AI-powered resume tailoring to optimize your resume for this specific job and improve your ATS score!</p>
+                            <a href="{{ url_for('main.tailor_resume', job_id=job._id) }}" 
+                               class="btn btn-primary">
+                                <i class="bi bi-magic"></i> Tailor Resume & Apply
+                            </a>
+                        </div>
                     {% endif %}
                 </div>
             </div>
-            {% endif %}
         </div>
 
         <!-- Sidebar -->

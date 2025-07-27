@@ -6,6 +6,7 @@ Landing page, dashboards, and core application routes
 from flask import render_template, redirect, url_for, request, jsonify, current_app, send_file, session, flash
 from flask_login import current_user, login_required
 from app.main import bp
+from app import db
 from app.models.user import User
 from app.models.application import Application
 from app.models.job_posting import JobPosting
@@ -89,62 +90,84 @@ def dashboard():
 @bp.route('/applicant/dashboard')
 @login_required
 def applicant_dashboard():
-    """Applicant dashboard"""
+    """Enhanced applicant dashboard with working profile completion"""
     if not current_user.is_applicant():
         return redirect(url_for('main.recruiter_dashboard'))
     
-    # Get user's active resume
-    active_resume = current_user.get_active_resume()
-    
-    # Get recent applications (limit to 5 for dashboard)
-    recent_applications = current_user.applications.order_by(
-        Application.created_at.desc()
-    ).limit(5).all()
-    
-    # Get job recommendations using the match module
-    from app.models.job_posting import JobPosting
-    from app.match.routes import calculate_job_match_score
-    
-    # Get active jobs and calculate match scores
-    active_jobs = JobPosting.get_active_jobs(limit=10)
-    job_matches = []
-    
-    if active_jobs and active_resume:
-        for job in active_jobs:
-            match_score = calculate_job_match_score(job, current_user, active_resume)
-            if match_score > 30:  # Only show jobs with reasonable match
-                job_matches.append({
-                    'job': job,
-                    'match_score': match_score
-                })
-    
-    # Sort by match score and limit to top 5 for dashboard
-    recommended_jobs = sorted(job_matches, key=lambda x: x['match_score'], reverse=True)[:5]
-    
-    # Calculate completion percentage
-    completion_percentage = calculate_profile_completion(current_user)
-    
-    # Fetch MongoDB jobs (limit 5) with error handling
-    mongo_jobs = []
-    
-    if hasattr(current_app, 'mongo_db') and current_app.mongo_db is not None:
+    try:
+        # Calculate profile completion
+        profile_data = calculate_profile_completion(current_user)
+        
+        # Get user's active resume
+        active_resume = current_user.get_active_resume()
+        
+        # Get recent applications (limit to 5 for dashboard)
+        recent_applications = current_user.applications.order_by(
+            Application.created_at.desc()
+        ).limit(5).all()
+        
+        # Get job recommendations using the match module
+        from app.models.job_posting import JobPosting
+        recommended_jobs = []
+        
+        # Get active jobs for recommendations
+        active_jobs = JobPosting.get_active_jobs(limit=10)
+        if active_jobs and active_resume:
+            try:
+                from app.match.routes import calculate_job_match_score
+                job_matches = []
+                
+                for job in active_jobs:
+                    match_score = calculate_job_match_score(job, current_user, active_resume)
+                    if match_score > 30:  # Only show jobs with reasonable match
+                        job_matches.append({
+                            'job': job,
+                            'match_score': match_score
+                        })
+                
+                # Sort by match score and limit to top 5 for dashboard
+                recommended_jobs = sorted(job_matches, key=lambda x: x['match_score'], reverse=True)[:5]
+            except ImportError:
+                # If match module is not available, continue without recommendations
+                pass
+        
+        # Fetch MongoDB jobs (limit 6)
+        mongo_jobs = []
         try:
-            mongo_jobs = list(current_app.mongo_db.jobs.find(
-                {}, {"_id": 1, "title": 1, "company": 1, "description": 1}
-            ).limit(5))
-            current_app.logger.info(f"Retrieved {len(mongo_jobs)} jobs from MongoDB")
-        except Exception as e:
-            current_app.logger.error(f"Error fetching jobs from MongoDB: {str(e)}")
-            flash("Unable to fetch recent job postings. Some features may be limited.", "warning")
-    
-    return render_template('dashboard/applicant.html',
-                         title='Dashboard',
-                         user=current_user,
-                         active_resume=active_resume,
-                         recent_applications=recent_applications,
-                         recommended_jobs=recommended_jobs,
-                         completion_percentage=completion_percentage,
-                         mongo_jobs=mongo_jobs)
+            mongo_db = current_app.mongo_db
+            mongo_jobs = list(mongo_db.jobs.find({}, {"_id": 1, "title": 1, "company": 1, "description": 1}).limit(6))
+            # Convert ObjectId to string for template
+            for job in mongo_jobs:
+                job['_id'] = str(job['_id'])
+        except:
+            # If MongoDB is not available, continue without mongo jobs
+            pass
+        
+        return render_template('dashboard/applicant.html',
+                             title='Dashboard',
+                             user=current_user,
+                             completion_percentage=profile_data['percentage'],
+                             profile_completion_items=profile_data['items'],
+                             missing_profile_items=profile_data['missing_items'],
+                             active_resume=active_resume,
+                             recent_applications=recent_applications,
+                             recommended_jobs=recommended_jobs,
+                             mongo_jobs=mongo_jobs)
+        
+    except Exception as e:
+        current_app.logger.error(f"Dashboard error: {str(e)}")
+        
+        # Provide safe fallbacks
+        return render_template('dashboard/applicant.html',
+                             title='Dashboard',
+                             user=current_user,
+                             completion_percentage=0,
+                             profile_completion_items=[],
+                             missing_profile_items=[],
+                             active_resume=None,
+                             recent_applications=[],
+                             recommended_jobs=[],
+                             mongo_jobs=[])
 
 
 @bp.route('/recruiter/dashboard')
@@ -201,6 +224,153 @@ def recruiter_dashboard():
                          recent_applications=recent_applications,
                          current_date=datetime.now().strftime('%b %d'),
                          **stats)
+
+
+@bp.route('/profile')
+@login_required
+def profile():
+    """User profile page where they can complete their details"""
+    
+    profile_data = calculate_profile_completion(current_user)
+    
+    return render_template('main/profile.html',
+                         title='My Profile',
+                         user=current_user,
+                         profile_data=profile_data)
+
+@bp.route('/profile/update', methods=['POST'])
+@login_required
+def update_profile():
+    """Handle profile update form submission with detailed logging"""
+    
+    try:
+        # Log form data received
+        current_app.logger.info(f"=== Profile Update for User {current_user.id} ===")
+        current_app.logger.info(f"Form data received: {dict(request.form)}")
+        
+        # Get form data
+        first_name = request.form.get('first_name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
+        phone = request.form.get('phone', '').strip()
+        city = request.form.get('city', '').strip()
+        bio = request.form.get('bio', '').strip()
+        experience_level = request.form.get('experience_level', '').strip()
+        skills = request.form.get('skills', '').strip()
+        
+        # Log what we're about to save
+        current_app.logger.info("Data to be saved:")
+        current_app.logger.info(f"  first_name: '{first_name}' (length: {len(first_name)})")
+        current_app.logger.info(f"  last_name: '{last_name}' (length: {len(last_name)})")
+        current_app.logger.info(f"  phone: '{phone}' (length: {len(phone)})")
+        current_app.logger.info(f"  city: '{city}' (length: {len(city)})")
+        current_app.logger.info(f"  bio: '{bio}' (length: {len(bio)})")
+        current_app.logger.info(f"  experience_level: '{experience_level}' (length: {len(experience_level)})")
+        current_app.logger.info(f"  skills: '{skills}' (length: {len(skills)})")
+        
+        # Update user fields
+        current_user.first_name = first_name if first_name else None
+        current_user.last_name = last_name if last_name else None
+        current_user.phone = phone if phone else None
+        current_user.city = city if city else None
+        current_user.bio = bio if bio else None
+        current_user.experience_level = experience_level if experience_level else None
+        current_user.skills = skills if skills else None
+        
+        # Save to database
+        db.session.commit()
+        
+        # Log what was actually saved
+        current_app.logger.info("After database commit:")
+        current_app.logger.info(f"  current_user.first_name: '{current_user.first_name}'")
+        current_app.logger.info(f"  current_user.last_name: '{current_user.last_name}'")
+        current_app.logger.info(f"  current_user.phone: '{current_user.phone}'")
+        current_app.logger.info(f"  current_user.city: '{current_user.city}'")
+        current_app.logger.info(f"  current_user.bio: '{current_user.bio}'")
+        current_app.logger.info(f"  current_user.experience_level: '{current_user.experience_level}'")
+        current_app.logger.info(f"  current_user.skills: '{current_user.skills}'")
+        
+        # Store timestamp for debugging
+        session['last_profile_update'] = datetime.now().isoformat()
+        
+        # Calculate completion after save
+        profile_data = calculate_profile_completion(current_user)
+        current_app.logger.info(f"Profile completion after save: {profile_data['percentage']}%")
+        
+        flash('Profile updated successfully!', 'success')
+        return redirect(url_for('main.applicant_dashboard'))
+        
+    except Exception as e:
+        current_app.logger.error(f"Profile update error: {str(e)}", exc_info=True)
+        db.session.rollback()
+        flash('Error updating profile. Please try again.', 'error')
+        return redirect(url_for('main.profile'))
+
+
+@bp.route('/debug/profile')
+@login_required
+def debug_profile():
+    """Debug route to check profile completion calculation"""
+    
+    profile_data = calculate_profile_completion(current_user)
+    
+    debug_info = {
+        'user_id': str(current_user.id),
+        'user_email': current_user.email,
+        'completion_percentage': profile_data['percentage'],
+        'completed_items': profile_data['completed'],
+        'total_items': profile_data['total'],
+        'all_items': profile_data['items'],
+        'missing_items': profile_data['missing_items'],
+        'user_attributes': {
+            'first_name': getattr(current_user, 'first_name', 'NOT_SET'),
+            'last_name': getattr(current_user, 'last_name', 'NOT_SET'),
+            'phone': getattr(current_user, 'phone', 'NOT_SET'),
+            'city': getattr(current_user, 'city', 'NOT_SET'),
+            'bio': getattr(current_user, 'bio', 'NOT_SET'),
+            'skills': getattr(current_user, 'skills', 'NOT_SET'),
+            'experience_level': getattr(current_user, 'experience_level', 'NOT_SET')
+        }
+    }
+    
+    return jsonify(debug_info)
+
+
+@bp.route('/applications')
+@login_required
+def applications():
+    """User applications page"""
+    
+    # Get all applications for the current user
+    user_applications = current_user.applications.order_by(
+        Application.created_at.desc()
+    ).all()
+    
+    return render_template('main/applications.html',
+                         title='My Applications',
+                         applications=user_applications)
+
+
+@bp.route('/debug/routes')
+def debug_routes():
+    """Debug route to check which routes are available"""
+    from flask import current_app
+    
+    routes_info = []
+    for rule in current_app.url_map.iter_rules():
+        if rule.endpoint.startswith('main.'):
+            routes_info.append({
+                'endpoint': rule.endpoint,
+                'methods': list(rule.methods),
+                'rule': str(rule)
+            })
+    
+    return jsonify({
+        'available_main_routes': routes_info,
+        'looking_for': [
+            'main.profile',
+            'main.applications'
+        ]
+    })
 
 
 @bp.route('/about')
@@ -356,33 +526,8 @@ def mongo_test():
 @login_required
 def mongo_jobs():
     """Show jobs from MongoDB for tailoring resume/cover letter"""
-    from app.utils.mongo_health import safe_mongo_operation, reconnect_mongodb
-    
-    jobs = []
-    
-    # Use the safe_mongo_operation helper for reliable MongoDB access
-    try:
-        jobs = safe_mongo_operation('jobs', 'find', 
-                                   options={"projection": {"_id": 1, "title": 1, "company": 1, "description": 1}})
-        
-        if jobs:
-            current_app.logger.info(f"Retrieved {len(jobs)} jobs from MongoDB")
-        else:
-            # Try explicit reconnection if no jobs were returned
-            current_app.logger.warning("No jobs returned from MongoDB, attempting reconnection")
-            if reconnect_mongodb():
-                jobs = safe_mongo_operation('jobs', 'find', 
-                                           options={"projection": {"_id": 1, "title": 1, "company": 1, "description": 1}})
-                if jobs:
-                    current_app.logger.info(f"Retrieved {len(jobs)} jobs after MongoDB reconnection")
-                else:
-                    flash("No job listings found in the database.", "info")
-            else:
-                flash("Job listings temporarily unavailable. MongoDB reconnection failed.", "warning")
-    except Exception as e:
-        current_app.logger.error(f"Error fetching jobs from MongoDB: {str(e)}")
-        flash("Unable to fetch job postings. Please try again later.", "warning")
-    
+    mongo_db = current_app.mongo_db
+    jobs = list(mongo_db.jobs.find({}, {"_id": 1, "title": 1, "company": 1, "description": 1}))
     return render_template('mongo_jobs.html', jobs=jobs)
 
 
@@ -1084,21 +1229,77 @@ def download_my_tailored(job_id, doc_type):
 
 
 def calculate_profile_completion(user):
-    """Calculate profile completion percentage"""
-    completion_items = [
-        user.first_name and user.last_name,
-        user.email,
-        user.phone,
-        user.city and user.province,
-        user.get_active_resume() is not None,
-        user.job_preferences is not None if user.is_applicant() else True,
-        user.is_verified
+    """Calculate profile completion percentage with detailed logging"""
+    
+    current_app.logger.info(f"=== Calculating Profile Completion for User {user.id} ===")
+    
+    completion_items = []
+    total_possible = 0
+    completed = 0
+    
+    # Essential profile fields to check
+    profile_checks = [
+        ('email', 'Email address', getattr(user, 'email', None)),
+        ('first_name', 'First name', getattr(user, 'first_name', None)),
+        ('last_name', 'Last name', getattr(user, 'last_name', None)),
+        ('phone', 'Phone number', getattr(user, 'phone', None)),
+        ('city', 'Location', getattr(user, 'city', None)),
+        ('bio', 'Professional summary', getattr(user, 'bio', None)),
+        ('skills', 'Skills', getattr(user, 'skills', None)),
+        ('experience_level', 'Experience level', getattr(user, 'experience_level', None))
     ]
     
-    completed = sum(1 for item in completion_items if item)
-    total = len(completion_items)
+    # Check each field
+    for field_name, display_name, field_value in profile_checks:
+        total_possible += 1
+        
+        # Log the raw value
+        current_app.logger.info(f"Checking {field_name}: raw value = '{field_value}' (type: {type(field_value)})")
+        
+        is_complete = False
+        if field_value is not None:
+            if isinstance(field_value, str):
+                is_complete = field_value.strip() != ''
+                current_app.logger.info(f"  String check: stripped = '{field_value.strip()}', is_complete = {is_complete}")
+            elif isinstance(field_value, list):
+                is_complete = len(field_value) > 0
+                current_app.logger.info(f"  List check: length = {len(field_value)}, is_complete = {is_complete}")
+            else:
+                is_complete = True
+                current_app.logger.info(f"  Other type check: is_complete = {is_complete}")
+        else:
+            current_app.logger.info(f"  Value is None: is_complete = {is_complete}")
+        
+        completion_items.append({
+            'field': field_name,
+            'name': display_name,
+            'completed': is_complete,
+            'value': field_value
+        })
+        
+        if is_complete:
+            completed += 1
+            current_app.logger.info(f"  ✓ {display_name} completed")
+        else:
+            current_app.logger.info(f"  ✗ {display_name} missing")
     
-    return int((completed / total) * 100)
+    # Calculate percentage (resume upload not required for completion)
+    completion_percentage = round((completed / total_possible) * 100) if total_possible > 0 else 0
+    
+    # Final logging
+    current_app.logger.info(f"=== Profile Completion Summary ===")
+    current_app.logger.info(f"Completed: {completed}/{total_possible} = {completion_percentage}%")
+    for item in completion_items:
+        status = "✓" if item['completed'] else "✗"
+        current_app.logger.info(f"  {status} {item['name']}: '{item['value']}'")
+    
+    return {
+        'percentage': completion_percentage,
+        'completed': completed,
+        'total': total_possible,
+        'items': completion_items,
+        'missing_items': [item for item in completion_items if not item['completed']]
+    }
 
 def extract_resume_sections(resume_text):
     """
@@ -1154,30 +1355,30 @@ def extract_job_keywords(job_description):
     }
 
 
-@bp.route('/my-tailored-resumes')
-@login_required
-def my_tailored_resumes():
-    """Show all best tailored resumes and cover letters for the current user (from MongoDB)"""
-    if not current_user.is_applicant():
-        return redirect(url_for('main.dashboard'))
-    mongo_db = current_app.mongo_db
-    tailored_list = get_best_tailored_resumes(mongo_db, str(current_user.id))
-    # Fetch job titles for display
-    job_ids = [t['job_id'] for t in tailored_list]
-    jobs = {str(j['_id']): j for j in mongo_db.jobs.find({'_id': {'$in': [ObjectId(jid) for jid in job_ids]}})}
-    # Build display list
-    display_list = []
-    for t in tailored_list:
-        job = jobs.get(t['job_id'])
-        display_list.append({
-            'job_id': t['job_id'],
-            'job_title': job['title'] if job else '(Job not found)',
-            'ats_score': t.get('ats_score'),
-            'updated_at': t.get('updated_at'),
-            'resume_text': t.get('resume_text', ''),
-            'cover_letter': t.get('cover_letter', '')
-        })
-    return render_template('resume/my_resumes.html', tailored_resumes=display_list, title='My Tailored Resumes')
+# @bp.route('/my-tailored-resumes')
+# @login_required
+# def my_tailored_resumes():
+#     """Show all best tailored resumes and cover letters for the current user (from MongoDB)"""
+#     if not current_user.is_applicant():
+#         return redirect(url_for('main.dashboard'))
+#     mongo_db = current_app.mongo_db
+#     tailored_list = get_best_tailored_resumes(mongo_db, str(current_user.id))
+#     # Fetch job titles for display
+#     job_ids = [t['job_id'] for t in tailored_list]
+#     jobs = {str(j['_id']): j for j in mongo_db.jobs.find({'_id': {'$in': [ObjectId(jid) for jid in job_ids]}})}
+#     # Build display list
+#     display_list = []
+#     for t in tailored_list:
+#         job = jobs.get(t['job_id'])
+#         display_list.append({
+#             'job_id': t['job_id'],
+#             'job_title': job['title'] if job else '(Job not found)',
+#             'ats_score': t.get('ats_score'),
+#             'updated_at': t.get('updated_at'),
+#             'resume_text': t.get('resume_text', ''),
+#             'cover_letter': t.get('cover_letter', '')
+#         })
+#     return render_template('resume/my_resumes.html', tailored_resumes=display_list, title='My Tailored Resumes')
 
 
 @bp.route('/submit-tailored-feedback/<job_id>', methods=['POST'])
@@ -1328,3 +1529,87 @@ Sincerely,
             "success": False, 
             "error": "An error occurred while sending your application. Please try again."
         })
+
+
+# --- DEBUG ROUTES ---
+
+@bp.route('/debug/profile-completion')
+@login_required
+def debug_profile_completion():
+    """Debug route to check profile completion details"""
+    
+    import json
+    
+    # Get current user data
+    user_data = {
+        'user_id': str(current_user.id),
+        'email': current_user.email,
+        'first_name': getattr(current_user, 'first_name', None),
+        'last_name': getattr(current_user, 'last_name', None),
+        'phone': getattr(current_user, 'phone', None),
+        'city': getattr(current_user, 'city', None),
+        'bio': getattr(current_user, 'bio', None),
+        'skills': getattr(current_user, 'skills', None),
+        'experience_level': getattr(current_user, 'experience_level', None),
+    }
+    
+    # Get profile completion calculation
+    profile_data = calculate_profile_completion(current_user)
+    
+    # Check resume status
+    resume_status = "No resume found"
+    try:
+        mongo_db = current_app.mongo_db
+        if mongo_db:
+            resume = mongo_db.resumes.find_one({'user_id': str(current_user.id)})
+            if resume:
+                resume_status = f"Resume found: {resume.get('filename', 'Unknown')}"
+    except Exception as e:
+        resume_status = f"Error checking resume: {str(e)}"
+    
+    debug_info = {
+        'current_user_attributes': user_data,
+        'profile_completion': profile_data,
+        'resume_status': resume_status,
+        'form_last_submitted': session.get('last_profile_update', 'Never')
+    }
+    
+    return f"""
+    <html>
+    <head><title>Profile Debug</title></head>
+    <body style="font-family: monospace; padding: 20px; background: #f5f5f5;">
+        <h2 style="color: #333;">Profile Completion Debug</h2>
+        <pre style="background: white; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #ddd;">{json.dumps(debug_info, indent=2, default=str)}</pre>
+        <hr>
+        <a href="{url_for('main.applicant_dashboard')}" style="color: #007bff; text-decoration: none;">← Back to Dashboard</a> | 
+        <a href="{url_for('main.profile')}" style="color: #007bff; text-decoration: none;">Edit Profile</a>
+    </body>
+    </html>
+    """
+
+
+@bp.route('/debug/user-model')
+@login_required  
+def debug_user_model():
+    """Check what attributes the User model has"""
+    
+    user_attrs = []
+    for attr in dir(current_user):
+        if not attr.startswith('_') and not callable(getattr(current_user, attr)):
+            try:
+                value = getattr(current_user, attr)
+                user_attrs.append(f"{attr}: {value} ({type(value).__name__})")
+            except Exception as e:
+                user_attrs.append(f"{attr}: ERROR - {str(e)}")
+    
+    return f"""
+    <html>
+    <head><title>User Model Debug</title></head>
+    <body style="font-family: monospace; padding: 20px; background: #f5f5f5;">
+        <h2 style="color: #333;">User Model Attributes</h2>
+        <pre style="background: white; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #ddd;">{'<br>'.join(sorted(user_attrs))}</pre>
+        <hr>
+        <a href="{url_for('main.applicant_dashboard')}" style="color: #007bff; text-decoration: none;">← Back to Dashboard</a>
+    </body>
+    </html>
+    """

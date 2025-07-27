@@ -124,7 +124,7 @@
                             </span>
                             {% endif %}
                         </div>
-                        <a href="{{ url_for('resume.my_resumes') }}" class="btn btn-outline-secondary">
+                        <a href="{{ url_for('main.applicant_dashboard') }}" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left me-1"></i>Back to Resumes
                         </a>
                     </div>
@@ -283,8 +283,8 @@
                 <a href="{{ url_for('resume.view_resume', resume_id=resume.id) }}" class="btn btn-outline-primary me-2">
                     <i class="bi bi-eye me-1"></i>View Resume
                 </a>
-                <a href="{{ url_for('resume.my_resumes') }}" class="btn btn-primary">
-                    <i class="bi bi-arrow-left me-1"></i>Back to My Resumes
+                <a href="{{ url_for('main.applicant_dashboard') }}" class="btn btn-primary">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
                 </a>
             </div>
         </div>

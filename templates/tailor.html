@@ -3,8 +3,36 @@
 <!-- Add Font Awesome for icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <!-- Add job description styling -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/job-description.css') }}" />
-<a href="{{ url_for('main.mongo_jobs') }}" class="btn btn-outline-secondary mb-3">&larr; Back to Jobs</a>
+<style>
+.job-description .formatted-description {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border-left: 4px solid #007bff;
+}
+.job-description .formatted-description p {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+.job-requirements ul {
+    padding-left: 1.5rem;
+}
+.job-requirements li {
+    margin-bottom: 0.3rem;
+    line-height: 1.5;
+}
+.skills-container .badge {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+}
+.job-meta {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+}
+</style>
+<a href="{{ url_for('jobs.jobs_list') }}" class="btn btn-outline-secondary mb-3">&larr; Back to Jobs</a>
 <h2>Tailor Resume & Cover Letter for {{ job.title }}</h2>
 
 <div class="row mb-3">
@@ -16,50 +44,91 @@
             <strong><i class="fas fa-building me-2"></i>{{ job.company }}</strong>
             {% if job.location %}<span class="ms-3"><i class="fas fa-map-marker-alt me-1"></i> {{ job.location }}</span>{% endif %}
           </span>
-          <button id="toggleDetailsBtn" class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#jobDetailsCollapse" aria-expanded="true">
+          <button id="toggleDetailsBtn" class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#jobDetailsCollapse" aria-expanded="true" aria-controls="jobDetailsCollapse">
             <i class="fas fa-minus-circle me-1"></i> Hide Details
           </button>
         </div>
       </div>
       <div class="collapse show" id="jobDetailsCollapse">
         <div class="card-body">
-          <div class="job-description mb-3">
-            <h5><i class="fas fa-tasks me-2"></i>Job Description</h5>
-            <div class="formatted-description">
-              {% if job.description and job.description is string %}
-                {% set sections = job.description|safe_split('**') %}
-                {% for section in sections %}
-                  {% if ':**' in section %}
-                    {% set parts = section|safe_split(':**') %}
-                    {% if parts|length >= 2 %}
-                    <div class="mt-3">
-                      <h6 class="text-primary">{{ parts[0].strip() }}</h6>
-                      <p>{{ parts[1].strip() }}</p>
-                    </div>
-                    {% endif %}
-                  {% elif section.strip() %}
-                    <p>{{ section.strip() }}</p>
+          <!-- JOB DESCRIPTION SECTION - SIMPLE & WORKING VERSION -->
+          <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">
+                <i class="fas fa-file-text me-2"></i>Job Description
+              </h5>
+              <button class="btn btn-outline-primary btn-sm" type="button" 
+                      data-bs-toggle="collapse" data-bs-target="#jobDescriptionCard" 
+                      aria-expanded="true">
+                <i class="fas fa-chevron-up"></i>
+              </button>
+            </div>
+            
+            <div class="collapse show" id="jobDescriptionCard">
+              <div class="card-body">
+                <!-- DEBUG INFO -->
+                <div class="alert alert-info mb-3">
+                  <strong>🔍 Debug Info:</strong><br>
+                  Job ID: {{ job._id }}<br>
+                  Available Fields: {{ job.keys()|list }}<br>
+                  Description Field: {{ 'EXISTS' if job.description else 'MISSING' }}<br>
+                  {% if job.description %}
+                    Description Length: {{ job.description|length }} characters<br>
+                    First 100 chars: "{{ job.description[:100] }}..."
                   {% endif %}
-                {% endfor %}
-              {% else %}
-                <p class="text-muted">Job description not available.</p>
-              {% endif %}
+                </div>
+                
+                <!-- DISPLAY ALL POSSIBLE DESCRIPTION FIELDS -->
+                {% if job.description %}
+                  <div class="mb-4">
+                    <h6 class="fw-bold text-primary mb-3">📄 Job Description:</h6>
+                    <div class="p-3 bg-light rounded" style="white-space: pre-wrap; line-height: 1.6;">{{ job.description }}</div>
+                  </div>
+                {% endif %}
+                
+                {% if job.company_description %}
+                  <div class="mb-4">
+                    <h6 class="fw-bold text-success mb-3">🏢 Company Description:</h6>
+                    <div class="p-3 bg-light rounded" style="white-space: pre-wrap; line-height: 1.6;">{{ job.company_description }}</div>
+                  </div>
+                {% endif %}
+                
+                {% if job.requirements %}
+                  <div class="mb-4">
+                    <h6 class="fw-bold text-warning mb-3">📋 Requirements:</h6>
+                    <div class="p-3 bg-light rounded" style="white-space: pre-wrap; line-height: 1.6;">{{ job.requirements }}</div>
+                  </div>
+                {% endif %}
+                
+                {% if job.skills %}
+                  <div class="mb-4">
+                    <h6 class="fw-bold text-info mb-3">🛠️ Skills:</h6>
+                    <div class="p-3 bg-light rounded" style="white-space: pre-wrap; line-height: 1.6;">{{ job.skills }}</div>
+                  </div>
+                {% endif %}
+                
+                <!-- FALLBACK: Show all job data if nothing above worked -->
+                {% if not job.description and not job.company_description and not job.requirements and not job.skills %}
+                  <div class="alert alert-warning">
+                    <strong>⚠️ No standard description fields found.</strong><br>
+                    <details class="mt-2">
+                      <summary class="btn btn-sm btn-outline-secondary">Show All Available Job Data</summary>
+                      <div class="mt-3 p-3 bg-dark text-light rounded" style="font-family: monospace; max-height: 400px; overflow-y: auto;">
+                        {% for key, value in job.items() %}
+                          {% if key != '_id' %}
+                            <strong style="color: #ffc107;">{{ key }}:</strong> 
+                            <span style="color: #17a2b8;">{{ value }}</span><br>
+                          {% endif %}
+                        {% endfor %}
+                      </div>
+                    </details>
+                  </div>
+                {% endif %}
+              </div>
             </div>
           </div>
           
-          {% if job.requirements and job.requirements is string %}
-          <div class="job-requirements mb-3">
-            <h5><i class="fas fa-clipboard-list me-2"></i>Requirements</h5>
-            <ul class="requirements-list">
-              {% set requirements_list = job.requirements|safe_split('*') %}
-              {% for requirement in requirements_list %}
-                {% if requirement.strip() %}
-                <li>{{ requirement.strip() }}</li>
-                {% endif %}
-              {% endfor %}
-            </ul>
-          </div>
-          {% endif %}
+          <!-- ADDITIONAL JOB META INFORMATION -->
           
           <div class="job-meta">
             <div class="row">
@@ -561,8 +630,29 @@ if (document.getElementById('resultTabs')) {
 <!-- Auto-optimize resume script -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, setting up auto-optimize functionality');
+    console.log('DOM loaded, setting up functionality');
     
+    // Job details toggle functionality
+    const toggleBtn = document.getElementById('toggleDetailsBtn');
+    const jobDetailsCollapse = document.getElementById('jobDetailsCollapse');
+    
+    if (toggleBtn && jobDetailsCollapse) {
+        // Update button text based on collapse state
+        jobDetailsCollapse.addEventListener('show.bs.collapse', function() {
+            toggleBtn.innerHTML = '<i class="fas fa-minus-circle me-1"></i> Hide Details';
+        });
+        
+        jobDetailsCollapse.addEventListener('hide.bs.collapse', function() {
+            toggleBtn.innerHTML = '<i class="fas fa-plus-circle me-1"></i> Show Details';
+        });
+        
+        // Ensure job details are visible by default
+        if (!jobDetailsCollapse.classList.contains('show')) {
+            jobDetailsCollapse.classList.add('show');
+        }
+    }
+    
+    // Auto-optimize functionality
     const autoOptimizeBtn = document.getElementById('auto-optimize-resume-btn');
     const resumePre = document.getElementById('resume-pre');
     const resumeTextarea = document.getElementById('resume-textarea');
@@ -582,10 +672,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Show loading state
+            // Show loading state with 90+ messaging
             const originalText = autoOptimizeBtn.innerHTML;
-            autoOptimizeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Optimizing...';
+            autoOptimizeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Optimizing to 90+...';
             autoOptimizeBtn.disabled = true;
+            
+            // Add detailed progress message
+            const progressDiv = document.createElement('div');
+            progressDiv.id = 'optimization-status';
+            progressDiv.className = 'alert alert-info mt-3';
+            progressDiv.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                    <div>
+                        <strong>🎯 Optimizing for 90+ ATS Score...</strong><br>
+                        <small class="text-muted">Iteratively improving your resume (up to 5 attempts for best results)</small>
+                    </div>
+                </div>
+            `;
+            
+            // Insert progress message
+            const suggestionsSection = document.querySelector('#suggestions');
+            if (suggestionsSection) {
+                const rowDiv = document.querySelector('#suggestions .row');
+                suggestionsSection.insertBefore(progressDiv, rowDiv || suggestionsSection.firstChild);
+            } else {
+                autoOptimizeBtn.parentNode.insertBefore(progressDiv, autoOptimizeBtn.nextSibling);
+            }
             
             // Show progress indicator if it exists
             const progressElement = document.getElementById('optimization-progress');
@@ -645,24 +758,87 @@ document.addEventListener('DOMContentLoaded', function() {
                             progressBar.style.width = score + '%';
                             progressBar.textContent = score + '%';
                             
-                            // Update progress bar color based on score
-                            progressBar.classList.remove('bg-warning', 'bg-danger');
+                            // Update progress bar color based on 90+ target
+                            progressBar.classList.remove('bg-warning', 'bg-danger', 'bg-info');
                             if (score >= 90) {
                                 progressBar.classList.add('bg-success');
-                            } else if (score >= 70) {
+                                progressBar.setAttribute('title', '🎯 90+ Target Achieved!');
+                            } else if (score >= 85) {
                                 progressBar.classList.add('bg-warning');
+                                progressBar.setAttribute('title', '⚡ Close to 90+ target');
+                            } else if (score >= 70) {
+                                progressBar.classList.add('bg-info');
+                                progressBar.setAttribute('title', '📈 Good progress toward 90+');
                             } else {
                                 progressBar.classList.add('bg-danger');
+                                progressBar.setAttribute('title', '🔄 Needs more optimization');
                             }
                         }
                     }
                     
-                    // Show enhanced success message
+                    // Show enhanced success message with detailed feedback
                     const alertDiv = document.createElement('div');
-                    alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
-                    const scoreText = data.estimated_score ? ` (Estimated ATS Score: ${data.estimated_score}%)` : '';
+                    let alertClass = 'alert-success';
+                    let icon = 'fas fa-check-circle';
+                    
+                    // Determine alert style based on optimization result
+                    if (data.success_level === 'target_achieved') {
+                        alertClass = 'alert-success';
+                        icon = 'fas fa-trophy';
+                    } else if (data.success_level === 'close_to_target') {
+                        alertClass = 'alert-warning';
+                        icon = 'fas fa-star';
+                    } else if (data.success_level === 'improved') {
+                        alertClass = 'alert-info';
+                        icon = 'fas fa-arrow-up';
+                    } else {
+                        alertClass = 'alert-primary';
+                        icon = 'fas fa-cogs';
+                    }
+                    
+                    alertDiv.className = `alert ${alertClass} alert-dismissible fade show mt-3`;
+                    
+                    // Create detailed feedback HTML
+                    let progressDetails = '';
+                    if (data.optimization_attempts && data.attempt_scores) {
+                        progressDetails = `
+                            <div class="small text-muted mt-2">
+                                <strong>Optimization Progress:</strong> ${data.optimization_attempts} attempts
+                                ${data.attempt_scores.length > 0 ? `• Score progression: ${data.attempt_scores.join('% → ')}% → ${data.estimated_score}%` : ''}
+                            </div>
+                        `;
+                    }
+                    
+                    // Create action buttons based on result
+                    let actionButtons = '';
+                    if (data.target_achieved) {
+                        actionButtons = `
+                            <div class="mt-2">
+                                <span class="badge bg-success me-2">🎯 90+ Target Achieved!</span>
+                                <small class="text-success">Your resume is now ATS-optimized for this job!</small>
+                            </div>
+                        `;
+                    } else {
+                        actionButtons = `
+                            <div class="mt-2">
+                                <span class="badge bg-warning me-2">🔄 ${data.estimated_score}% ATS Score</span>
+                                <button onclick="document.getElementById('auto-optimize-resume-btn').click()" 
+                                        class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-redo"></i> Try Again for 90+
+                                </button>
+                            </div>
+                        `;
+                    }
+                    
                     alertDiv.innerHTML = `
-                        <strong><i class="fas fa-check-circle me-2"></i>Success!</strong> ${data.message}${scoreText}
+                        <div class="d-flex align-items-start">
+                            <i class="${icon} me-2 mt-1"></i>
+                            <div class="flex-grow-1">
+                                <strong>Optimization Complete!</strong> ${data.message}
+                                ${progressDetails}
+                                ${actionButtons}
+                            </div>
+                        </div>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     `;
                     
@@ -688,6 +864,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         resumeTab.click();
                     }
                     
+                    // Update button state based on achievement
+                    if (data.target_achieved) {
+                        autoOptimizeBtn.innerHTML = '<i class="fas fa-trophy text-success me-2"></i>90+ Achieved!';
+                        autoOptimizeBtn.classList.remove('btn-success');
+                        autoOptimizeBtn.classList.add('btn-outline-success');
+                        autoOptimizeBtn.disabled = false; // Allow further optimization if desired
+                    } else {
+                        // Keep button available for re-optimization
+                        autoOptimizeBtn.innerHTML = originalText;
+                        autoOptimizeBtn.disabled = false;
+                    }
+                    
                 } else {
                     // Show error message
                     console.error('Optimization failed:', data.error);
@@ -699,13 +887,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Network error. Please check your connection and try again.');
             })
             .finally(() => {
-                // Reset button state
-                autoOptimizeBtn.innerHTML = originalText;
-                autoOptimizeBtn.disabled = false;
+                // Remove progress status message
+                const statusDiv = document.getElementById('optimization-status');
+                if (statusDiv) {
+                    statusDiv.remove();
+                }
                 
                 // Hide progress indicator
                 if (progressElement) {
                     progressElement.style.display = 'none';
+                }
+                
+                // Only reset button if not already updated in success handler
+                if (autoOptimizeBtn.innerHTML.includes('fa-spinner')) {
+                    autoOptimizeBtn.innerHTML = originalText;
+                    autoOptimizeBtn.disabled = false;
                 }
             });
         });

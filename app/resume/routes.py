@@ -148,23 +148,23 @@ def upload_resume():
                 
                 flash(f'Resume "{resume.title}" uploaded successfully! ATS Score: {ats_score}% (Basic analysis)', 'warning')
             
-            return redirect(url_for('resume.my_resumes'))
+            return redirect(url_for('main.applicant_dashboard'))
         else:
             flash('Invalid file type. Please upload PDF, DOC, DOCX, or TXT files only.', 'error')
     
     return render_template('resume/upload.html', title='Upload Resume')
 
 
-@bp.route('/my-resumes')
-@login_required
-def my_resumes():
-    """List user's resumes"""
-    if not current_user.is_applicant():
-        flash('Only applicants can view resumes.', 'error')
-        return redirect(url_for('main.dashboard'))
-    
-    resumes = current_user.resumes.order_by(Resume.created_at.desc()).all()
-    return render_template('resume/my_resumes.html', title='My Resumes', resumes=resumes)
+# @bp.route('/my-resumes')
+# @login_required
+# def my_resumes():
+#     """List user's resumes"""
+#     if not current_user.is_applicant():
+#         flash('Only applicants can view resumes.', 'error')
+#         return redirect(url_for('main.dashboard'))
+#     
+#     resumes = current_user.resumes.order_by(Resume.created_at.desc()).all()
+#     return render_template('resume/my_resumes.html', title='My Resumes', resumes=resumes)
 
 
 @bp.route('/view/<int:resume_id>')
@@ -197,7 +197,7 @@ def set_primary(resume_id):
     
     db.session.commit()
     flash(f'Resume "{resume.title}" set as primary', 'success')
-    return redirect(url_for('resume.my_resumes'))
+    return redirect(url_for('main.applicant_dashboard'))
 
 
 @bp.route('/delete/<int:resume_id>', methods=['POST'])
@@ -217,7 +217,7 @@ def delete_resume(resume_id):
     db.session.commit()
     
     flash(f'Resume "{resume.title}" deleted successfully', 'success')
-    return redirect(url_for('resume.my_resumes'))
+    return redirect(url_for('main.applicant_dashboard'))
 
 
 @bp.route('/analyze-ats/<int:resume_id>')

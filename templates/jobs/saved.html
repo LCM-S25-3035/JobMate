@@ -69,7 +69,9 @@
                                     {% endif %}
                                     <div class="mt-2">
                                         <a href="{{ url_for('jobs.job_detail', job_id=job._id) }}" class="btn btn-primary btn-sm">View Details</a>
-                                        <a href="{{ url_for('jobs.apply_to_job', job_id=job._id) }}" class="btn btn-success btn-sm">Apply Now</a>
+                                        <a href="{{ url_for('main.tailor_resume', job_id=job._id) }}" class="btn btn-success btn-sm">
+                                            <i class="bi bi-magic"></i> Tailor Resume & Apply
+                                        </a>
                                         <button class="btn btn-warning btn-sm" onclick="unsaveJob('{{ job._id }}')" title="Remove from saved">
                                             <i class="bi bi-bookmark-fill"></i>
                                         </button>

@@ -9,9 +9,6 @@ from pymongo import MongoClient
 from bson import ObjectId
 import os
 from app.jobs import bp
-from app.models.application import Application
-from app.models.job_posting import JobPosting
-from app import db
 
 
 def get_mongo_db():
@@ -321,17 +318,6 @@ def jobs_facets_api():
     return jsonify(facets)
 
 
-@bp.route('/apply/<job_id>')
-@login_required
-def apply_to_job(job_id):
-    """Redirect to tailor resume page for job application"""
-    if not current_user.is_applicant():
-        flash('Only applicants can apply to jobs.', 'error')
-        return redirect(url_for('jobs.job_detail', job_id=job_id))
-    
-    return redirect(url_for('main.tailor_resume', job_id=job_id))
-
-
 @bp.route('/save/<job_id>', methods=['POST'])
 @login_required
 def save_job(job_id):
@@ -406,3 +392,100 @@ def saved_jobs():
                          title='Saved Jobs',
                          jobs=jobs,
                          total_saved=len(jobs))
+
+
+@bp.route('/debug_job/<job_id>')
+@login_required
+def debug_job(job_id):
+    """Debug route to see job data structure"""
+    mongo_db = get_mongo_db()
+    if mongo_db is None:
+        return jsonify({'error': 'MongoDB not available'}), 500
+    
+    try:
+        job = mongo_db.jobs.find_one({"_id": ObjectId(job_id)})
+        
+        if job:
+            # Convert ObjectId to string for JSON serialization
+            job['_id'] = str(job['_id'])
+            
+            # Get all field info
+            field_info = {}
+            for key, value in job.items():
+                field_info[key] = {
+                    'type': str(type(value).__name__),
+                    'length': len(str(value)) if value else 0,
+                    'sample': str(value)[:100] + '...' if value and len(str(value)) > 100 else str(value)
+                }
+            
+            return jsonify({
+                'success': True,
+                'job_fields': list(job.keys()),
+                'field_details': field_info,
+                'description_exists': 'description' in job,
+                'description_content': job.get('description', 'NOT FOUND'),
+                'job_summary': job.get('summary', 'NOT FOUND'),
+                'job_details': job.get('details', 'NOT FOUND')
+            })
+        else:
+            return jsonify({'error': 'Job not found with ID: ' + job_id}), 404
+            
+    except Exception as e:
+        return jsonify({'error': f'Error fetching job: {str(e)}'}), 500
+
+
+@bp.route('/debug_canadian_jobs')
+@login_required
+def debug_canadian_jobs():
+    """Debug route to check Canadian jobs data structure"""
+    mongo_db = get_mongo_db()
+    
+    if mongo_db is None:
+        return jsonify({'error': 'MongoDB not available'}), 500
+    
+    try:
+        # Find Canadian jobs specifically
+        canadian_jobs = list(mongo_db.jobs.find({
+            "$or": [
+                {"location": {"$regex": "Canada|Toronto|Vancouver|Montreal|Calgary|Ottawa|Ontario|Quebec|British Columbia", "$options": "i"}},
+                {"company": "BMO"}
+            ]
+        }).limit(10))
+        
+        job_analysis = []
+        for job in canadian_jobs:
+            job['_id'] = str(job['_id'])
+            
+            analysis = {
+                'job_id': job['_id'],
+                'title': job.get('title', 'NO TITLE'),
+                'company': job.get('company', 'NO COMPANY'), 
+                'location': job.get('location', 'NO LOCATION'),
+                'source': job.get('source', 'NO SOURCE'),
+                'all_fields': list(job.keys()),
+                'description_analysis': {
+                    'description': len(str(job.get('description', ''))) if job.get('description') else 0,
+                    'job_description': len(str(job.get('job_description', ''))) if job.get('job_description') else 0,
+                    'summary': len(str(job.get('summary', ''))) if job.get('summary') else 0,
+                    'company_description': len(str(job.get('company_description', ''))) if job.get('company_description') else 0,
+                    'details': len(str(job.get('details', ''))) if job.get('details') else 0,
+                },
+                'url_fields': {
+                    'company_url': job.get('company_url', 'NONE'),
+                    'job_url': job.get('job_url', 'NONE'),
+                    'apply_url': job.get('apply_url', 'NONE'),
+                    'job_url_direct': job.get('job_url_direct', 'NONE'),
+                    'linkedin_url': job.get('linkedin_url', 'NONE'),
+                    'company_website': job.get('company_website', 'NONE'),
+                }
+            }
+            job_analysis.append(analysis)
+        
+        return jsonify({
+            'success': True,
+            'total_jobs_found': len(canadian_jobs),
+            'job_analysis': job_analysis
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Debug failed: {str(e)}'}), 500

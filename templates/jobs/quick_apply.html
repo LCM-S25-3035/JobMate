@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Quick Apply - {{ job.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-send"></i> Quick Apply</h2>
+                    <p class="text-muted mb-0">Apply to this position with your current resume</p>
+                </div>
+                <a href="{{ url_for('jobs.job_detail', job_id=job._id) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Job
+                </a>
+            </div>
+
+            <!-- Job Summary Card -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h4 class="card-title">{{ job.title }}</h4>
+                            <p class="text-muted">
+                                <i class="bi bi-building"></i> {{ job.company }}
+                                {% if job.location %}
+                                | <i class="bi bi-geo-alt"></i> {{ job.location }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            {% if job.min_amount or job.max_amount %}
+                            <p class="text-success fw-bold mb-0">
+                                {% if job.min_amount and job.max_amount %}
+                                    ${{ "{:,}".format(job.min_amount|int) }} - ${{ "{:,}".format(job.max_amount|int) }}
+                                {% elif job.min_amount %}
+                                    ${{ "{:,}".format(job.min_amount|int) }}+
+                                {% elif job.max_amount %}
+                                    Up to ${{ "{:,}".format(job.max_amount|int) }}
+                                {% endif %}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Application Form -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-file-person"></i> Application Details
+                    </h5>
+                    
+                    <!-- Redirect to Tailor Resume instead of old quick apply -->
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Enhanced Application Process:</strong> We now use AI-powered resume tailoring for better results!
+                    </div>
+                    
+                    <div class="text-center">
+                        <a href="{{ url_for('main.tailor_resume', job_id=job._id) }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-magic"></i> Tailor Resume & Apply
+                        </a>
+                    </div>
+                                    <small class="text-muted">
+                                        Updated: {{ resume.updated_at.strftime('%B %d, %Y') if resume.updated_at else 'Recently' }}
+                                    </small>
+                                </div>
+                                <div class="text-truncate small text-muted">
+                                    {{ (resume.content[:200] + '...') if resume.content and resume.content|length > 200 else (resume.content or 'Resume content will be used for your application') }}
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">
+                                Want to optimize this resume for better ATS matching? 
+                                <a href="{{ url_for('main.tailor_resume', job_id=job._id) }}" class="text-decoration-none">
+                                    <i class="bi bi-magic"></i> Use AI Tailoring instead
+                                </a>
+                            </small>
+                        </div>
+
+                        <!-- Cover Letter -->
+                        <div class="mb-4">
+                            <label for="cover_letter" class="form-label">
+                                <strong>Cover Letter</strong> <span class="text-muted">(Optional)</span>
+                            </label>
+                            <textarea class="form-control" id="cover_letter" name="cover_letter" rows="6" 
+                                      placeholder="Write a brief cover letter explaining why you're interested in this position..."></textarea>
+                            <small class="form-text text-muted">A personalized cover letter can help your application stand out.</small>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div class="mb-4">
+                            <label for="additional_info" class="form-label">
+                                <strong>Additional Information</strong> <span class="text-muted">(Optional)</span>
+                            </label>
+                            <textarea class="form-control" id="additional_info" name="additional_info" rows="3" 
+                                      placeholder="Any additional information you'd like to share (portfolio links, availability, etc.)..."></textarea>
+                        </div>
+
+                        <!-- Consent and Submit -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="consent" name="consent" required>
+                                <label class="form-check-label" for="consent">
+                                    I confirm that the information provided is accurate and I consent to sharing my resume and application details with {{ job.company }}.
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-send"></i> Submit Application
+                            </button>
+                            <a href="{{ url_for('main.tailor_resume', job_id=job._id) }}" class="btn btn-warning btn-lg">
+                                <i class="bi bi-magic"></i> Tailor Resume First
+                            </a>
+                            <a href="{{ url_for('jobs.job_detail', job_id=job._id) }}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Info Alert -->
+            <div class="alert alert-info mt-4">
+                <i class="bi bi-lightbulb"></i>
+                <strong>Quick Apply vs AI Tailoring:</strong>
+                <ul class="mb-0 mt-2">
+                    <li><strong>Quick Apply:</strong> Fast application with your current resume</li>
+                    <li><strong>AI Tailoring:</strong> Optimize your resume for this specific job to increase ATS score and match rate</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

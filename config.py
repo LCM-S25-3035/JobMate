@@ -33,10 +33,6 @@ class Config:
     # MongoDB Configuration
     MONGODB_URI = os.environ.get('MONGODB_URI') # or 'mongodb://localhost:27017/'
     MONGODB_DB = os.environ.get('MONGODB_DB') # or 'jobmate_mongo'
-    MONGODB_REQUIRED = os.environ.get('MONGODB_REQUIRED', 'true').lower() == 'true'
-    MONGODB_CONNECT_TIMEOUT = int(os.environ.get('MONGODB_CONNECT_TIMEOUT', '30000'))
-    MONGODB_SOCKET_TIMEOUT = int(os.environ.get('MONGODB_SOCKET_TIMEOUT', '60000'))
-    MONGODB_SERVER_SELECTION_TIMEOUT = int(os.environ.get('MONGODB_SERVER_SELECTION_TIMEOUT', '30000'))
     
     # Redis Configuration (for Celery)
     REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'

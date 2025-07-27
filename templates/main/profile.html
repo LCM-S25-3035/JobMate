@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - JobMate{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-person-lines-fill me-2"></i>My Profile
+                    </h4>
+                    <div class="mt-2">
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ profile_data.percentage }}%"
+                                 aria-valuenow="{{ profile_data.percentage }}" 
+                                 aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                        <small class="text-muted">Profile {{ profile_data.percentage }}% complete</small>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                                    <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('main.update_profile') }}">
+                        <!-- Add CSRF token for security -->
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label">
+                                    First Name *
+                                    {% if not current_user.first_name %}
+                                        <i class="bi bi-exclamation-circle text-danger"></i>
+                                    {% endif %}
+                                </label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       value="{{ current_user.first_name or '' }}" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label">
+                                    Last Name *
+                                    {% if not current_user.last_name %}
+                                        <i class="bi bi-exclamation-circle text-danger"></i>
+                                    {% endif %}
+                                </label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       value="{{ current_user.last_name or '' }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" 
+                                       value="{{ current_user.email }}" disabled>
+                                <small class="text-muted">Email cannot be changed</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">
+                                    Phone Number
+                                    {% if not current_user.phone %}
+                                        <i class="bi bi-exclamation-circle text-danger"></i>
+                                    {% endif %}
+                                </label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{{ current_user.phone or '' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="city" class="form-label">
+                                    City/Location
+                                    {% if not current_user.city %}
+                                        <i class="bi bi-exclamation-circle text-danger"></i>
+                                    {% endif %}
+                                </label>
+                                <input type="text" class="form-control" id="city" name="city" 
+                                       value="{{ current_user.city or '' }}">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="experience_level" class="form-label">
+                                    Experience Level
+                                    {% if not current_user.experience_level %}
+                                        <i class="bi bi-exclamation-circle text-danger"></i>
+                                    {% endif %}
+                                </label>
+                                <select class="form-control" id="experience_level" name="experience_level">
+                                    <option value="">Select experience level</option>
+                                    <option value="entry" {{ 'selected' if current_user.experience_level == 'entry' }}>Entry Level (0-2 years)</option>
+                                    <option value="mid" {{ 'selected' if current_user.experience_level == 'mid' }}>Mid Level (2-5 years)</option>
+                                    <option value="senior" {{ 'selected' if current_user.experience_level == 'senior' }}>Senior Level (5+ years)</option>
+                                    <option value="executive" {{ 'selected' if current_user.experience_level == 'executive' }}>Executive</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="skills" class="form-label">
+                                Skills (comma-separated)
+                                {% if not current_user.skills %}
+                                    <i class="bi bi-exclamation-circle text-danger"></i>
+                                {% endif %}
+                            </label>
+                            <input type="text" class="form-control" id="skills" name="skills" 
+                                   value="{{ current_user.skills or '' }}"
+                                   placeholder="e.g., Python, JavaScript, Project Management, Data Analysis">
+                            <small class="text-muted">Separate skills with commas</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="bio" class="form-label">
+                                Professional Summary
+                                {% if not current_user.bio %}
+                                    <i class="bi bi-exclamation-circle text-danger"></i>
+                                {% endif %}
+                            </label>
+                            <textarea class="form-control" id="bio" name="bio" rows="4" 
+                                      placeholder="Brief description of your professional background and goals">{{ current_user.bio or '' }}</textarea>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('main.applicant_dashboard') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>Save Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

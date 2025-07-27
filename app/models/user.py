@@ -41,6 +41,11 @@ class User(UserMixin, db.Model):
     province = db.Column(db.String(50), nullable=True)
     country = db.Column(db.String(50), default='Canada')
     
+    # Profile Completion Fields
+    bio = db.Column(db.Text, nullable=True)
+    skills = db.Column(db.String(500), nullable=True)
+    experience_level = db.Column(db.String(50), nullable=True)
+    
     # Profile Completion
     profile_completed = db.Column(db.Boolean, default=False)
     onboarding_completed = db.Column(db.Boolean, default=False)

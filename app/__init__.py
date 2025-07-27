@@ -82,20 +82,15 @@ def create_app(config_class=None):
     # Load configuration
     app.config.from_object(config_class)
     
-    # Debug: Show detected driver
+    # Configure PostgreSQL connection with available driver
     detected_driver = detect_postgresql_driver()
-    print(f"🔧 Detected PostgreSQL driver: {detected_driver}")
     
     # Adjust DATABASE_URL for available PostgreSQL driver
     database_url = app.config.get('SQLALCHEMY_DATABASE_URI')
-    print(f"🔗 Original URL: {database_url}")
     
     adjusted_url = adjust_database_url(database_url)
     if adjusted_url:
         app.config['SQLALCHEMY_DATABASE_URI'] = adjusted_url
-        print(f"🔗 Adjusted URL: {adjusted_url}")
-    else:
-        print("⚠️ Warning: No PostgreSQL driver available")
     
     # Initialize extensions with app
     db.init_app(app)
@@ -119,9 +114,7 @@ def create_app(config_class=None):
         # Test connection
         mongo_client.admin.command('ping')
         app.mongo_db = mongo_client[app.config['MONGODB_DB']]
-        print("✅ MongoDB connected successfully")
     except Exception as e:
-        print(f"❌ MongoDB connection failed: {e}")
         app.mongo_db = None
     
     # Register Blueprints
@@ -235,7 +228,6 @@ def create_app(config_class=None):
         from app.models.user import User
         return User.query.get(int(user_id))
     
-    print(f"🚀 JobMate Flask application v{app.config.get('VERSION', '1.0.0')} created successfully!")
     return app
 
 
@@ -243,7 +235,6 @@ def create_database_tables(app):
     """Create database tables if they don't exist"""
     with app.app_context():
         db.create_all()
-        print("✅ Database tables created successfully")
 
 
 # Cleanup function for MongoDB connection
@@ -251,4 +242,3 @@ def cleanup_mongo():
     global mongo_client
     if mongo_client:
         mongo_client.close()
-        print("📦 MongoDB connection closed")

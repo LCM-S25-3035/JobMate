@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}My Applications - JobMate{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>My Applications</h2>
+                <a href="{{ url_for('main.applicant_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    {% if applications %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Job Title</th>
+                                        <th>Company</th>
+                                        <th>Applied Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for application in applications %}
+                                    <tr>
+                                        <td>
+                                            <h6 class="mb-0">{{ application.job_posting.title if application.job_posting else 'N/A' }}</h6>
+                                        </td>
+                                        <td>{{ application.job_posting.company_name if application.job_posting else 'N/A' }}</td>
+                                        <td>{{ application.created_at.strftime('%B %d, %Y') if application.created_at else 'N/A' }}</td>
+                                        <td>
+                                            <span class="badge bg-{% if application.status == 'applied' %}primary{% elif application.status == 'interview' %}warning{% elif application.status == 'offer' %}success{% else %}secondary{% endif %}">
+                                                {{ application.status.title() if application.status else 'Applied' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if application.job_posting %}
+                                            <a href="{{ url_for('jobs.job_detail', job_id=application.job_posting.id) }}" class="btn btn-sm btn-outline-primary">
+                                                View Job
+                                            </a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
+                            <h5 class="text-muted">No Applications Yet</h5>
+                            <p class="text-muted mb-4">You haven't applied to any jobs yet. Start browsing available positions and apply with AI-optimized resumes.</p>
+                            <a href="{{ url_for('jobs.jobs_list') }}" class="btn btn-primary">
+                                <i class="bi bi-search me-1"></i>Browse Jobs
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

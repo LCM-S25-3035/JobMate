@@ -33,24 +33,6 @@
         background: linear-gradient(45deg, #28a745, #20c997);
         transition: width 0.3s ease;
     }
-    
-    .quick-action-btn {
-        background: rgba(102, 126, 234, 0.1);
-        border: 2px solid #667eea;
-        color: #667eea;
-        border-radius: 8px;
-        padding: 15px;
-        text-decoration: none;
-        display: block;
-        text-align: center;
-        transition: all 0.3s ease;
-    }
-    
-    .quick-action-btn:hover {
-        background: #667eea;
-        color: white;
-        transform: translateY(-2px);
-    }
 
     /* Jobs Section */
     .job-card {
@@ -146,55 +128,6 @@
                 </div>
             </div>
         </div>
-        
-        <div class="col-md-3 mb-3">
-            <div class="dashboard-card p-3">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h5 class="fw-bold mb-1 text-info">{% if active_resume %}1{% else %}0{% endif %}</h5>
-                        <small class="text-muted">Active Resume</small>
-                    </div>
-                    <i class="bi bi-file-earmark-text fs-3 text-info"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Quick Actions -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="dashboard-card p-4">
-                <h5 class="fw-bold mb-3">
-                    <i class="bi bi-lightning-charge me-2 text-warning"></i>Quick Actions
-                </h5>
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <a href="{{ url_for('match.recommended_jobs') }}" class="quick-action-btn">
-                            <i class="bi bi-search fs-4 mb-2 d-block"></i>
-                            <span class="fw-semibold">Job Recommendations</span>
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <a href="{{ url_for('resume.upload_resume') }}" class="quick-action-btn">
-                            <i class="bi bi-cloud-upload fs-4 mb-2 d-block"></i>
-                            <span class="fw-semibold">Upload Resume</span>
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <a href="{{ url_for('match.update_preferences') }}" class="quick-action-btn">
-                            <i class="bi bi-gear fs-4 mb-2 d-block"></i>
-                            <span class="fw-semibold">Job Preferences</span>
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <a href="{{ url_for('match.job_discovery') }}" class="quick-action-btn">
-                            <i class="bi bi-compass fs-4 mb-2 d-block"></i>
-                            <span class="fw-semibold">Job Discovery</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
     
     <!-- Profile Completion -->
@@ -218,32 +151,68 @@
                 </p>
                 
                 <div class="row">
-                    {% if not active_resume %}
-                    <div class="col-md-6 mb-2">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-circle me-2 text-danger"></i>
-                            <span>Upload your resume</span>
+                    {% if missing_profile_items %}
+                        {% for item in missing_profile_items[:6] %}
+                        <div class="col-md-6 mb-2">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-circle me-2 text-danger"></i>
+                                <span class="small">{{ item.name }}</span>
+                            </div>
                         </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if not current_user.phone %}
-                    <div class="col-md-6 mb-2">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-circle me-2 text-danger"></i>
-                            <span>Add phone number</span>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Fallback for basic checks if missing_profile_items is not available -->
+                        {% if not current_user.phone %}
+                        <div class="col-md-6 mb-2">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-circle me-2 text-danger"></i>
+                                <span class="small">Add phone number</span>
+                            </div>
                         </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if not current_user.city %}
-                    <div class="col-md-6 mb-2">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-circle me-2 text-danger"></i>
-                            <span>Add location information</span>
+                        {% endif %}
+                        
+                        {% if not current_user.city %}
+                        <div class="col-md-6 mb-2">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-circle me-2 text-danger"></i>
+                                <span class="small">Add location information</span>
+                            </div>
                         </div>
-                    </div>
+                        {% endif %}
+                        
+                        {% if not current_user.first_name %}
+                        <div class="col-md-6 mb-2">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-circle me-2 text-danger"></i>
+                                <span class="small">Add first name</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if not current_user.bio %}
+                        <div class="col-md-6 mb-2">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-circle me-2 text-danger"></i>
+                                <span class="small">Add professional summary</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if not current_user.skills %}
+                        <div class="col-md-6 mb-2">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-circle me-2 text-danger"></i>
+                                <span class="small">Add skills</span>
+                            </div>
+                        </div>
+                        {% endif %}
                     {% endif %}
+                </div>
+                
+                <div class="mt-3">
+                    <a href="{{ url_for('main.profile') }}" class="btn btn-primary">
+                        <i class="bi bi-person-plus"></i> Complete Profile
+                    </a>
                 </div>
             </div>
         </div>
@@ -258,7 +227,7 @@
                     <h5 class="fw-bold mb-0">
                         <i class="bi bi-send me-2 text-primary"></i>Recent Applications
                     </h5>
-                    <a href="{{ url_for('resume.my_resumes') }}" class="btn btn-outline-primary btn-sm">
+                    <a href="{{ url_for('main.applications') }}" class="btn btn-outline-primary btn-sm">
                         View All
                     </a>
                 </div>
@@ -285,7 +254,7 @@
                         <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
                         <h6 class="text-muted">No applications yet</h6>
                         <p class="text-muted mb-3">Start applying to jobs to see your applications here.</p>
-                        <a href="{{ url_for('match.recommended_jobs') }}" class="btn btn-primary">
+                        <a href="{{ url_for('jobs.jobs_list') }}" class="btn btn-primary">
                             <i class="bi bi-search me-1"></i>Find Jobs
                         </a>
                     </div>
@@ -319,7 +288,7 @@
                         <i class="bi bi-lightbulb fs-2 text-muted mb-2 d-block"></i>
                         <h6 class="text-muted">No recommendations yet</h6>
                         <p class="text-muted small mb-3">Complete your profile to get AI-powered job recommendations.</p>
-                        <a href="{{ url_for('match.update_preferences') }}" class="btn btn-outline-primary btn-sm">
+                        <a href="{{ url_for('main.profile') }}" class="btn btn-outline-primary btn-sm">
                             Complete Profile
                         </a>
                     </div>

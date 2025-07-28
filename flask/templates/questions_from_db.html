@@ -1,0 +1,287 @@
+{% extends "layout.html" %}
+
+{% block title %}Question Generator (Database){% endblock %}
+
+{% block content %}
+    <h2 class="section-title">🗄️ Question generator using the database</h2>
+    <p class="section-description">Retrieve job details from your database to generate tailored interview questions.</p>
+
+    <form method="POST" class="main-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="job_id" class="form-label">Database Job ID: 🆔</label>
+                <input type="number" id="job_id" name="job_id" required class="form-input" value="{{ request.form.get('job_id', '') }}">
+            </div>
+            <div class="form-group">
+                <label for="level" class="form-label">Candidate Level:</label>
+                <select id="level" name="level" class="form-select">
+                    <option value="Entry" {% if request.form.get('level') == 'Entry' %}selected{% endif %}>Entry</option>
+                    <option value="Junior" {% if request.form.get('level') == 'Junior' %}selected{% endif %}>Junior</option>
+                    <option value="Mid" {% if request.form.get('level') == 'Mid' %}selected{% endif %}>Mid</option>
+                    <option value="Senior" {% if request.form.get('level') == 'Senior' %}selected{% endif %}>Senior</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="question_type" class="form-label">Type of Questions:</label>
+                <select id="question_type" name="question_type" class="form-select">
+                    <option value="technical" {% if request.form.get('question_type') == 'technical' %}selected{% endif %}>Technical</option>
+                    <option value="behavioral" {% if request.form.get('question_type') == 'behavioral' %}selected{% endif %}>Behavioral</option>
+                    <option value="situational" {% if request.form.get('question_type') == 'situational' %}selected{% endif %}>Situational</option>
+                    <option value="mixed" {% if request.form.get('question_type') == 'mixed' %}selected{% endif %}>Mixed</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="language" class="form-label">Preferred Language:</label>
+                <select id="language" name="language" class="form-select">
+                    <option value="English" {% if request.form.get('language') == 'English' %}selected{% endif %}>English</option>
+                    <option value="French" {% if request.form.get('language') == 'French' %}selected{% endif %}>French</option>
+                    <option value="Spanish" {% if request.form.get('language') == 'Spanish' %}selected{% endif %}>Spanish</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="n_questions" class="form-label">#️⃣ Number of Questions:</label>
+                <input type="range" id="n_questions" name="n_questions" min="1" max="10" value="{{ request.form.get('n_questions', 5) }}" oninput="this.nextElementSibling.value=this.value" class="form-range">
+                <output class="range-output">{{ request.form.get('n_questions', 5) }}</output>
+            </div>
+            <div class="form-group">
+                <label for="level_description" class="form-label">More detailed description of the candidate's level:</label>
+                <input type="text" id="level_description" name="level_description" class="form-input" placeholder="Example: 'recent graduate with little experience', 'professional with 5 years of experience in the sector'." value="{{ request.form.get('level_description', '') }}">
+            </div>
+        </div>
+        {# The 'role' input is removed as it's now retrieved from the DB in question_gen_db.py #}
+        {# The 'job_description', 'technical_skills', 'soft_skills' inputs are removed as they are retrieved from DB #}
+        <div class="flex justify-center mt-6">
+            <button type="submit" class="generate-button">Generate Questions</button>
+        </div>
+    </form>
+
+    {% if questions_result %}
+        <h3 class="generated-questions-title">✅ Questions Generated:</h3>
+        <div class="generated-questions-output result-box">
+            {{ questions_result | safe }}
+        </div>
+        <form action="{{ url_for('download_pdf') }}" method="post" class="mt-4 text-center">
+            <input type="hidden" name="questions_text" value="{{ questions_result }}">
+            <button type="submit" class="download-button">📄 Download Questions in PDF</button>
+        </form>
+    {% endif %}
+
+    <style>
+        /* These styles should ideally be in static/css/style.css */
+        /* However, for this immersive to be self-contained, they are included here. */
+        /* Base styles for forms */
+        .main-form {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-top: 2rem;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 280px; /* Minimum width for form groups before wrapping */
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+            display: block;
+            font-size: 0.95rem;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            color: #333;
+            background-color: #f9fafb;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color: #4CAF50; /* Green focus border */
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2); /* Green focus shadow */
+            outline: none;
+        }
+
+        .form-range {
+            width: calc(100% - 40px); /* Adjust width for output */
+            margin-right: 10px;
+        }
+
+        .range-output {
+            display: inline-block;
+            width: 30px;
+            text-align: right;
+            font-weight: 600;
+            color: #4CAF50;
+        }
+
+        .generate-button, .download-button {
+            background-color: #4CAF50; /* Green from the image */
+            color: white;
+            padding: 0.9rem 2.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: none; /* Remove default button border */
+            margin-top: 1.5rem;
+        }
+
+        .generate-button:hover, .download-button:hover {
+            background-color: #43A047; /* Slightly darker green on hover */
+            transform: translateY(-2px);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #4CAF50; /* Changed to green */
+            text-align: left; /* Aligned to the left */
+            margin-bottom: 0.5rem;
+            /* Removed flex properties as they conflict with text-align: left */
+        }
+
+        .section-description {
+            text-align: left; /* Aligned to the left */
+            color: #555;
+            margin-bottom: 2rem;
+            font-size: 1.05rem;
+        }
+
+        .generated-questions-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #333;
+            margin-top: 2.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .result-box {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.5rem;
+            word-wrap: break-word;
+            max-height: 600px;
+            overflow-y: auto;
+            text-align: left;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05); /* Subtle inner shadow */
+        }
+
+        /* Pygments styles (kept consistent with app.py's HtmlFormatter) */
+        .code-highlight-container {
+            margin: 1.5rem 0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .highlight {
+            background-color: #272822; /* Dark background for code */
+            color: #f8f8f2; /* Light text color */
+            padding: 1rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+            line-height: 1.4;
+            border-radius: 8px;
+        }
+        .highlight pre {
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+        .highlight .linenos {
+            background-color: #3e3d32; /* Darker background for line numbers */
+            color: #888;
+            padding-right: 10px;
+            border-right: 1px solid #555;
+            user-select: none;
+        }
+        /* Pygments syntax coloring (example for 'monokai' or similar dark theme) */
+        .highlight .c { color: #75715e } /* Comment */
+        .highlight .err { color: #960050; background-color: #1e0010 } /* Error */
+        .highlight .k { color: #66d9ef } /* Keyword */
+        .highlight .l { color: #ae81ff } /* Literal */
+        .highlight .n { color: #f8f8f2 } /* Name */
+        .highlight .o { color: #f92672 } /* Operator */
+        .highlight .p { color: #f8f8f2 } /* Punctuation */
+        .highlight .cm { color: #75715e } /* Comment.Multiline */
+        .highlight .cp { color: #75715e } /* Comment.Preproc */
+        .highlight .c1 { color: #75715e } /* Comment.Single */
+        .highlight .cs { color: #75715e } /* Comment.Special */
+        .highlight .gd { color: #f92672 } /* Generic.Deleted */
+        .highlight .ge { font-style: italic } /* Generic.Emph */
+        .highlight .gh { color: #f8f8f2; font-weight: bold } /* Generic.Heading */
+        .highlight .gi { color: #a6e22e } /* Generic.Inserted */
+        .highlight .gp { color: #75715e; font-weight: bold } /* Generic.Prompt */
+        .highlight .gs { font-weight: bold } /* Generic.Strong */
+        .highlight .gu { color: #75715e; font-weight: bold } /* Generic.Subheading */
+        .highlight .kc { color: #66d9ef } /* Keyword.Constant */
+        .highlight .kd { color: #66d9ef } /* Keyword.Declaration */
+        .highlight .kn { color: #f92672 } /* Keyword.Namespace */
+        .highlight .kp { color: #66d9ef } /* Keyword.Pseudo */
+        .highlight .kr { color: #66d9ef } /* Keyword.Reserved */
+        .highlight .kt { color: #66d9ef } /* Keyword.Type */
+        .highlight .m { color: #ae81ff } /* Literal.Number */
+        .highlight .s { color: #e6db74 } /* Literal.String */
+        .highlight .na { color: #a6e22e } /* Name.Attribute */
+        .highlight .nb { color: #f8f8f2 } /* Name.Builtin */
+        .highlight .nc { color: #a6e22e } /* Name.Class */
+        .highlight .no { color: #66d9ef } /* Name.Constant */
+        .highlight .nd { color: #a6e22e } /* Name.Decorator */
+        .highlight .ni { color: #f8f8f2 } /* Name.Entity */
+        .highlight .ne { color: #a6e22e } /* Name.Exception */
+        .highlight .nf { color: #a6e22e } /* Name.Function */
+        .highlight .nl { color: #f8f8f2 } /* Name.Label */
+        .highlight .nn { color: #f8f8f2 } /* Name.Namespace */
+        .highlight .nx { color: #a6e22e } /* Name.Other */
+        .highlight .py { color: #f8f8f2 } /* Name.Property */
+        .highlight .nt { color: #f92672 } /* Name.Tag */
+        .highlight .nv { color: #f8f8f2 } /* Name.Variable */
+        .highlight .ow { color: #f92672 } /* Operator.Word */
+        .highlight .w { color: #f8f8f2 } /* Text.Whitespace */
+        .highlight .mf { color: #ae81ff } /* Literal.Number.Float */
+        .highlight .mh { color: #ae81ff } /* Literal.Number.Hex */
+        .highlight .mi { color: #ae81ff } /* Literal.Number.Integer */
+        .highlight .mo { color: #ae81ff } /* Literal.Number.Oct */
+        .highlight .sb { color: #e6db74 } /* Literal.String.Backtick */
+        .highlight .sc { color: #e6db74 } /* Literal.String.Char */
+        .highlight .sd { color: #e6db74 } /* Literal.String.Doc */
+        .highlight .s2 { color: #e6db74 } /* Literal.String.Double */
+        .highlight .se { color: #ae81ff } /* Literal.String.Escape */
+        .highlight .sh { color: #e6db74 } /* Literal.String.Heredoc */
+        .highlight .si { color: #e6db74 } /* Literal.String.Interpol */
+        .highlight .sx { color: #e6db74 } /* Literal.String.Other */
+        .highlight .sr { color: #e6db74 } /* Literal.String.Regex */
+        .highlight .s1 { color: #e6db74 } /* Literal.String.Single */
+        .highlight .ss { color: #e6db74 } /* Literal.String.Symbol */
+        .highlight .bp { color: #f8f8f2 } /* Name.Builtin.Pseudo */
+        .highlight .vc { color: #f8f8f2 } /* Name.Variable.Class */
+        .highlight .vg { color: #f8f8f2 } /* Name.Variable.Global */
+        .highlight .vi { color: #f8f8f2 } /* Name.Variable.Instance */
+        .highlight .il { color: #ae81ff } /* Literal.Number.Integer.Long */
+    </style>
+{% endblock %}
+

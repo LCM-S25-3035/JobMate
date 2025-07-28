@@ -224,6 +224,7 @@ JobMate - AI-Enhanced Job Matching Platform
 Flask Application Factory Pattern
 """
 
+from flask import Flask, app, render_template, flash, redirect, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate

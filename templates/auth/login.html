@@ -273,7 +273,9 @@ document.addEventListener('DOMContentLoaded', function() {
         field.nextElementSibling.nextElementSibling.textContent = '';
     }
     
-    // Form submission
+    // Form submission - DISABLED FOR CSRF FIX
+    // Let form submit normally instead of using AJAX
+    /*
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -329,6 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+    */
     
     function showAlert(type, message) {
         // Remove existing alerts

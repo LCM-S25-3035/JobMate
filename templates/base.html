@@ -7,6 +7,12 @@
     <meta name="keywords" content="jobs, careers, AI, resume, job matching, Ontario, technology">
     <meta name="author" content="JobMate">
     
+<<<<<<< Updated upstream
+=======
+    <!-- CSRF Token for AJAX requests -->
+
+    
+>>>>>>> Stashed changes
     <!-- Cache busting meta tags -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -23,6 +29,11 @@
     <!-- Custom CSS with cache busting -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}?v=20241220003">
     
+<<<<<<< Updated upstream
+=======
+
+
+>>>>>>> Stashed changes
     <!-- Theme System CSS with cache busting -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}?v=20241220003">
     
@@ -389,11 +400,19 @@
                                 <i class="bi bi-speedometer2 me-1"></i>Dashboard
                             </a>
                         </li>
+<<<<<<< Updated upstream
                         
                         {% if current_user.is_applicant() %}
                         <li class="nav-item">
                             <a class="nav-link nav-link-theme" href="#" onclick="alert('Jobs module coming soon!')">
                                 <i class="bi bi-search me-1"></i>Find Jobs
+=======
+
+                        {% if current_user.is_applicant() %}
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-theme" href="{{ url_for('main.browse_jobs') }}">
+                                <i class="bi bi-search me-1"></i>Browse Jobs
+>>>>>>> Stashed changes
                             </a>
                         </li>
                         <li class="nav-item">
@@ -410,11 +429,6 @@
                         <li class="nav-item">
                             <a class="nav-link nav-link-theme" href="{{ url_for('recruiter.create_job') }}">
                                 <i class="bi bi-plus-circle me-1"></i>Post Jobs
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link nav-link-theme" href="{{ url_for('recruiter.candidates') }}">
-                                <i class="bi bi-people me-1"></i>Candidates
                             </a>
                         </li>
                         <li class="nav-item">

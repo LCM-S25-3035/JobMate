@@ -1,0 +1,158 @@
+{
+	"info": {
+		"_postman_id": "ai-suggestions-collection",
+		"name": "JobMate AI Suggestions API",
+		"description": "Test collection for AI-powered skills and salary suggestions",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "AI Skills & Salary Suggestions",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has result field\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('result');",
+							"});",
+							"",
+							"pm.test(\"Response time is less than 30s\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(30000);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"Full Stack Developer\",\n  \"location\": \"Toronto, ON\",\n  \"experience\": \"Mid-level\",\n  \"description\": \"We are seeking a Full Stack Developer to join our growing team. You will work with React, Node.js, PostgreSQL, and AWS. The ideal candidate has 3-5 years of experience building scalable web applications and working in agile environments.\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:5002/ai/api/suggest_skills_salary",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5002",
+					"path": [
+						"ai",
+						"api",
+						"suggest_skills_salary"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Junior Developer Test",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"Software Developer\",\n  \"location\": \"Vancouver, BC\",\n  \"experience\": \"Junior\",\n  \"description\": \"Join our team as a Junior Software Developer. You'll work with Python, Django, and PostgreSQL to build web applications. Fresh graduates welcome!\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:5002/ai/api/suggest_skills_salary",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5002",
+					"path": [
+						"ai",
+						"api",
+						"suggest_skills_salary"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Senior Data Scientist Test",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"Data Scientist\",\n  \"location\": \"Montreal, QC\",\n  \"experience\": \"Senior\",\n  \"description\": \"Looking for a Senior Data Scientist with expertise in machine learning, Python, R, SQL, and cloud platforms. You'll lead analytics projects and mentor junior team members.\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:5002/ai/api/suggest_skills_salary",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5002",
+					"path": [
+						"ai",
+						"api",
+						"suggest_skills_salary"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Error Test - Empty Fields",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"\",\n  \"location\": \"\",\n  \"experience\": \"\",\n  \"description\": \"\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:5002/ai/api/suggest_skills_salary",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5002",
+					"path": [
+						"ai",
+						"api",
+						"suggest_skills_salary"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5002"
+		}
+	]
+}

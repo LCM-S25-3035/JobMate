@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 {% extends "base.html" %}
 
 {% block title %}Edit Job - JobMate{% endblock %}
@@ -89,3 +90,96 @@
     </form>
 </div>
 {% endblock %}
+=======
+{% extends "base.html" %}
+
+{% block title %}Edit Job - JobMate{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4"><i class="bi bi-pencil-square me-2"></i>Edit Job Posting</h2>
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="mb-3">
+            <label for="title" class="form-label">Job Title</label>
+            <input type="text" class="form-control" name="title" id="title" value="{{ job.title }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="company_name" class="form-label">Company Name</label>
+            <input type="text" class="form-control" name="company_name" id="company_name" value="{{ job.company_name }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="description" class="form-label">Job Description</label>
+            <textarea class="form-control" name="description" id="description" rows="5" required>{{ job.description }}</textarea>
+        </div>
+
+        <div class="mb-3">
+            <label for="requirements" class="form-label">Requirements</label>
+            <textarea class="form-control" name="requirements" id="requirements" rows="4">{{ job.requirements }}</textarea>
+        </div>
+
+        <div class="mb-3">
+            <label for="location" class="form-label">Location</label>
+            <input type="text" class="form-control" name="location" id="location" value="{{ job.location }}" required>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col">
+                <label for="salary_min" class="form-label">Minimum Salary</label>
+                <input type="number" class="form-control" name="salary_min" id="salary_min" value="{{ job.salary_min }}">
+            </div>
+            <div class="col">
+                <label for="salary_max" class="form-label">Maximum Salary</label>
+                <input type="number" class="form-control" name="salary_max" id="salary_max" value="{{ job.salary_max }}">
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="employment_type" class="form-label">Employment Type</label>
+            <select class="form-select" name="employment_type" id="employment_type">
+                <option value="full_time" {% if job.employment_type == 'full_time' %}selected{% endif %}>Full-time</option>
+                <option value="part_time" {% if job.employment_type == 'part_time' %}selected{% endif %}>Part-time</option>
+                <option value="contract" {% if job.employment_type == 'contract' %}selected{% endif %}>Contract</option>
+                <option value="internship" {% if job.employment_type == 'internship' %}selected{% endif %}>Internship</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="work_setting" class="form-label">Work Setting</label>
+            <select class="form-select" name="work_setting" id="work_setting">
+                <option value="onsite" {% if job.work_setting == 'onsite' %}selected{% endif %}>Onsite</option>
+                <option value="remote" {% if job.work_setting == 'remote' %}selected{% endif %}>Remote</option>
+                <option value="hybrid" {% if job.work_setting == 'hybrid' %}selected{% endif %}>Hybrid</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="experience_level" class="form-label">Experience Level</label>
+            <select class="form-select" name="experience_level" id="experience_level">
+                <option value="entry" {% if job.experience_level == 'entry' %}selected{% endif %}>Entry Level</option>
+                <option value="mid" {% if job.experience_level == 'mid' %}selected{% endif %}>Mid Level</option>
+                <option value="senior" {% if job.experience_level == 'senior' %}selected{% endif %}>Senior Level</option>
+            </select>
+        </div>
+
+        <div class="mb-4">
+            <label for="status" class="form-label">Status</label>
+            <select class="form-select" name="status" id="status">
+                <option value="active" {% if job.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="paused" {% if job.status == 'paused' %}selected{% endif %}>Paused</option>
+                <option value="draft" {% if job.status == 'draft' %}selected{% endif %}>Draft</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save me-2"></i>Update Job
+        </button>
+        <a href="{{ url_for('recruiter.job_listings') }}" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>
+{% endblock %}
+>>>>>>> Stashed changes

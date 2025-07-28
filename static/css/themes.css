@@ -403,5 +403,73 @@
 
 /* Ensure dropdown menus appear above fixed navbar */
 .navbar .dropdown-menu {
-    z-index: 1100 !important;   /* maior que 1030 */
-} 
+    z-index: 1100 !important;
+}
+
+/* Fix dropdown positioning in job cards - Simple approach */
+.job-card .dropdown {
+    position: relative !important;
+}
+
+.job-card .dropdown-menu {
+    z-index: 1050 !important;
+    position: absolute !important;
+    right: 0 !important;
+    left: auto !important;
+    top: 100% !important;
+    margin-top: 0.125rem !important;
+    min-width: 180px !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background-color: white !important;
+    border: 1px solid rgba(0, 0, 0, 0.175) !important;
+    border-radius: 0.375rem !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Ensure parent containers don't clip dropdowns */
+.job-card,
+.job-card-content,
+.col-lg-4,
+.d-flex {
+    overflow: visible !important;
+}
+
+/* Ensure dropdown shows all items with proper styling */
+.job-card .dropdown-menu .dropdown-item {
+    white-space: nowrap !important;
+    padding: 0.5rem 1rem !important;
+    color: #212529 !important;
+    background-color: transparent !important;
+    border: 0 !important;
+    display: block !important;
+    width: 100% !important;
+    clear: both !important;
+    font-weight: 400 !important;
+    text-align: inherit !important;
+    text-decoration: none !important;
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+}
+
+.job-card .dropdown-menu .dropdown-item:hover,
+.job-card .dropdown-menu .dropdown-item:focus {
+    background-color: #e9ecef !important;
+    color: #1e2125 !important;
+}
+
+.job-card .dropdown-menu .dropdown-item.text-danger {
+    color: #dc3545 !important;
+}
+
+.job-card .dropdown-menu .dropdown-item.text-danger:hover {
+    color: #bb2d3b !important;
+    background-color: #f8d7da !important;
+}
+
+.job-card .dropdown-menu .dropdown-divider {
+    height: 0 !important;
+    margin: 0.5rem 0 !important;
+    overflow: hidden !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.175) !important;
+}

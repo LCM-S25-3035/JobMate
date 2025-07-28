@@ -5,6 +5,7 @@ Landing page, dashboards, and core application routes
 
 from flask import render_template, redirect, url_for, request, jsonify
 from flask_login import current_user, login_required
+from app import db
 from app.main import bp
 from app.models.user import User
 from app.models.application import Application
@@ -136,6 +137,124 @@ def recruiter_dashboard():
                          recent_applications=recent_applications,
                          current_date=datetime.now().strftime('%b %d'),
                          **stats)
+
+
+@bp.route('/jobs')
+@login_required
+def browse_jobs():
+    """Browse all active job postings for applicants"""
+    # Get all active jobs posted by recruiters
+    active_jobs = JobPosting.get_active_jobs(limit=50)
+    
+    # Get filter parameters
+    location = request.args.get('location', '')
+    job_type = request.args.get('job_type', '')
+    remote_type = request.args.get('remote_type', '')
+    
+    # Apply filters if provided
+    filtered_jobs = active_jobs
+    if location:
+        filtered_jobs = [job for job in filtered_jobs if location.lower() in (job.location or '').lower()]
+    if job_type:
+        filtered_jobs = [job for job in filtered_jobs if job.employment_type == job_type]
+    if remote_type:
+        filtered_jobs = [job for job in filtered_jobs if job.remote_type == remote_type]
+    
+    return render_template('jobs/browse.html',
+                         title='Browse Jobs',
+                         jobs=filtered_jobs,
+                         total_jobs=len(filtered_jobs),
+                         filters={
+                             'location': location,
+                             'job_type': job_type,
+                             'remote_type': remote_type
+                         })
+
+
+@bp.route('/jobs/<int:job_id>')
+def view_job(job_id):
+    """View specific job posting details"""
+    job = JobPosting.query.filter_by(id=job_id, status='active').first()
+    if not job:
+        flash('Job posting not found or no longer available.', 'error')
+        return redirect(url_for('main.browse_jobs'))
+    
+    # Increment view count
+    job.increment_view_count()
+    
+    return render_template('jobs/view.html',
+                         title=f'{job.title} - {job.company_name}',
+                         job=job)
+
+
+@bp.route('/jobs/<int:job_id>/apply', methods=['GET', 'POST'])
+@login_required
+def apply_to_job(job_id):
+    """Apply to a specific job posting"""
+    from app.main.forms import JobApplicationForm
+    from app.models.application import Application
+    from datetime import datetime
+    
+    job = JobPosting.query.filter_by(id=job_id, status='active').first()
+    if not job:
+        flash('Job posting not found or no longer available.', 'error')
+        return redirect(url_for('main.browse_jobs'))
+    
+    # Check if user already applied to this job
+    existing_application = Application.query.filter_by(
+        user_id=current_user.id,
+        job_posting_id=job.id
+    ).first()
+    
+    if existing_application:
+        flash('You have already applied to this job.', 'warning')
+        return redirect(url_for('main.view_job', job_id=job.id))
+    
+    form = JobApplicationForm()
+    
+    if form.validate_on_submit():
+        try:
+            # Create new application record
+            application = Application(
+                user_id=current_user.id,
+                job_posting_id=job.id,
+                company_name=job.company_name,
+                job_title=job.title,
+                job_location=job.location,
+                cover_letter=form.cover_letter.data,
+                notes=form.additional_notes.data if form.additional_notes.data else None,
+                status='applied',
+                application_method='manual',
+                applied_at=datetime.utcnow(),
+                remote_type=job.remote_type if hasattr(job, 'remote_type') else None
+            )
+            
+            # Handle resume file if uploaded
+            if form.resume_file.data:
+                # For now, we'll just note that a resume was uploaded
+                # In a full implementation, you'd save the file and store the path
+                application.notes = (application.notes or '') + '\n[Resume uploaded with application]'
+            
+            # Save to database
+            db.session.add(application)
+            db.session.commit()
+            
+            print(f"Debug - Application created successfully with ID: {application.id}")
+            flash(f'Application submitted successfully for {job.title}!', 'success')
+            return redirect(url_for('main.view_job', job_id=job.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error creating application: {str(e)}")
+            flash('There was an error submitting your application. Please try again.', 'error')
+    else:
+        if request.method == 'POST':
+            print(f"Debug - Form validation failed: {form.errors}")
+    
+    return render_template('jobs/apply.html',
+                         title=f'Apply for {job.title}',
+                         job=job,
+                         form=form)
 
 
 @bp.route('/about')

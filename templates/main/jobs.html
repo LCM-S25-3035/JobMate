@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .filter-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .job-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .job-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        border-color: var(--primary-color);
+    }
+    
+    .job-title {
+        color: var(--primary-color);
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        text-decoration: none;
+    }
+    
+    .job-title:hover {
+        color: var(--primary-color);
+        text-decoration: underline;
+    }
+    
+    .company-name {
+        color: var(--text-muted);
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .job-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+    
+    .job-meta i {
+        color: var(--primary-color);
+        margin-right: 0.25rem;
+    }
+    
+    .job-description {
+        color: var(--text-color);
+        line-height: 1.6;
+        margin-bottom: 1rem;
+    }
+    
+    .job-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .job-tag {
+        background: var(--primary-color);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .salary-range {
+        color: var(--success-color);
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .apply-btn {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .apply-btn:hover {
+        background: var(--primary-dark);
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .no-jobs {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-muted);
+    }
+    
+    .no-jobs i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-6 fw-bold mb-2">
+                    <i class="bi bi-search me-3"></i>Browse Job Opportunities
+                </h1>
+                <p class="lead mb-0 opacity-90">
+                    Discover {{ total_jobs }} active job postings from top recruiters
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <div class="stats-display">
+                    <div class="stat-item">
+                        <h3 class="mb-0">{{ total_jobs }}</h3>
+                        <p class="mb-0 opacity-75">Active Jobs</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container">
+    <!-- Filters -->
+    <div class="filter-card">
+        <h5 class="mb-3"><i class="bi bi-funnel me-2"></i>Filter Jobs</h5>
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="location" class="form-label">Location</label>
+                <input type="text" class="form-control" id="location" name="location" 
+                       value="{{ filters.location }}" placeholder="City, Province">
+            </div>
+            <div class="col-md-3">
+                <label for="job_type" class="form-label">Job Type</label>
+                <select class="form-select" id="job_type" name="job_type">
+                    <option value="">All Types</option>
+                    <option value="full_time" {% if filters.job_type == 'full_time' %}selected{% endif %}>Full Time</option>
+                    <option value="part_time" {% if filters.job_type == 'part_time' %}selected{% endif %}>Part Time</option>
+                    <option value="contract" {% if filters.job_type == 'contract' %}selected{% endif %}>Contract</option>
+                    <option value="internship" {% if filters.job_type == 'internship' %}selected{% endif %}>Internship</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="remote_type" class="form-label">Work Type</label>
+                <select class="form-select" id="remote_type" name="remote_type">
+                    <option value="">All Work Types</option>
+                    <option value="onsite" {% if filters.remote_type == 'onsite' %}selected{% endif %}>On-site</option>
+                    <option value="remote" {% if filters.remote_type == 'remote' %}selected{% endif %}>Remote</option>
+                    <option value="hybrid" {% if filters.remote_type == 'hybrid' %}selected{% endif %}>Hybrid</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-search"></i> Filter
+                </button>
+                <a href="{{ url_for('main.browse_jobs') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-clockwise"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Jobs List -->
+    {% if jobs %}
+        <div class="row">
+            {% for job in jobs %}
+            <div class="col-12">
+                <div class="job-card">
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <a href="#" class="job-title">{{ job.title }}</a>
+                            <div class="company-name">
+                                <i class="bi bi-building"></i> {{ job.company_name }}
+                            </div>
+                            
+                            <div class="job-meta">
+                                <span><i class="bi bi-geo-alt"></i> {{ job.location_formatted }}</span>
+                                <span><i class="bi bi-clock"></i> {{ job.employment_type.replace('_', ' ').title() }}</span>
+                                <span><i class="bi bi-laptop"></i> {{ job.remote_type.title() }}</span>
+                                {% if job.experience_level %}
+                                <span><i class="bi bi-star"></i> {{ job.experience_level.title() }} Level</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="job-description">
+                                {{ job.description[:200] }}{% if job.description|length > 200 %}...{% endif %}
+                            </div>
+                            
+                            {% if job.required_skills %}
+                            <div class="job-tags">
+                                {% for skill in job.required_skills[:5] %}
+                                <span class="job-tag">{{ skill }}</span>
+                                {% endfor %}
+                                {% if job.required_skills|length > 5 %}
+                                <span class="job-tag">+{{ job.required_skills|length - 5 }} more</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-lg-4 text-lg-end">
+                            {% if job.salary_range_formatted != "Not disclosed" %}
+                            <div class="salary-range mb-3">
+                                {{ job.salary_range_formatted }}
+                            </div>
+                            {% endif %}
+                            
+                            <div class="job-actions">
+                                <a href="#" class="apply-btn">
+                                    <i class="bi bi-send"></i> Apply Now
+                                </a>
+                            </div>
+                            
+                            <div class="job-posted mt-2">
+                                <small class="text-muted">
+                                    Posted {{ job.created_at.strftime('%b %d, %Y') }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-jobs">
+            <i class="bi bi-search"></i>
+            <h3>No Jobs Found</h3>
+            <p>No active job postings match your current filters. Try adjusting your search criteria.</p>
+            <a href="{{ url_for('main.browse_jobs') }}" class="btn btn-primary">
+                <i class="bi bi-arrow-clockwise"></i> View All Jobs
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+// Add some interactivity
+document.addEventListener('DOMContentLoaded', function() {
+    // Smooth hover effects for job cards
+    const jobCards = document.querySelectorAll('.job-card');
+    jobCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+</script>
+{% endblock %}

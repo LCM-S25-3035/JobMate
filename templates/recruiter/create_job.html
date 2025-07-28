@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 {% extends "base.html" %}
 
 {% block title %}Create Job Posting - JobMate{% endblock %}
@@ -691,4 +692,722 @@ window.addEventListener('load', () => {
     }
 });
 </script>
+=======
+{% extends "base.html" %}
+
+{% block title %}Create Job Posting - JobMate{% endblock %}
+
+{% block head %}
+<style>
+    .page-header {
+        background: var(--gradient-primary);
+        color: white;
+        border-radius: 0 0 20px 20px;
+        margin: -20px;
+        padding: 30px 0;
+    }
+    
+    .form-container {
+        background: var(--gradient-card);
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: var(--shadow-card);
+        margin-top: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .form-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--gradient-primary);
+        z-index: 1;
+    }
+    
+    .form-floating > .form-control, .form-select {
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    
+    .form-floating > .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem var(--shadow-color);
+        background: white;
+    }
+    
+    .form-floating > label {
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+    
+    .section-title {
+        color: var(--primary-dark);
+        font-weight: 700;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 3px solid var(--primary-color);
+        position: relative;
+        font-size: 1.4rem;
+    }
+    
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: -3px;
+        left: 0;
+        width: 50px;
+        height: 3px;
+        background: var(--gradient-primary);
+        border-radius: 2px;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+    
+    .form-section:hover {
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        transform: translateY(-2px);
+    }
+    
+    .progress-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        position: relative;
+    }
+    
+    .progress-step {
+        flex: 1;
+        text-align: center;
+        position: relative;
+        padding: 10px;
+    }
+    
+    .progress-step .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--border-color);
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 10px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    
+    .progress-step.active .step-number {
+        background: var(--gradient-primary);
+        color: white;
+        transform: scale(1.1);
+    }
+    
+    .progress-step.completed .step-number {
+        background: var(--success-color);
+        color: white;
+    }
+    
+    .progress-step .step-label {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+    
+    .progress-step.active .step-label {
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+    
+    .character-counter {
+        text-align: right;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-top: 5px;
+    }
+    
+    .salary-range-display {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 10px;
+        text-align: center;
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+    
+    .ai-suggestion {
+        background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 15px;
+        font-size: 0.9rem;
+    }
+    
+    .ai-suggestion .suggestion-label {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .skill-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    
+    .skill-tag {
+        background: var(--primary-light);
+        color: var(--primary-dark);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .skill-tag:hover {
+        background: var(--primary-color);
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .form-help {
+        background: var(--info-light);
+        border-left: 4px solid var(--info-color);
+        padding: 12px 16px;
+        border-radius: 0 8px 8px 0;
+        margin-top: 10px;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-6 fw-bold mb-2">
+                    <i class="bi bi-plus-circle me-3"></i>Create Job Posting
+                </h1>
+                <p class="lead mb-0 opacity-90">
+                    Build your perfect job posting to attract top talent
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <button type="button" class="btn btn-light btn-lg" onclick="saveDraft()">
+                    <i class="bi bi-save me-2"></i>Save Draft
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Progress Indicator -->
+            <div class="progress-indicator">
+                <div class="progress-step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Basic Info</div>
+                </div>
+                <div class="progress-step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Job Details</div>
+                </div>
+                <div class="progress-step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Description</div>
+                </div>
+                <div class="progress-step" data-step="4">
+                    <div class="step-number">4</div>
+                    <div class="step-label">Review</div>
+                </div>
+            </div>
+            
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            <i class="bi bi-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Form -->
+            <div class="form-container">
+                <form method="POST" id="createJobForm" action="{{ url_for('recruiter.create_job') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Basic Information Section -->
+                    <div class="form-section" id="section-1">
+                        <h4 class="section-title">
+                            <i class="bi bi-info-circle me-2"></i>Basic Information
+                        </h4>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <div class="form-floating">
+                                    {{ form.title(class="form-control", id="title", placeholder="Job Title") }}
+                                    {% if form.title.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.title.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <label for="title" class="form-label">Job Title</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                           <div class="col-md-4"> 
+                              <div class="form-floating">
+                                  {{ form.company_name(class="form-control", id="company_name", placeholder="Company Name") }}
+                                  {% if form.company_name.errors %}
+                                      <div class="text-danger small mt-1">
+                                          {% for error in form.company_name.errors %}
+                                              {{ error }}
+                                          {% endfor %}
+                                      </div>
+                                  {% endif %}
+                                  <label for="company_name" class="form-label">Company Name</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                          <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    {{ form.location(class="form-control", id="location", placeholder="Location", required=true) }}
+                                    {% if form.location.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.location.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <label for="location" class="form-label">Location</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    {{ form.job_category(class="form-select", id="job_category") }}
+                                    {% if form.job_category.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.job_category.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <label for="job_category" class="form-label">Department</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Job Details Section -->
+                    <div class="form-section" id="section-2">
+                        <h4 class="section-title">
+                            <i class="bi bi-briefcase me-2"></i>Job Details
+                        </h4>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    {{ form.employment_type(class="form-select", id="employment_type") }}
+                                    {% if form.employment_type.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.employment_type.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <label for="employment_type" class="form-label">Employment Type</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    {{ form.remote_type(class="form-select", id="remote_type") }}
+                                    {% if form.remote_type.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.remote_type.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <label for="remote_type" class="form-label">Work Setting</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    {{ form.experience_level(class="form-select", id="experience_level") }}
+                                    {% if form.experience_level.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.experience_level.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <label for="experience_level" class="form-label">Experience Level</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    {{ form.salary_min(class="form-control", id="salary_min", placeholder="Minimum Salary", type="number") }}
+                                    {% if form.salary_min.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.salary_min.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <label for="salary_min" class="form-label">Minimum Salary (CAD)</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    {{ form.salary_max(class="form-control", id="salary_max", placeholder="Maximum Salary", type="number") }}
+                                    {% if form.salary_max.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.salary_max.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <label for="salary_max" class="form-label">Maximum Salary (CAD)</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description Section -->
+                    <div class="form-section" id="section-3">
+                        <h4 class="section-title">
+                            <i class="bi bi-file-text me-2"></i>Job Description & Requirements
+                        </h4>
+                        
+                        <div class="form-floating mb-4">
+                            {{ form.description(class="form-control", id="description", placeholder="Job Description", style="height: 200px", maxlength="2000", oninput="updateCharacterCount('description', 2000)", required=true) }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <label for="description" class="form-label">Job Description</label>
+                        </div>
+                        <div class="character-counter" id="description-counter">0/2000 characters</div>
+                        
+                        <div class="form-floating mb-4">
+                            {{ form.requirements(class="form-control", id="requirements", placeholder="Requirements", style="height: 180px", maxlength="1500", oninput="updateCharacterCount('requirements', 1500)") }}
+                            {% if form.requirements.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.requirements.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <label for="requirements" class="form-label">Requirements</label>
+                        </div>
+                        <div class="character-counter" id="requirements-counter">0/1500 characters</div>
+
+                        <div class="form-floating mb-4">
+                            {{ form.skills(class="form-control", id="skills", placeholder="Skills (comma-separated)", oninput="updateSkillTags(this.value.split(','))") }}
+                            {% if form.skills.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.skills.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <label for="skills" class="form-label">Required Skills</label>
+                        </div>
+                        <div class="form-help">
+                            Enter Skills separated by commas. For example: <strong>Python, JavaScript, SQL</strong>
+                        </div>
+                        <div class="skill-tags" id="skillTags">
+                        </div>
+                        
+                         <div class="ai-suggestion mt-3">
+                             <div class="suggestion-label">
+                                 <i class="bi bi-robot me-1"></i>Suggested Skills
+                            </div>
+                            <div class="skill-tags">
+                                <span class="skill-tag" onclick="addSkill('JavaScript')">JavaScript</span>      
+                                <span class="skill-tag" onclick="addSkill('Python')">Python</span>
+                                <span class="skill-tag" onclick="addSkill('SQL')">SQL</span>
+                                <span class="skill-tag" onclick="addSkill('React')">React</span>
+                                <span class="skill-tag" onclick="addSkill('Node.js')">Node.js
+                            </div>
+                         </div>
+                    </div>
+
+                    <!-- Submit Section -->
+                    <div class="text-center mt-4">
+                        <button type="button" class="btn btn-theme-soft btn-lg me-3" onclick="window.history.back()">
+                            <i class="bi bi-arrow-left me-2"></i>Cancel
+                        </button>
+                        <button type="button" class="btn btn-theme-outline btn-lg me-3" onclick="saveDraft()">
+                            <i class="bi bi-save me-2"></i>Save as Draft
+                        </button>
+                        <button type="submit" class="btn btn-theme-primary btn-lg">
+                            <i class="bi bi-check-circle me-2"></i>Publish Job Posting
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('createJobForm');
+    const sections = document.querySelectorAll('.form-section');
+    const progressSteps = document.querySelectorAll('.progress-step');
+    
+    // Initialize character counters
+    updateCharacterCount('title', 100);
+    updateCharacterCount('description', 2000);
+    updateCharacterCount('requirements', 1500);
+    
+    // Initialize skills functionality
+    initializeSkills();
+    
+    // Progress tracking
+    trackProgress();
+});
+
+function updateCharacterCount(fieldId, maxLength) {
+    const field = document.getElementById(fieldId);
+    const counter = document.getElementById(fieldId + '-counter');
+    
+    if (field && counter) {
+        const currentLength = field.value.length;
+        counter.textContent = `${currentLength}/${maxLength} characters`;
+        
+        if (currentLength > maxLength * 0.9) {
+            counter.style.color = 'var(--warning-color)';
+        } else {
+            counter.style.color = 'var(--text-secondary)';
+        }
+    }
+}
+
+function updateSalaryRange() {
+    const minSalary = document.getElementById('salary_min').value;
+    const maxSalary = document.getElementById('salary_max').value;
+    const display = document.getElementById('salaryDisplay');
+    const rangeText = document.getElementById('salaryRangeText');
+    
+    if (minSalary && maxSalary) {
+        const formattedMin = new Intl.NumberFormat('en-CA', {
+            style: 'currency',
+            currency: 'CAD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(minSalary);
+        
+        const formattedMax = new Intl.NumberFormat('en-CA', {
+            style: 'currency',
+            currency: 'CAD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(maxSalary);
+        
+        rangeText.textContent = `${formattedMin} - ${formattedMax}`;
+        display.style.display = 'block';
+    } else {
+        display.style.display = 'none';
+    }
+}
+
+function initializeSkills() {
+    const skillsInput = document.getElementById('skills');
+    const skillTags = document.getElementById('skillTags');
+    
+    skillsInput.addEventListener('input', function() {
+        const skills = this.value.split(',').map(s => s.trim()).filter(s => s);
+        updateSkillTags(skills);
+    });
+}
+
+function addSkill(skillName) {
+    const skillsInput = document.getElementById('skills');
+    const currentSkills = skillsInput.value ? skillsInput.value.split(',').map(s => s.trim()) : [];
+    
+    if (!currentSkills.includes(skillName)) {
+        currentSkills.push(skillName);
+        skillsInput.value = currentSkills.join(', ');
+        updateSkillTags(currentSkills);
+    }
+}
+
+function updateSkillTags(skills) {
+    const skillTags = document.getElementById('skillTags');
+    skillTags.innerHTML = '';
+    
+    skills.forEach(skill => {
+        if (skill) {
+            const tag = document.createElement('span');
+            tag.className = 'skill-tag';
+            tag.innerHTML = `${skill} <i class="bi bi-x ms-1" onclick="removeSkill('${skill}')"></i>`;
+            skillTags.appendChild(tag);
+        }
+    });
+}
+
+function removeSkill(skillToRemove) {
+    const skillsInput = document.getElementById('skills');
+    const currentSkills = skillsInput.value.split(',').map(s => s.trim()).filter(s => s !== skillToRemove);
+    skillsInput.value = currentSkills.join(', ');
+    updateSkillTags(currentSkills);
+}
+
+function trackProgress() {
+    const requiredFields = ['title', 'company_name', 'location', 'description'];
+    const progressSteps = document.querySelectorAll('.progress-step');
+    
+    // Check form completion
+    const completedSections = [];
+    
+    // Section 1: Basic Info
+    if (document.getElementById('title').value && 
+        document.getElementById('company_name').value && 
+        document.getElementById('location').value) {
+        completedSections.push(1);
+    }
+    
+    // Section 2: Job Details
+    if (document.getElementById('employment_type').value) {
+        completedSections.push(2);
+    }
+    
+    // Section 3: Description
+    if (document.getElementById('description').value) {
+        completedSections.push(3);
+    }
+    
+    // Update progress steps
+    progressSteps.forEach((step, index) => {
+        const stepNumber = index + 1;
+        if (completedSections.includes(stepNumber)) {
+            step.classList.add('completed');
+        } else {
+            step.classList.remove('completed');
+        }
+    });
+}
+
+function validateForm() {
+    const requiredFields = [
+        { id: 'title', name: 'Job Title' },
+        { id: 'company_name', name: 'Company Name' },
+        { id: 'location', name: 'Location' },
+        { id: 'description', name: 'Job Description' }
+    ];
+    
+    let isValid = true;
+    const errors = [];
+    
+    requiredFields.forEach(field => {
+        const element = document.getElementById(field.id);
+        if (!element.value.trim()) {
+            isValid = false;
+            errors.push(field.name);
+            element.classList.add('is-invalid');
+        } else {
+            element.classList.remove('is-invalid');
+        }
+    });
+    
+    // Validate salary range
+    const minSalary = parseInt(document.getElementById('salary_min').value || 0);
+    const maxSalary = parseInt(document.getElementById('salary_max').value || 0);
+    
+    if (minSalary && maxSalary && minSalary >= maxSalary) {
+        isValid = false;
+        errors.push('Maximum salary must be greater than minimum salary');
+    }
+    
+    if (!isValid) {
+        alert('Please fix the following errors:\n- ' + errors.join('\n- '));
+    }
+    
+    return isValid;
+}
+
+function saveDraft() {
+    const formData = new FormData(document.getElementById('createJobForm'));
+    formData.append('status', 'draft');
+    
+    fetch('/recruiter/jobs/draft', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Draft saved successfully!');
+        } else {
+            alert('Error saving draft');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving draft');
+    });
+}
+
+// Auto-save functionality
+setInterval(() => {
+    const title = document.getElementById('title').value;
+    if (title) {
+        localStorage.setItem('jobDraft', JSON.stringify({
+            title: title,
+            company_name: document.getElementById('company_name').value,
+            location: document.getElementById('location').value,
+            description: document.getElementById('description').value,
+            timestamp: new Date().toISOString()
+        }));
+    }
+}, 30000); // Auto-save every 30 seconds
+
+// Clear any previous drafts when starting fresh
+window.addEventListener('load', () => {
+    // Clear draft storage when loading the form to avoid popup
+    localStorage.removeItem('jobDraft');
+});
+</script>
+>>>>>>> Stashed changes
 {% endblock %} 

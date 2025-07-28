@@ -1,0 +1,343 @@
+/* Jobs Module Styles */
+
+/* Job Cards */
+.job-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: 1px solid #e0e0e0;
+    position: relative;
+    overflow: visible !important;
+}
+
+.job-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-color: #007bff;
+}
+
+.job-card .card-title a {
+    color: #333;
+    text-decoration: none !important;
+    font-weight: 600;
+}
+
+.job-card .card-title a:hover {
+    color: #007bff;
+}
+
+/* Filter Sidebar */
+.filter-section {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    position: sticky;
+    top: 20px;
+}
+
+.filter-section .form-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.filter-section .form-select,
+.filter-section .form-control {
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+}
+
+.filter-section .form-select:focus,
+.filter-section .form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Active Filters */
+.active-filters {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.active-filters .badge {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+}
+
+/* Job Skills/Tags */
+.badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Salary Range Inputs */
+.salary-range-inputs {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.salary-range-inputs input {
+    flex: 1;
+}
+
+/* Pagination */
+.pagination {
+    margin-top: 2rem;
+}
+
+.pagination .page-link {
+    color: #007bff;
+    border-color: #dee2e6;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.pagination .page-link:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 10;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Job Detail Page */
+.job-description, 
+.job-requirements, 
+.job-benefits {
+    line-height: 1.7;
+    color: #495057;
+}
+
+.job-description p, 
+.job-requirements p, 
+.job-benefits p {
+    margin-bottom: 1rem;
+}
+
+.job-description ul,
+.job-requirements ul,
+.job-benefits ul {
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.job-description li,
+.job-requirements li,
+.job-benefits li {
+    margin-bottom: 0.5rem;
+}
+
+.job-description h3,
+.job-requirements h3,
+.job-benefits h3 {
+    color: #343a40;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.job-description strong,
+.job-requirements strong,
+.job-benefits strong {
+    color: #343a40;
+}
+
+/* Company Info Card */
+.card-title {
+    color: #343a40;
+    font-weight: 600;
+}
+
+/* Search Input */
+.search-input-wrapper {
+    position: relative;
+}
+
+.search-input-wrapper .form-control {
+    padding-left: 2.5rem;
+}
+
+.search-input-wrapper .search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .job-card .row > div:last-child {
+        text-align: left !important;
+        margin-top: 1rem;
+    }
+    
+    .filter-section {
+        position: static;
+        margin-bottom: 2rem;
+    }
+    
+    .active-filters {
+        margin-bottom: 1rem;
+    }
+    
+    .pagination {
+        margin-top: 1rem;
+    }
+    
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .btn-group .btn {
+        width: 100%;
+    }
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.empty-state .display-1 {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+/* Save Button States */
+.btn-save {
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-save:hover {
+    transform: scale(1.05);
+}
+
+.btn-save.saved {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+
+/* Job Meta Icons */
+.job-meta i {
+    color: #007bff;
+    margin-right: 0.25rem;
+}
+
+/* Facet Counts */
+.facet-count {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+}
+
+/* Filter Reset Button */
+.filter-reset {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+/* Job Application Status */
+.application-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.application-status.applied {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.application-status.not-applied {
+    background-color: #f8f9fa;
+    color: #495057;
+    border: 1px solid #dee2e6;
+}
+
+/* Smooth Transitions */
+* {
+    transition: color 0.15s ease-in-out, 
+                background-color 0.15s ease-in-out, 
+                border-color 0.15s ease-in-out, 
+                box-shadow 0.15s ease-in-out;
+}
+
+/* Job card dropdown fixes - Enhanced */
+.job-card .dropdown {
+    position: static !important;
+}
+
+.job-card .dropdown-menu {
+    z-index: 9999 !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    min-width: 180px;
+    position: absolute !important;
+    transform: translate3d(0px, 38px, 0px) !important;
+    top: 0px !important;
+    left: 0px !important;
+    will-change: transform;
+}
+
+/* Ensure dropdown appears above other cards */
+.job-card .dropdown.show {
+    z-index: 10000 !important;
+}
+
+/* Ensure parent containers allow overflow */
+.job-card-content,
+.card-body,
+.col-lg-4,
+.col-lg-8,
+.row {
+    overflow: visible !important;
+}

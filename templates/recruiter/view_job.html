@@ -196,6 +196,24 @@
         font-weight: 500;
     }
     
+    .quick-stat-clickable {
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .quick-stat-clickable:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    .quick-stat-clickable:hover .quick-stat-number {
+        color: var(--primary-color);
+    }
+    
     .empty-state {
         text-align: center;
         padding: 40px 20px;
@@ -275,14 +293,10 @@
             </div>
             <div class="col-lg-4">
                 <div class="quick-stats">
-                    <div class="quick-stat">
+                    <a href="{{ url_for('recruiter.hiring_pipeline', job_id=job.id) }}" class="quick-stat quick-stat-clickable">
                         <div class="quick-stat-number">{{ applications|length or 0 }}</div>
                         <div class="quick-stat-label">Applications</div>
-                    </div>
-                    <div class="quick-stat">
-                        <div class="quick-stat-number">{{ job.view_count or 0 }}</div>
-                        <div class="quick-stat-label">Views</div>
-                    </div>
+                    </a>
                 </div>
             </div>
         </div>
@@ -400,7 +414,7 @@
                         {% if applications|length > 5 %}
                         <div class="text-center mt-3">
                             <a href="{{ url_for('recruiter.candidates') }}" class="btn btn-theme-outline">
-                                View All {{ applications|length }} Applications
+                                Manage in Hiring Pipeline
                             </a>
                         </div>
                         {% endif %}

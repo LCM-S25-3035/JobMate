@@ -15,7 +15,7 @@ bp = Blueprint('ai_agents', __name__)
 
 # Import AI agents
 from app.ai_agents.resume_parser import ResumeParserAgent, parse_resume_file
+from app.ai_agents import suggestions
+from app.ai_agents import routes
 
-__all__ = ['ResumeParserAgent', 'parse_resume_file']
-
-# from app.ai_agents import routes  # TODO: Implement routes.py 
+__all__ = ['ResumeParserAgent', 'parse_resume_file'] 

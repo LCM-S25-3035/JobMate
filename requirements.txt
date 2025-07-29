@@ -95,6 +95,11 @@ gunicorn==21.2.0
 # Configuration
 python-decouple==3.8
 
+# added packages for profile module Jenny added
+reportlab==4.0.5
+
+
+
 # AI & ML - Additional packages (commented for now, install if needed)
 # langchain==0.1.0
 # spacy==3.7.2

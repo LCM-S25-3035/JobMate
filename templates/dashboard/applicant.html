@@ -197,6 +197,7 @@
         </div>
     </div>
     
+
     <!-- Profile Completion -->
     {% if completion_percentage < 100 %}
     <div class="row mb-4">
@@ -208,39 +209,39 @@
                     </h5>
                     <span class="badge bg-primary">{{ completion_percentage }}% Complete</span>
                 </div>
-                
                 <div class="completion-bar mb-3">
                     <div class="completion-fill" data-width="{{ completion_percentage }}"></div>
                 </div>
-                
                 <p class="text-muted mb-3">
                     Complete your profile to get better job matches and increase your visibility to recruiters.
                 </p>
-                
                 <div class="row">
                     {% if not active_resume %}
                     <div class="col-md-6 mb-2">
                         <div class="d-flex align-items-center">
                             <i class="bi bi-circle me-2 text-danger"></i>
                             <span>Upload your resume</span>
+                            <a href="{{ url_for('resume.upload_resume') }}" class="btn btn-link btn-sm ms-2">Upload</a>
                         </div>
                     </div>
                     {% endif %}
-                    
+
                     {% if not current_user.phone %}
                     <div class="col-md-6 mb-2">
                         <div class="d-flex align-items-center">
                             <i class="bi bi-circle me-2 text-danger"></i>
                             <span>Add phone number</span>
+                            <a href="{{ url_for('main.profile') }}#edit-phone" class="btn btn-link btn-sm ms-2">Edit</a>
                         </div>
                     </div>
                     {% endif %}
-                    
+
                     {% if not current_user.city %}
                     <div class="col-md-6 mb-2">
                         <div class="d-flex align-items-center">
                             <i class="bi bi-circle me-2 text-danger"></i>
                             <span>Add location information</span>
+                            <a href="{{ url_for('main.profile') }}#edit-location" class="btn btn-link btn-sm ms-2">Edit</a>
                         </div>
                     </div>
                     {% endif %}

@@ -70,26 +70,26 @@ def adjust_database_url(database_url):
 def create_app(config_class=None):
     """Application Factory for creating Flask app instances"""
     
+    from dotenv import load_dotenv
+    load_dotenv()
     app = Flask(__name__, 
                 template_folder='../templates',
                 static_folder='../static')
-    
     # Get configuration class
     if config_class is None:
         config_name = os.environ.get('FLASK_ENV') or 'default'
         config_class = config[config_name]
-    
     # Load configuration
     app.config.from_object(config_class)
-    
+    # Override with .env values if present
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', app.config.get('SECRET_KEY', ''))
+    app.config['WTF_CSRF_ENABLED'] = os.environ.get('WTF_CSRF_ENABLED', str(app.config.get('WTF_CSRF_ENABLED', 'true'))).lower() == 'true'
     # Debug: Show detected driver
     detected_driver = detect_postgresql_driver()
     print(f"🔧 Detected PostgreSQL driver: {detected_driver}")
-    
     # Adjust DATABASE_URL for available PostgreSQL driver
     database_url = app.config.get('SQLALCHEMY_DATABASE_URI')
     print(f"🔗 Original URL: {database_url}")
-    
     adjusted_url = adjust_database_url(database_url)
     if adjusted_url:
         app.config['SQLALCHEMY_DATABASE_URI'] = adjusted_url

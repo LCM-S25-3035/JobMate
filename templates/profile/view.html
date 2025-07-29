@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">My Profile</h2>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="card-title">Personal Information</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Name:</strong> {{ user.first_name }} {{ user.last_name }}</li>
+                        <li class="list-group-item"><strong>Email:</strong> {{ user.email }}</li>
+                        <li class="list-group-item"><strong>Phone:</strong> {{ user.phone or 'Not provided' }}</li>
+                        <li class="list-group-item"><strong>Location:</strong> {{ user.city }}, {{ user.province }}</li>
+                        <li class="list-group-item"><strong>Account Type:</strong> {{ 'Applicant' if user.is_applicant() else 'Recruiter' }}</li>
+                        <li class="list-group-item"><strong>Verified:</strong> {{ 'Yes' if user.is_verified else 'No' }}</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="card-title">Resume & Preferences</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Active Resume:</strong> {% if user.get_active_resume() %}Yes{% else %}No{% endif %}</li>
+                        {% if user.is_applicant() %}
+                        <li class="list-group-item"><strong>Job Preferences:</strong> {% if user.job_preferences %}Set{% else %}Not set{% endif %}</li>
+                        {% endif %}
+                        <li class="list-group-item"><strong>Profile Completion:</strong> {{ calculate_profile_completion(user) }}%</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-4">
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+                <!-- Editable Phone Section -->
+                <div id="edit-phone" class="mt-4">
+                    <form method="POST" action="{{ url_for('main.update_phone') }}" class="row g-2 align-items-center">
+                        {{ phone_form.csrf_token }}
+                        <div class="col-auto">
+                            {{ phone_form.phone.label(class="form-label mb-0") }}
+                        </div>
+                        <div class="col-auto">
+                            {{ phone_form.phone(class="form-control form-control-sm") }}
+                        </div>
+                        <div class="col-auto">
+                            {{ phone_form.submit(class="btn btn-primary btn-sm") }}
+                        </div>
+                    </form>
+                </div>
+                <!-- Editable Location Section -->
+                <div id="edit-location" class="mt-4">
+                    <form method="POST" action="{{ url_for('main.update_location') }}" class="row g-2 align-items-center">
+                        {{ location_form.csrf_token }}
+                        <div class="col-auto">
+                            {{ location_form.city.label(class="form-label mb-0") }}
+                        </div>
+                        <div class="col-auto">
+                            {{ location_form.city(class="form-control form-control-sm") }}
+                        </div>
+                        <div class="col-auto">
+                            {{ location_form.province.label(class="form-label mb-0") }}
+                        </div>
+                        <div class="col-auto">
+                            {{ location_form.province(class="form-control form-control-sm") }}
+                        </div>
+                        <div class="col-auto">
+                            {{ location_form.submit(class="btn btn-primary btn-sm") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -497,7 +497,10 @@ def tailor_resume(job_id):
             if file_ext not in ['.pdf', '.docx', '.txt']:
                 error = 'Unsupported file type. Please upload PDF, DOCX, or TXT.'
             else:
-                temp_path = os.path.join('/tmp', filename)
+                import tempfile # Jenny updated this
+                temp_dir = tempfile.gettempdir()  # Jenny updated this
+                temp_path = os.path.join(temp_dir, filename) # Jenny updated this
+                #temp_path = os.path.join('/tmp', filename)
                 resume_file.save(temp_path)
                 try:
                     resume_text = extract_text_from_file(temp_path, file_ext)
@@ -1179,6 +1182,55 @@ def my_tailored_resumes():
         })
     return render_template('resume/my_resumes.html', tailored_resumes=display_list, title='My Tailored Resumes')
 
+#Jenny added
+@bp.route('/profile')
+@login_required
+def profile():
+    from app.profile.forms import UpdatePhoneForm, UpdateLocationForm
+    phone_form = UpdatePhoneForm()
+    location_form = UpdateLocationForm()
+    return render_template(
+        'profile/view.html',
+        user=current_user,
+        calculate_profile_completion=calculate_profile_completion,
+        phone_form=phone_form,
+        location_form=location_form
+    )
+
+print("app/main/routes.py loaded") #Jenny added
+
+#Jenny added
+from flask import request, redirect, url_for, flash
+from flask_login import login_required, current_user
+
+@bp.route('/profile/update_phone', methods=['POST'])
+@login_required
+def update_phone():
+    phone = request.form.get('phone')
+    if phone:
+        current_user.phone = phone
+        # Save to DB
+        from app import db
+        db.session.commit()
+        flash('Phone number updated!', 'success')
+    return redirect(url_for('main.profile') + '#edit-phone')
+
+@bp.route('/profile/update_location', methods=['POST'])
+@login_required
+def update_location():
+    city = request.form.get('city')
+    province = request.form.get('province')
+    if city:
+        current_user.city = city
+    if province:
+        current_user.province = province
+    # Save to DB
+    from app import db
+    db.session.commit()
+    flash('Location updated!', 'success')
+    return redirect(url_for('main.profile') + '#edit-location')
+
+## up to here
 
 @bp.route('/submit-tailored-feedback/<job_id>', methods=['POST'])
 @login_required

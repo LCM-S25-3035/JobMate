@@ -216,6 +216,7 @@ def create_test_users_and_data():
             if not existing_user:
                 new_user = User(
                     email=user_data["email"],
+                    password=user_data["password"], # Jenny added this line
                     password_hash=generate_password_hash(user_data["password"]),
                     first_name=user_data["first_name"],
                     last_name=user_data["last_name"],

@@ -21,7 +21,7 @@ def main():
     site = os.environ.get("SITE", "glassdoor").lower()
 
     if site == "glassdoor":
-        bot = GlassdoorBot(driver_path, profile_path)
+        bot = GlassdoorBot(driver_path, profile_path, config)
         bot.run()
         bot.browser.quit()
     elif site == "indeed":

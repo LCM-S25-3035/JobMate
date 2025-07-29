@@ -67,10 +67,30 @@ class FormScraper:
         print("Checking for modal contents...")
         data = {"buttons": [], "inputs": []}
         try:
-            modal = self.driver.find_element(
-                By.XPATH,
-                "//div[contains(@class, 'modal') or contains(@class, 'dialog') or @role='dialog']"
-            )
+            # Try multiple modal detection strategies
+            modal = None
+            modal_selectors = [
+                "//div[contains(@class, 'modal') or contains(@class, 'dialog') or @role='dialog']",
+                "//div[contains(@class, 'Modal')]",
+                "//div[contains(@class, 'overlay')]",
+                "//div[contains(@data-test, 'modal')]",
+                "//div[contains(@class, 'popup')]",
+                "//div[@role='dialog']",
+                "//div[contains(@class, 'sign-in') or contains(@class, 'signin') or contains(@class, 'login')]"
+            ]
+            
+            for selector in modal_selectors:
+                try:
+                    modal = self.driver.find_element(By.XPATH, selector)
+                    if modal.is_displayed():
+                        print(f"Found modal with selector: {selector}")
+                        break
+                except Exception:
+                    continue
+            
+            if not modal:
+                print("No modal found with any selector.")
+                return data
             # Scrape modal buttons
             buttons = modal.find_elements(By.XPATH, ".//button | .//*[@role='button']")
             for btn in buttons:

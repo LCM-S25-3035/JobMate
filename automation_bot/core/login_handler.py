@@ -20,7 +20,7 @@ class LoginHandler:
         try:
             # Scroll to top to ensure all buttons are visible
             self.driver.execute_script("window.scrollTo(0, 0);")
-            time.sleep(2)  # Wait for dynamic buttons to render
+            time.sleep(1)  # Reduced from 2 to 1 second - Wait for dynamic buttons to render
 
             print("Scraping visible buttons dynamically...")
             buttons = [
@@ -42,7 +42,7 @@ class LoginHandler:
         
         if not login_buttons:
             print("No login buttons found. Assuming already signed in.")
-            return True  # Already logged in
+            return False  # No login needed - already signed in
         
         # Attempt to click the first login button found
         for button_text in login_buttons:
@@ -54,14 +54,15 @@ class LoginHandler:
                 )
                 login_button.click()
                 print(f"Successfully clicked login button: {button_text}")
-                return True
+                return True  # Login button clicked - need to complete login flow
                 
             except Exception as e:
                 print(f"Failed to click button '{button_text}': {e}")
                 continue
         
-        print("Failed to click any login buttons")
-        return False  # Failed to login
+        # This should never happen based on user's feedback, but if it does, treat as login needed
+        print("Login buttons found but couldn't click any - treating as login needed")
+        return True
 
     def find_and_click_dynamic_button(self, target_text):
         """Find and click a button by exact text match."""
@@ -89,7 +90,7 @@ class LoginHandler:
                         self.driver.execute_script("arguments[0].scrollIntoView(true);", el)
                         WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(el))
                         el.click()
-                        time.sleep(2)
+                        time.sleep(1)  # Reduced from 2 to 1 second
                         return True
 
                 except Exception as inner_e:
@@ -104,11 +105,31 @@ class LoginHandler:
     def fill_email_field(self):
         """Fill the email field with human-like typing."""
         try:
-            email_input = self.driver.find_element(By.XPATH, "//input[@type='email']")
+            # Try multiple selectors for email input
+            email_selectors = [
+                "//input[@type='email']",
+                "//input[@data-test='emailInput-input']",
+                "//input[contains(@name, 'email')]",
+                "//input[contains(@id, 'email')]"
+            ]
+            
+            email_input = None
+            for selector in email_selectors:
+                try:
+                    email_input = self.driver.find_element(By.XPATH, selector)
+                    if email_input.is_displayed():
+                        break
+                except Exception:
+                    continue
+            
+            if not email_input:
+                print("No email input field found")
+                return
+                
             email_input.clear()
             for char in self.email:
                 email_input.send_keys(char)
-                time.sleep(0.2)
+                time.sleep(0.1)  # Reduced from 0.2 to 0.1 seconds
             print(f"Filled email field with {self.email}")
         except Exception as e:
             print(f"Error filling email field: {e}")
@@ -116,15 +137,32 @@ class LoginHandler:
     def fill_password_field(self):
         """Fill the password field with human-like typing."""
         try:
-            password_input = self.driver.find_element(
-                By.XPATH,
-                "//input[@type='password' or contains(@name, 'password') or contains(@placeholder, 'password')]"
-            )
+            # Try multiple selectors for password input
+            password_selectors = [
+                "//input[@type='password']",
+                "//input[@data-test='passwordInput-input']",
+                "//input[contains(@name, 'password')]",
+                "//input[contains(@id, 'password')]"
+            ]
+            
+            password_input = None
+            for selector in password_selectors:
+                try:
+                    password_input = self.driver.find_element(By.XPATH, selector)
+                    if password_input.is_displayed():
+                        break
+                except Exception:
+                    continue
+            
+            if not password_input:
+                print("No password input field found")
+                return
+                
             password_input.clear()
             for char in self.password:
                 password_input.send_keys(char)
-                time.sleep(0.2)
+                time.sleep(0.1)  # Reduced from 0.2 to 0.1 seconds
             print("Filled password field.")
-            time.sleep(5)  # Let modal settle
+            time.sleep(2)  # Reduced from 5 to 2 seconds - Let modal settle
         except Exception as e:
             print(f"Error filling password field: {e}")

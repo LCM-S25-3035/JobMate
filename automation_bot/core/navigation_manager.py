@@ -59,9 +59,23 @@ class NavigationManager:
         current_url = self.driver.current_url
         print(f"Current SmartApply URL: {current_url}")
 
-        if ("resume-module/upload" in current_url or "form/resume" in current_url) and "relevant-experience" not in current_url:
+        # Debug: Show which conditions are being checked
+        is_resume_upload = "resume-module/upload" in current_url
+        is_form_resume = "form/resume" in current_url
+        is_resumeapply = "resumeapply" in current_url  # New pattern for resumeapply URLs
+        is_relevant_experience = "relevant-experience" in current_url
+        
+        print(f"URL condition check:")
+        print(f"  - Contains 'resume-module/upload': {is_resume_upload}")
+        print(f"  - Contains 'form/resume': {is_form_resume}")
+        print(f"  - Contains 'resumeapply': {is_resumeapply}")
+        print(f"  - Contains 'relevant-experience': {is_relevant_experience}")
+
+        if (is_resume_upload or is_form_resume or is_resumeapply) and not is_relevant_experience:
+            print("Detected resume page - calling handle_resume_selection()")
             self.handle_resume_selection()
         else:
+            print("Not a resume page - looking for generic Continue button")
             try:
                 print("Looking for 'Continue' button (waiting up to 5s)...")
                 continue_button = WebDriverWait(self.driver, 5).until(
@@ -87,53 +101,113 @@ class NavigationManager:
         current_url = self.driver.current_url
         print(f"Current SmartApply URL: {current_url}")
 
-        if ("resume-module/upload" in current_url or "form/resume" in current_url) and "relevant-experience" not in current_url:
+        if ("resume-module/upload" in current_url or "form/resume" in current_url or "resumeapply" in current_url) and "relevant-experience" not in current_url:
             print("On resume page. Selecting existing resume...")
 
             try:
-                # Step 1: Click the resume card label
+                # Step 1: Try multiple selectors for the resume card based on current HTML
                 print("Attempting to select the uploaded resume card...")
-                resume_label = WebDriverWait(self.driver, 5).until(
-                    EC.element_to_be_clickable(
-                        (By.XPATH, "//label[contains(@data-testid, 'FileResumeCard-label')]")
-                    )
-                )
-                self.browser_manager.scroll_into_view(resume_label)
-                resume_label.click()
-                print("Clicked resume card label successfully.")
-
-                # Confirm selection (check data-checked attribute)
-                resume_card = self.driver.find_element(By.XPATH, "//div[@data-testid='FileResumeCard']")
-                is_selected = resume_card.get_attribute("data-checked")
-                if is_selected == "true":
-                    print("Resume card is selected.")
+                resume_selectors = [
+                    "//label[@data-testid='FileResumeCard-label']",  # Current structure
+                    "//input[@data-testid='FileResumeCard-input']",  # Direct radio input
+                    "//div[@data-testid='FileResumeCard']//label",   # Label within card
+                    "//div[@data-testid='FileResumeCard']",          # Card div itself
+                    "//label[contains(@data-testid, 'FileResumeCard-label')]",  # Original selector
+                    "//div[@data-testid='FileResumeCard']//input[@type='radio']",  # Radio within card
+                    "//input[@type='radio' and @name='resumeType' and @value='SAVED_FILE_RESUME']",  # By value
+                    "//input[@type='radio' and contains(@name, 'resume')]/..",
+                    "//div[contains(@class, 'ResumeCard')]//label",
+                    "//label[contains(@class, 'resume') or contains(@for, 'resume')]"
+                ]
+                
+                resume_element = None
+                for selector in resume_selectors:
+                    try:
+                        resume_element = WebDriverWait(self.driver, 3).until(
+                            EC.element_to_be_clickable((By.XPATH, selector))
+                        )
+                        print(f"Found resume element with selector: {selector}")
+                        break
+                    except Exception:
+                        continue
+                
+                if resume_element:
+                    self.browser_manager.scroll_into_view(resume_element)
+                    resume_element.click()
+                    print("Clicked resume card/label successfully.")
+                    time.sleep(1)  # Let selection register
+                    
+                    # Verify selection worked by checking data-checked attribute
+                    try:
+                        resume_card = self.driver.find_element(By.XPATH, "//div[@data-testid='FileResumeCard']")
+                        is_checked = resume_card.get_attribute("data-checked")
+                        print(f"Resume card data-checked status: {is_checked}")
+                        
+                        if is_checked != "true":
+                            print("Resume not selected, trying to click the radio input directly...")
+                            radio_input = self.driver.find_element(By.XPATH, "//input[@data-testid='FileResumeCard-input']")
+                            self.browser_manager.scroll_into_view(radio_input)
+                            radio_input.click()
+                            time.sleep(1)
+                            
+                            # Check again
+                            is_checked = resume_card.get_attribute("data-checked")
+                            print(f"Resume card data-checked status after radio click: {is_checked}")
+                    except Exception as verify_err:
+                        print(f"Could not verify resume selection: {verify_err}")
                 else:
-                    print("Resume card not selected. Retrying...")
-                    resume_label.click()
+                    print("Could not find resume card with any selector")
+                    # Debug: show what elements are available
+                    all_labels = self.driver.find_elements(By.TAG_NAME, "label")
+                    all_divs = self.driver.find_elements(By.XPATH, "//div[contains(@data-testid, 'Card') or contains(@class, 'Card')]")
+                    print(f"Found {len(all_labels)} labels and {len(all_divs)} card-like divs on page")
+                    
+                    # Show specific testid elements
+                    testid_elements = self.driver.find_elements(By.XPATH, "//*[@data-testid]")
+                    testids = [elem.get_attribute("data-testid") for elem in testid_elements if elem.get_attribute("data-testid")]
+                    print(f"Elements with data-testid: {list(set(testids))}")
 
-                # Step 2: Scroll to footer
+                # Step 2: Scroll to footer to reveal Continue button
                 print("Scrolling to page footer to reveal Continue button...")
                 self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 time.sleep(1)
 
-                # Step 3: Find all Continue buttons
-                continue_buttons = self.driver.find_elements(
-                    By.XPATH, "//button[.//span[text()='Continue']]"
-                )
-                print(f"Found {len(continue_buttons)} Continue buttons.")
-
-                # Step 4: Click the first visible and enabled Continue
+                # Step 3: Try multiple selectors for Continue button
+                continue_selectors = [
+                    "//button[contains(text(), 'Continue')]",  # Direct text match
+                    "//button[@type='submit']",  # Submit button
+                    "//button[.//span[text()='Continue']]",  # Span with Continue text
+                    "//button[@data-testid='ia-continueButton']",  # Indeed specific testid
+                    "//button[contains(@class, 'continue')]",  # Class-based
+                    "//input[@type='submit' and @value='Continue']",  # Input submit
+                    "//button[contains(@class, 'ia-BasePage-component--withContinue')]//button",  # Within continue component
+                    "//div[contains(@class, 'withContinue')]//button",  # Within continue div
+                    "//button[contains(@aria-label, 'Continue')]",  # Aria label
+                    "//form//button[@type='submit']"  # Form submit button
+                ]
+                
                 clicked = False
-                for btn in continue_buttons:
-                    if btn.is_displayed() and btn.is_enabled():
-                        self.browser_manager.scroll_into_view(btn)
-                        btn.click()
-                        print("Clicked the correct Continue button.")
-                        clicked = True
-                        break
+                for selector in continue_selectors:
+                    try:
+                        continue_buttons = self.driver.find_elements(By.XPATH, selector)
+                        print(f"Found {len(continue_buttons)} Continue buttons with selector: {selector}")
+                        
+                        for btn in continue_buttons:
+                            if btn.is_displayed() and btn.is_enabled():
+                                self.browser_manager.scroll_into_view(btn)
+                                btn.click()
+                                print("Clicked Continue button successfully.")
+                                clicked = True
+                                break
+                        
+                        if clicked:
+                            break
+                    except Exception as e:
+                        print(f"Error with selector {selector}: {e}")
+                        continue
 
                 if not clicked:
-                    print("No visible Continue button found. Asking user for manual intervention.")
+                    print("No Continue button found with any selector. Manual intervention needed.")
                     input("Please manually click Continue, then press Enter here to proceed.")
 
                 time.sleep(2)  # Let page load
@@ -192,6 +266,7 @@ class NavigationManager:
                
                 # Save URL before clicking
                 previous_url = self.driver.current_url
+                print(f"URL before Continue click: {previous_url}")
 
                 self.driver.execute_script("arguments[0].click();", continue_button)
                 print("Clicked 'Continue' button.")
@@ -199,7 +274,23 @@ class NavigationManager:
 
                 # Check if URL changed
                 new_url = self.driver.current_url
-                if new_url == previous_url:
+                print(f"URL after Continue click: {new_url}")
+                
+                # Normalize URLs for comparison (remove protocol differences)
+                def normalize_url(url):
+                    return url.replace('https://', '').replace('http://', '').lower()
+                
+                previous_normalized = normalize_url(previous_url)
+                new_normalized = normalize_url(new_url)
+                
+                # Check if we moved to a different page (path changed)
+                url_changed = previous_normalized != new_normalized
+                moved_to_review = 'form/review' in new_url
+                
+                if url_changed or moved_to_review:
+                    print("Successfully navigated to next page.")
+                    return
+                else:
                     print("URL did not change after clicking Continue.")
                     print("There are mandatory fields that user need to input.")
                     input("Please fill missing values and press Enter to retry...")
@@ -208,14 +299,16 @@ class NavigationManager:
                     time.sleep(3)
 
                     # Check URL again
-                    if self.driver.current_url == previous_url:
-                        print("Still on same page after retry. Exiting loop.")
+                    final_url = self.driver.current_url
+                    final_normalized = normalize_url(final_url)
+                    
+                    if final_normalized != previous_normalized or 'form/review' in final_url:
+                        print("Successfully navigated after retry.")
                         return
                     else:
-                        print(f"URL changed to: {self.driver.current_url}")
+                        print("Still on same page after retry. Exiting loop.")
+                        return
 
-                else:
-                    print(f"URL changed to: {new_url}")
                 steps += 1
 
             except Exception:

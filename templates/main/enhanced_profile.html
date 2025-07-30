@@ -208,18 +208,17 @@
                     
                     <!-- Basic Profile Update (uses existing route) -->
                     <form method="POST" action="{{ url_for('main.update_profile') }}">
+                        {{ form.csrf_token }}
                         <h6 class="text-muted mb-3">Basic Information</h6>
                         
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">First Name *</label>
-                                <input type="text" class="form-control" name="first_name" 
-                                       value="{{ user.first_name or '' }}" required>
+                                {{ form.first_name(class="form-control", value=user.first_name or '', required=True) }}
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Last Name *</label>
-                                <input type="text" class="form-control" name="last_name" 
-                                       value="{{ user.last_name or '' }}" required>
+                                {{ form.last_name(class="form-control", value=user.last_name or '', required=True) }}
                             </div>
                         </div>
                         
@@ -232,23 +231,18 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Phone Number</label>
-                                <input type="tel" class="form-control" name="phone" 
-                                       value="{{ user.phone or '' }}" placeholder="+1 (555) 123-4567">
+                                {{ form.phone(class="form-control", value=user.phone or '', placeholder="+1 (555) 123-4567") }}
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">City</label>
-                                <input type="text" class="form-control" name="city" 
-                                       value="{{ user.city or '' }}" placeholder="Toronto">
+                                {{ form.city(class="form-control", value=user.city or '', placeholder="Toronto") }}
                             </div>
                         </div>
                         
                         <div class="mb-3">
                             <label class="form-label">Experience Level</label>
-                            <select class="form-select" name="experience_level">
-                                <option value="">Select experience level</option>
-                                <option value="entry" {{ 'selected' if user.experience_level == 'entry' }}>Entry Level (0-2 years)</option>
-                                <option value="junior" {{ 'selected' if user.experience_level == 'junior' }}>Junior (2-4 years)</option>
-                                <option value="mid" {{ 'selected' if user.experience_level == 'mid' }}>Mid Level (4-7 years)</option>
+                            {{ form.experience_level(class="form-select", value=user.experience_level or '') }}
+                        </div>
                                 <option value="senior" {{ 'selected' if user.experience_level == 'senior' }}>Senior (7+ years)</option>
                                 <option value="lead" {{ 'selected' if user.experience_level == 'lead' }}>Lead/Principal</option>
                             </select>
@@ -256,15 +250,13 @@
                         
                         <div class="mb-3">
                             <label class="form-label">Professional Bio</label>
-                            <textarea class="form-control" name="bio" rows="4" 
-                                      placeholder="Tell us about yourself, your experience, and career goals...">{{ user.bio or '' }}</textarea>
+                            {{ form.bio(class="form-control", rows=4, value=user.bio or '', placeholder="Tell us about yourself, your experience, and career goals...") }}
                             <small class="text-muted">This helps employers understand your background and interests.</small>
                         </div>
                         
                         <div class="mb-4">
                             <label class="form-label">Skills</label>
-                            <textarea class="form-control" name="skills" rows="3" 
-                                      placeholder="List your technical skills, tools, and technologies...">{{ user.skills or '' }}</textarea>
+                            {{ form.skills(class="form-control", rows=3, value=user.skills or '', placeholder="List your technical skills, tools, and technologies...") }}
                             <small class="text-muted">Separate skills with commas or use any format you prefer.</small>
                         </div>
                         
@@ -279,15 +271,14 @@
                     
                     <!-- Social Links Form -->
                     <form method="POST" action="{{ url_for('main.update_social_links') }}">
+                        {{ social_form.csrf_token }}
                         <h6 class="text-muted mb-3">Social Links</h6>
                         
                         <div class="mb-3">
                             <label class="form-label">LinkedIn Profile</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-linkedin"></i></span>
-                                <input type="url" class="form-control" name="linkedin_url" 
-                                       value="{{ user.linkedin_url or '' }}" 
-                                       placeholder="https://linkedin.com/in/yourprofile">
+                                {{ social_form.linkedin_url(class="form-control", value=user.linkedin_url or '', placeholder="https://linkedin.com/in/yourprofile") }}
                             </div>
                         </div>
                         
@@ -295,9 +286,7 @@
                             <label class="form-label">GitHub Profile</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-github"></i></span>
-                                <input type="url" class="form-control" name="github_url" 
-                                       value="{{ user.github_url or '' }}" 
-                                       placeholder="https://github.com/yourusername">
+                                {{ social_form.github_url(class="form-control", value=user.github_url or '', placeholder="https://github.com/yourusername") }} 
                             </div>
                         </div>
                         
@@ -305,9 +294,7 @@
                             <label class="form-label">Portfolio/Website</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-globe"></i></span>
-                                <input type="url" class="form-control" name="portfolio_url" 
-                                       value="{{ user.portfolio_url or '' }}" 
-                                       placeholder="https://yourportfolio.com">
+                                {{ social_form.portfolio_url(class="form-control", value=user.portfolio_url or '', placeholder="https://yourportfolio.com") }}
                             </div>
                         </div>
                         

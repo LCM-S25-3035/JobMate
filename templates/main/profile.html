@@ -48,19 +48,11 @@
                     {% endwith %}
                     
                     <form method="POST" action="{{ url_for('main.update_profile') }}">
-                        <!-- Add CSRF token for security -->
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        
+                        {{ form.csrf_token }}
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="first_name" class="form-label">
-                                    First Name *
-                                    {% if not current_user.first_name %}
-                                        <i class="bi bi-exclamation-circle text-danger"></i>
-                                    {% endif %}
-                                </label>
-                                <input type="text" class="form-control" id="first_name" name="first_name" 
-                                       value="{{ current_user.first_name or '' }}" required>
+                                <label for="first_name" class="form-label">First Name *</label>
+                                {{ form.first_name(class="form-control", id="first_name", value=current_user.first_name or '', required=True) }}
                             </div>
                             
                             <div class="col-md-6 mb-3">
@@ -70,8 +62,7 @@
                                         <i class="bi bi-exclamation-circle text-danger"></i>
                                     {% endif %}
                                 </label>
-                                <input type="text" class="form-control" id="last_name" name="last_name" 
-                                       value="{{ current_user.last_name or '' }}" required>
+                                {{ form.last_name(class="form-control", id="last_name", value=current_user.last_name or '', required=True) }}
                             </div>
                         </div>
                         
@@ -90,8 +81,7 @@
                                         <i class="bi bi-exclamation-circle text-danger"></i>
                                     {% endif %}
                                 </label>
-                                <input type="tel" class="form-control" id="phone" name="phone" 
-                                       value="{{ current_user.phone or '' }}">
+                                {{ form.phone(class="form-control", id="phone", value=current_user.phone or '') }}
                             </div>
                         </div>
                         
@@ -103,8 +93,7 @@
                                         <i class="bi bi-exclamation-circle text-danger"></i>
                                     {% endif %}
                                 </label>
-                                <input type="text" class="form-control" id="city" name="city" 
-                                       value="{{ current_user.city or '' }}">
+                                {{ form.city(class="form-control", id="city", value=current_user.city or '') }}
                             </div>
                             
                             <div class="col-md-6 mb-3">
@@ -114,13 +103,7 @@
                                         <i class="bi bi-exclamation-circle text-danger"></i>
                                     {% endif %}
                                 </label>
-                                <select class="form-control" id="experience_level" name="experience_level">
-                                    <option value="">Select experience level</option>
-                                    <option value="entry" {{ 'selected' if current_user.experience_level == 'entry' }}>Entry Level (0-2 years)</option>
-                                    <option value="mid" {{ 'selected' if current_user.experience_level == 'mid' }}>Mid Level (2-5 years)</option>
-                                    <option value="senior" {{ 'selected' if current_user.experience_level == 'senior' }}>Senior Level (5+ years)</option>
-                                    <option value="executive" {{ 'selected' if current_user.experience_level == 'executive' }}>Executive</option>
-                                </select>
+                                {{ form.experience_level(class="form-control", id="experience_level", value=current_user.experience_level or '') }}
                             </div>
                         </div>
                         
@@ -131,9 +114,7 @@
                                     <i class="bi bi-exclamation-circle text-danger"></i>
                                 {% endif %}
                             </label>
-                            <input type="text" class="form-control" id="skills" name="skills" 
-                                   value="{{ current_user.skills or '' }}"
-                                   placeholder="e.g., Python, JavaScript, Project Management, Data Analysis">
+                            {{ form.skills(class="form-control", id="skills", value=current_user.skills or '', placeholder="e.g., Python, JavaScript, Project Management, Data Analysis") }}
                             <small class="text-muted">Separate skills with commas</small>
                         </div>
                         
@@ -144,8 +125,7 @@
                                     <i class="bi bi-exclamation-circle text-danger"></i>
                                 {% endif %}
                             </label>
-                            <textarea class="form-control" id="bio" name="bio" rows="4" 
-                                      placeholder="Brief description of your professional background and goals">{{ current_user.bio or '' }}</textarea>
+                            {{ form.bio(class="form-control", id="bio", rows=4, value=current_user.bio or '', placeholder="Brief description of your professional background and goals") }}
                         </div>
                         
                         <div class="d-flex justify-content-between">

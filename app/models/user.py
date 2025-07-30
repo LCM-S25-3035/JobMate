@@ -46,6 +46,12 @@ class User(UserMixin, db.Model):
     skills = db.Column(db.String(500), nullable=True)
     experience_level = db.Column(db.String(50), nullable=True)
     
+    # Enhanced Profile Fields (added for profile enhancements)
+    profile_picture = db.Column(db.String(200), nullable=True, default='uploads/profiles/default.png')
+    linkedin_url = db.Column(db.String(200), nullable=True)
+    github_url = db.Column(db.String(200), nullable=True)
+    portfolio_url = db.Column(db.String(200), nullable=True)
+    
     # Profile Completion
     profile_completed = db.Column(db.Boolean, default=False)
     onboarding_completed = db.Column(db.Boolean, default=False)

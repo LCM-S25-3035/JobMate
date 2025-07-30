@@ -489,3 +489,84 @@ def debug_canadian_jobs():
         
     except Exception as e:
         return jsonify({'error': f'Debug failed: {str(e)}'}), 500
+
+
+# Job Saving Functionality - Added for save/unsave jobs feature
+@bp.route('/jobs/<job_id>/save', methods=['POST'])
+@login_required
+def save_job_endpoint(job_id):
+    """Save job to user's saved jobs"""
+    try:
+        # Get MongoDB database handle
+        mongo_db = get_mongo_db()
+        if mongo_db is None:
+            return jsonify({'success': False, 'error': 'Database unavailable'}), 500
+        
+        # Check if job exists
+        job = mongo_db.jobs.find_one({'_id': ObjectId(job_id)})
+        if not job:
+            return jsonify({'success': False, 'error': 'Job not found'}), 404
+        
+        # Check if already saved
+        existing_save = mongo_db.saved_jobs.find_one({
+            'user_id': str(current_user.id),
+            'job_id': ObjectId(job_id)
+        })
+        
+        if existing_save:
+            return jsonify({'success': False, 'error': 'Job already saved'}), 400
+        
+        # Save the job
+        from datetime import datetime
+        saved_job = {
+            'user_id': str(current_user.id),
+            'job_id': ObjectId(job_id),
+            'job_title': job.get('title', ''),
+            'company': job.get('company', ''),
+            'saved_date': datetime.utcnow(),
+            'created_at': datetime.utcnow()
+        }
+        
+        result = mongo_db.saved_jobs.insert_one(saved_job)
+        
+        if result.inserted_id:
+            current_app.logger.info(f"Job {job_id} saved by user {current_user.id}")
+            return jsonify({
+                'success': True,
+                'message': f'Job "{job.get("title", "")}" saved successfully!',
+                'saved_id': str(result.inserted_id)
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Failed to save job'}), 500
+            
+    except Exception as e:
+        current_app.logger.error(f"Error saving job {job_id}: {str(e)}")
+        return jsonify({'success': False, 'error': 'Server error while saving job'}), 500
+
+
+@bp.route('/jobs/<job_id>/unsave', methods=['POST'])
+@login_required
+def unsave_job_endpoint(job_id):
+    """Remove job from user's saved jobs"""
+    try:
+        mongo_db = get_mongo_db()
+        if mongo_db is None:
+            return jsonify({'success': False, 'error': 'Database unavailable'}), 500
+        
+        # Remove the saved job
+        result = mongo_db.saved_jobs.delete_one({
+            'user_id': str(current_user.id),
+            'job_id': ObjectId(job_id)
+        })
+        
+        if result.deleted_count > 0:
+            return jsonify({
+                'success': True,
+                'message': 'Job removed from saved jobs'
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Job not found in saved jobs'}), 404
+            
+    except Exception as e:
+        current_app.logger.error(f"Error unsaving job {job_id}: {str(e)}")
+        return jsonify({'success': False, 'error': 'Server error while removing job'}), 500

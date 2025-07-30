@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - JobMate{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4><i class="bi bi-person me-2"></i>My Profile</h4>
+                    {% if stats and stats.profile_completion %}
+                    <span class="badge bg-primary">{{ stats.profile_completion.percentage }}% Complete</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <!-- Profile Information -->
+                    <div class="text-center mb-4">
+                        <div class="mb-3">
+                            <img src="{{ url_for('static', filename='img/default-avatar.png') }}" 
+                                 alt="Profile Picture" 
+                                 class="rounded-circle"
+                                 style="width: 100px; height: 100px; object-fit: cover;"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <div class="rounded-circle bg-secondary d-none align-items-center justify-content-center mx-auto" 
+                                 style="width: 100px; height: 100px;">
+                                <i class="bi bi-person-fill text-white" style="font-size: 2.5rem;"></i>
+                            </div>
+                        </div>
+                        <h5>{{ user.first_name or 'First' }} {{ user.last_name or 'Last' }}</h5>
+                        <p class="text-muted">{{ user.email }}</p>
+                    </div>
+                    
+                    <!-- Profile Update Form -->
+                    <form method="POST" action="{{ url_for('main.update_profile') }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">First Name *</label>
+                                <input type="text" class="form-control" name="first_name" 
+                                       value="{{ user.first_name or '' }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" name="last_name" 
+                                       value="{{ user.last_name or '' }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-control" value="{{ user.email }}" readonly>
+                            <small class="text-muted">Contact support to change your email address</small>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" name="phone" 
+                                       value="{{ user.phone or '' }}" placeholder="+1 (555) 123-4567">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">City</label>
+                                <input type="text" class="form-control" name="city" 
+                                       value="{{ user.city or '' }}" placeholder="City, State">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Experience Level</label>
+                            <select class="form-select" name="experience_level">
+                                <option value="not_specified" {% if not user.experience_level or user.experience_level == 'not_specified' %}selected{% endif %}>Select Experience Level</option>
+                                <option value="entry_level" {% if user.experience_level == 'entry_level' %}selected{% endif %}>Entry Level (0-2 years)</option>
+                                <option value="mid_level" {% if user.experience_level == 'mid_level' %}selected{% endif %}>Mid Level (3-5 years)</option>
+                                <option value="senior_level" {% if user.experience_level == 'senior_level' %}selected{% endif %}>Senior Level (6-10 years)</option>
+                                <option value="executive" {% if user.experience_level == 'executive' %}selected{% endif %}>Executive (10+ years)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Professional Bio</label>
+                            <textarea class="form-control" name="bio" rows="4" 
+                                      placeholder="Tell us about yourself, your experience, and career goals...">{{ user.bio or '' }}</textarea>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Skills</label>
+                            <input type="text" class="form-control" name="skills" 
+                                   value="{{ user.skills or '' }}" 
+                                   placeholder="Python, JavaScript, Data Analysis, Project Management">
+                            <small class="text-muted">Separate skills with commas</small>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('main.applicant_dashboard') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-2"></i>Update Profile
+                            </button>
+                        </div>
+                    </form>
+                    
+                    {% if stats and stats.profile_completion %}
+                    <div class="mt-4">
+                        <h6>Profile Completion Details</h6>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-success" style="width: {{ stats.profile_completion.percentage }}%">
+                                {{ stats.profile_completion.percentage }}%
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            {{ stats.profile_completion.completed_fields }}/{{ stats.profile_completion.total_fields }} fields completed
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -21,8 +21,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'jobmate-super-secret-key-change-in-production'
     
     # Database Configuration
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        f'postgresql+psycopg://jobmate_user:jobmate_password@localhost:5432/jobmate_db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_size': 10,
@@ -96,8 +95,7 @@ class DevelopmentConfig(Config):
     TESTING = False
     
     # Development database (local PostgreSQL)
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
-        'postgresql+psycopg://jobmate_user:jobmate_password@localhost:5432/jobmate_dev'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     
     # Development MongoDB
     MONGODB_DB = 'job_automation'
@@ -153,8 +151,7 @@ class DockerConfig(Config):
     DEBUG = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
     
     # Docker service names
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'postgresql+psycopg://jobmate_user:jobmate_password@postgres:5432/jobmate_db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     
     MONGODB_URI = os.environ.get('MONGODB_URI') or 'mongodb://mongodb:27017/'
     REDIS_URL = os.environ.get('REDIS_URL') or 'redis://redis:6379/0'

@@ -229,18 +229,315 @@ def recruiter_dashboard():
 @bp.route('/profile')
 @login_required
 def profile():
-    """User profile page where they can complete their details"""
-    
-    profile_data = calculate_profile_completion(current_user)
-    
-    return render_template('main/profile.html',
-                         title='My Profile',
-                         user=current_user,
-                         profile_data=profile_data)
+    """Enhanced user profile page with better error handling"""
+    try:
+        current_app.logger.info(f"Loading profile for user {current_user.id}")
+        
+        # Calculate profile completion using the enhanced function
+        try:
+            profile_completion = calculate_profile_completion(current_user)
+            current_app.logger.info(f"Profile completion calculated: {profile_completion['percentage']}%")
+        except Exception as e:
+            current_app.logger.error(f"Profile completion calculation error: {str(e)}")
+            # Provide fallback data
+            profile_completion = {
+                'percentage': 0,
+                'completed_fields': 0,
+                'total_fields': 9,
+                'missing_fields': ['Unable to calculate'],
+                'filled_fields': []
+            }
+        
+        # Get application stats (safe fallback)
+        try:
+            total_applications = current_user.applications.count() if hasattr(current_user, 'applications') else 0
+            recent_applications = []
+            if hasattr(current_user, 'applications'):
+                recent_applications = current_user.applications.order_by(
+                    Application.created_at.desc()
+                ).limit(5).all()
+        except Exception as e:
+            current_app.logger.error(f"Application stats error: {str(e)}")
+            total_applications = 0
+            recent_applications = []
+        
+        profile_stats = {
+            'total_applications': total_applications,
+            'recent_applications': recent_applications,
+            'profile_completion': profile_completion
+        }
+        
+        # Debug log current user fields
+        current_app.logger.info(f"User {current_user.id} profile data loading successful")
+        
+        # Try to render the enhanced profile template, with fallback
+        try:
+            return render_template('main/enhanced_profile.html', 
+                                 user=current_user, 
+                                 stats=profile_stats)
+        except Exception as template_error:
+            current_app.logger.error(f"Enhanced profile template error: {str(template_error)}")
+            # Fallback to a simple profile page
+            try:
+                return render_template('main/simple_profile.html', 
+                                     user=current_user, 
+                                     stats=profile_stats)
+            except Exception as fallback_error:
+                current_app.logger.error(f"Simple profile template error: {str(fallback_error)}")
+                # Last resort - show error page
+                return render_template('main/profile_error.html', 
+                                     user=current_user,
+                                     error_message=str(template_error))
+                             
+    except Exception as e:
+        current_app.logger.error(f"Profile page error: {str(e)}", exc_info=True)
+        # Instead of redirecting, show a simple error page
+        try:
+            return render_template('main/profile_error.html', 
+                                 user=current_user,
+                                 error_message=str(e))
+        except:
+            # Ultimate fallback - just redirect to dashboard
+            flash('Error loading profile', 'error')
+            return redirect(url_for('main.applicant_dashboard'))
+
 
 @bp.route('/profile/update', methods=['POST'])
 @login_required
 def update_profile():
+    """Update user profile information"""
+    try:
+        current_app.logger.info(f"Updating profile for user {current_user.id}")
+        
+        # Get form data
+        first_name = request.form.get('first_name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
+        phone = request.form.get('phone', '').strip()
+        city = request.form.get('city', '').strip()
+        experience_level = request.form.get('experience_level', '').strip()
+        bio = request.form.get('bio', '').strip()
+        skills = request.form.get('skills', '').strip()
+        
+        # Validate required fields
+        if not first_name or not last_name:
+            flash('First name and last name are required.', 'error')
+            return redirect(url_for('main.profile'))
+        
+        # Update user fields
+        current_user.first_name = first_name
+        current_user.last_name = last_name
+        current_user.phone = phone if phone else None
+        current_user.city = city if city else None
+        current_user.experience_level = experience_level if experience_level != 'not_specified' else None
+        current_user.bio = bio if bio else None
+        current_user.skills = skills if skills else None
+        
+        # Commit changes
+        db.session.commit()
+        
+        current_app.logger.info(f"Profile updated successfully for user {current_user.id}")
+        flash('Profile updated successfully!', 'success')
+        
+    except Exception as e:
+        current_app.logger.error(f"Error updating profile for user {current_user.id}: {str(e)}")
+        db.session.rollback()
+        flash('Error updating profile. Please try again.', 'error')
+    
+    return redirect(url_for('main.profile'))
+
+
+@bp.route('/profile/upload-picture', methods=['POST'])
+@login_required 
+def upload_profile_picture():
+    """Upload and update user profile picture"""
+    try:
+        if 'profile_picture' not in request.files:
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+        
+        file = request.files['profile_picture']
+        
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+        
+        # File validation
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+        if not ('.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
+            return jsonify({'success': False, 'error': 'Invalid file type. Use PNG, JPG, JPEG, or GIF'}), 400
+        
+        # Check file size (5MB limit)
+        file.seek(0, 2)  # Seek to end
+        file_size = file.tell()
+        file.seek(0)  # Reset to beginning
+        
+        if file_size > 5 * 1024 * 1024:  # 5MB
+            return jsonify({'success': False, 'error': 'File too large. Maximum size is 5MB'}), 400
+        
+        # Generate secure filename
+        import os
+        from datetime import datetime
+        
+        filename = secure_filename(file.filename)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"profile_{current_user.id}_{timestamp}_{filename}"
+        
+        # Create upload directory
+        upload_dir = os.path.join(current_app.static_folder, 'uploads', 'profiles')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        file_path = os.path.join(upload_dir, filename)
+        file.save(file_path)
+        
+        # Update user profile picture path
+        if hasattr(current_user, 'profile_picture'):
+            current_user.profile_picture = f'uploads/profiles/{filename}'
+        if hasattr(current_user, 'updated_at'):
+            current_user.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        current_app.logger.info(f"Profile picture updated for user {current_user.id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Profile picture updated successfully!',
+            'picture_url': url_for('static', filename=f'uploads/profiles/{filename}')
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Profile picture upload error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Error uploading profile picture'}), 500
+
+
+@bp.route('/profile/delete-picture', methods=['POST'])
+@login_required
+def delete_profile_picture():
+    """Delete user profile picture"""
+    try:
+        if hasattr(current_user, 'profile_picture') and current_user.profile_picture:
+            # Delete the file from filesystem
+            try:
+                import os
+                old_path = os.path.join(current_app.static_folder, current_user.profile_picture)
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+            except Exception as e:
+                current_app.logger.warning(f"Could not delete old profile picture file: {e}")
+            
+            # Clear from database
+            current_user.profile_picture = None
+            if hasattr(current_user, 'updated_at'):
+                current_user.updated_at = datetime.utcnow()
+            
+            db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Profile picture deleted successfully!'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Profile picture delete error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Error deleting profile picture'}), 500
+
+
+@bp.route('/profile/change-password', methods=['POST'])
+@login_required
+def change_password():
+    """Change user password"""
+    try:
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if not all([current_password, new_password, confirm_password]):
+            flash('All password fields are required', 'error')
+            return redirect(url_for('main.profile'))
+        
+        # Verify current password
+        if not current_user.check_password(current_password):
+            flash('Current password is incorrect', 'error')
+            return redirect(url_for('main.profile'))
+        
+        # Validate new password
+        if len(new_password) < 8:
+            flash('New password must be at least 8 characters long', 'error')
+            return redirect(url_for('main.profile'))
+        
+        if new_password != confirm_password:
+            flash('New passwords do not match', 'error')
+            return redirect(url_for('main.profile'))
+        
+        # Update password
+        current_user.set_password(new_password)
+        if hasattr(current_user, 'updated_at'):
+            current_user.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        current_app.logger.info(f"Password changed for user {current_user.id}")
+        flash('Password changed successfully! 🔒', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Password change error: {str(e)}")
+        flash('Error changing password. Please try again.', 'error')
+    
+    return redirect(url_for('main.profile'))
+
+
+@bp.route('/profile/update-social', methods=['POST'])
+@login_required
+def update_social_links():
+    """Update user social media links"""
+    try:
+        linkedin_url = request.form.get('linkedin_url', '').strip()
+        github_url = request.form.get('github_url', '').strip()
+        portfolio_url = request.form.get('portfolio_url', '').strip()
+        
+        # Basic URL validation
+        def validate_url(url, platform):
+            if not url:
+                return None
+            if not url.startswith(('http://', 'https://')):
+                url = 'https://' + url
+            
+            # Platform-specific validation
+            if platform == 'linkedin' and 'linkedin.com' not in url:
+                return None
+            elif platform == 'github' and 'github.com' not in url:
+                return None
+            
+            return url
+        
+        # Validate and update URLs
+        if hasattr(current_user, 'linkedin_url'):
+            current_user.linkedin_url = validate_url(linkedin_url, 'linkedin')
+        if hasattr(current_user, 'github_url'):
+            current_user.github_url = validate_url(github_url, 'github')
+        if hasattr(current_user, 'portfolio_url'):
+            current_user.portfolio_url = validate_url(portfolio_url, 'portfolio')
+        
+        if hasattr(current_user, 'updated_at'):
+            current_user.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        current_app.logger.info(f"Social links updated for user {current_user.id}")
+        flash('Social media links updated successfully! 🔗', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Social links update error: {str(e)}")
+        flash('Error updating social media links. Please try again.', 'error')
+    
+    return redirect(url_for('main.profile'))
+
+
+@bp.route('/update_profile', methods=['POST'])
+@login_required
+def update_profile_legacy():
     """Handle profile update form submission with detailed logging"""
     
     try:
@@ -297,13 +594,42 @@ def update_profile():
         current_app.logger.info(f"Profile completion after save: {profile_data['percentage']}%")
         
         flash('Profile updated successfully!', 'success')
-        return redirect(url_for('main.applicant_dashboard'))
+        return redirect(url_for('main.profile'))
         
     except Exception as e:
         current_app.logger.error(f"Profile update error: {str(e)}", exc_info=True)
         db.session.rollback()
         flash('Error updating profile. Please try again.', 'error')
         return redirect(url_for('main.profile'))
+
+
+@bp.route('/profile/debug')
+@login_required
+def profile_debug():
+    """Debug route to check user profile data"""
+    try:
+        user_data = {
+            'id': current_user.id,
+            'email': current_user.email,
+            'first_name': getattr(current_user, 'first_name', None),
+            'last_name': getattr(current_user, 'last_name', None),
+            'phone': getattr(current_user, 'phone', None),
+            'city': getattr(current_user, 'city', None),
+            'bio': getattr(current_user, 'bio', None),
+            'skills': getattr(current_user, 'skills', None),
+            'experience_level': getattr(current_user, 'experience_level', None),
+            'profile_picture': getattr(current_user, 'profile_picture', None),
+        }
+        
+        return jsonify({
+            'user_data': user_data,
+            'data_types': {k: str(type(v)) for k, v in user_data.items()},
+            'non_empty_fields': [k for k, v in user_data.items() if v and str(v).strip()],
+            'empty_fields': [k for k, v in user_data.items() if not v or not str(v).strip()]
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @bp.route('/debug/profile')
@@ -1229,77 +1555,115 @@ def download_my_tailored(job_id, doc_type):
 
 
 def calculate_profile_completion(user):
-    """Calculate profile completion percentage with detailed logging"""
-    
-    current_app.logger.info(f"=== Calculating Profile Completion for User {user.id} ===")
-    
-    completion_items = []
-    total_possible = 0
-    completed = 0
-    
-    # Essential profile fields to check
-    profile_checks = [
-        ('email', 'Email address', getattr(user, 'email', None)),
-        ('first_name', 'First name', getattr(user, 'first_name', None)),
-        ('last_name', 'Last name', getattr(user, 'last_name', None)),
-        ('phone', 'Phone number', getattr(user, 'phone', None)),
-        ('city', 'Location', getattr(user, 'city', None)),
-        ('bio', 'Professional summary', getattr(user, 'bio', None)),
-        ('skills', 'Skills', getattr(user, 'skills', None)),
-        ('experience_level', 'Experience level', getattr(user, 'experience_level', None))
-    ]
-    
-    # Check each field
-    for field_name, display_name, field_value in profile_checks:
-        total_possible += 1
+    """Calculate accurate profile completion percentage"""
+    try:
+        # Define all fields we want to check for completion
+        fields_to_check = [
+            ('first_name', 'First Name', True),  # (field_name, display_name, is_required)
+            ('last_name', 'Last Name', True),
+            ('email', 'Email', True),  # Always filled
+            ('phone', 'Phone Number', False),
+            ('city', 'City', False),
+            ('bio', 'Professional Bio', False),
+            ('skills', 'Skills', False),
+            ('experience_level', 'Experience Level', False),
+            ('profile_picture', 'Profile Picture', False),
+            ('linkedin_url', 'LinkedIn Profile', False),
+            ('github_url', 'GitHub Profile', False),
+            ('portfolio_url', 'Portfolio Website', False)
+        ]
         
-        # Log the raw value
-        current_app.logger.info(f"Checking {field_name}: raw value = '{field_value}' (type: {type(field_value)})")
+        completed_fields = 0
+        total_fields = len(fields_to_check)
+        missing_fields = []
+        filled_fields = []
+        completion_items = []
         
-        is_complete = False
-        if field_value is not None:
-            if isinstance(field_value, str):
-                is_complete = field_value.strip() != ''
-                current_app.logger.info(f"  String check: stripped = '{field_value.strip()}', is_complete = {is_complete}")
-            elif isinstance(field_value, list):
-                is_complete = len(field_value) > 0
-                current_app.logger.info(f"  List check: length = {len(field_value)}, is_complete = {is_complete}")
+        for field, label, is_required in fields_to_check:
+            value = getattr(user, field, None)
+            
+            # Check if field has meaningful content
+            is_filled = False
+            
+            if field == 'email':
+                # Email is always considered filled if user exists
+                is_filled = bool(value and str(value).strip())
+            elif field == 'profile_picture':
+                # Profile picture is filled if not default
+                is_filled = bool(value and str(value).strip() and 
+                               str(value) not in ['uploads/profiles/default.png', '', 'None', 'null'])
+            elif field == 'experience_level':
+                # Experience level is filled if not default/empty
+                is_filled = bool(value and str(value).strip() and 
+                               str(value) not in ['not_specified', 'Not Specified', '', 'None', 'null'])
+            elif field in ['linkedin_url', 'github_url', 'portfolio_url']:
+                # Social media URLs are filled if they contain valid URLs
+                is_filled = bool(value and str(value).strip() and 
+                               str(value).startswith(('http://', 'https://')) and
+                               str(value) not in ['', 'None', 'null'])
+            elif field == 'skills':
+                # Skills can be stored as string or array
+                if isinstance(value, str):
+                    # Check if it's not empty string or empty array string
+                    is_filled = bool(value.strip() and value.strip() not in ['[]', '{}', '', 'None', 'null'])
+                elif isinstance(value, (list, tuple)):
+                    is_filled = bool(value and len(value) > 0)
+                else:
+                    is_filled = bool(value)
             else:
-                is_complete = True
-                current_app.logger.info(f"  Other type check: is_complete = {is_complete}")
-        else:
-            current_app.logger.info(f"  Value is None: is_complete = {is_complete}")
+                # Standard text fields
+                is_filled = bool(value and str(value).strip() and 
+                               str(value).strip() not in ['', 'None', 'null', 'nan'])
+            
+            # Create completion item
+            completion_items.append({
+                'field': field,
+                'name': label,
+                'completed': is_filled,
+                'value': value
+            })
+            
+            if is_filled:
+                completed_fields += 1
+                filled_fields.append(label)
+            else:
+                missing_fields.append(label)
+                
+                # Log missing field values for debugging
+                current_app.logger.debug(f"Missing field '{field}': value='{value}', type={type(value)}")
         
-        completion_items.append({
-            'field': field_name,
-            'name': display_name,
-            'completed': is_complete,
-            'value': field_value
-        })
+        completion_percentage = round((completed_fields / total_fields) * 100) if total_fields > 0 else 0
         
-        if is_complete:
-            completed += 1
-            current_app.logger.info(f"  ✓ {display_name} completed")
-        else:
-            current_app.logger.info(f"  ✗ {display_name} missing")
-    
-    # Calculate percentage (resume upload not required for completion)
-    completion_percentage = round((completed / total_possible) * 100) if total_possible > 0 else 0
-    
-    # Final logging
-    current_app.logger.info(f"=== Profile Completion Summary ===")
-    current_app.logger.info(f"Completed: {completed}/{total_possible} = {completion_percentage}%")
-    for item in completion_items:
-        status = "✓" if item['completed'] else "✗"
-        current_app.logger.info(f"  {status} {item['name']}: '{item['value']}'")
-    
-    return {
-        'percentage': completion_percentage,
-        'completed': completed,
-        'total': total_possible,
-        'items': completion_items,
-        'missing_items': [item for item in completion_items if not item['completed']]
-    }
+        # Log completion details for debugging
+        current_app.logger.info(f"Profile completion for user {user.id}: {completion_percentage}% ({completed_fields}/{total_fields})")
+        current_app.logger.debug(f"Filled fields: {filled_fields}")
+        current_app.logger.debug(f"Missing fields: {missing_fields}")
+        
+        return {
+            'percentage': completion_percentage,
+            'completed': completed_fields,
+            'total': total_fields,
+            'items': completion_items,
+            'missing_items': [item for item in completion_items if not item['completed']],
+            'missing_fields': missing_fields,
+            'filled_fields': filled_fields,
+            'completed_fields': completed_fields,
+            'total_fields': total_fields
+        }
+        
+    except Exception as e:
+        current_app.logger.error(f"Profile completion calculation error: {str(e)}")
+        return {
+            'percentage': 0,
+            'completed': 0,
+            'total': 9,
+            'items': [],
+            'missing_items': [],
+            'missing_fields': ['Unable to calculate'],
+            'filled_fields': [],
+            'completed_fields': 0,
+            'total_fields': 9
+        }
 
 def extract_resume_sections(resume_text):
     """
@@ -1613,3 +1977,37 @@ def debug_user_model():
     </body>
     </html>
     """
+
+
+@bp.route('/test-login')
+def test_login():
+    """Quick test login for demo purposes"""
+    from flask_login import login_user
+    
+    # Find or create a test user
+    test_user = User.query.filter_by(email='test@example.com').first()
+    if not test_user:
+        test_user = User(
+            email='test@example.com',
+            password='testpassword',
+            first_name='Test',
+            last_name='User',
+            user_type='applicant'
+        )
+        test_user.set_password('testpassword')
+        db.session.add(test_user)
+        db.session.commit()
+    
+    # Enable the user and verify them
+    test_user.is_active = True
+    test_user.is_verified = True
+    db.session.commit()
+    
+    # Login the user
+    login_success = login_user(test_user, remember=True)
+    
+    if login_success:
+        flash('Test user logged in successfully!', 'success')
+        return redirect(url_for('main.profile'))
+    else:
+        return f"Login failed for user {test_user.email}"

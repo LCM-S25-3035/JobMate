@@ -180,7 +180,17 @@
                                     {% endif %}
                                 </div>
                                 <div class="col-md-4 text-end">
-                                    <p class="text-success fw-bold">{{ job.salary_display }}</p>
+                                    {% if job.min_amount or job.max_amount %}
+                                    <p class="text-success fw-bold">
+                                        {% if job.min_amount and job.max_amount %}
+                                            ${{ "{:,}".format(job.min_amount|int) }} - ${{ "{:,}".format(job.max_amount|int) }}
+                                        {% elif job.min_amount %}
+                                            ${{ "{:,}".format(job.min_amount|int) }}+
+                                        {% elif job.max_amount %}
+                                            Up to ${{ "{:,}".format(job.max_amount|int) }}
+                                        {% endif %}
+                                    </p>
+                                    {% endif %}
                                     {% set date_str = job.date_posted.strftime('%Y-%m-%d') if job.date_posted and job.date_posted.__class__.__name__ == 'datetime' else (job.date_posted if job.date_posted and job.date_posted is string else 'Recently') %}
                                     <small class="text-muted">Posted: {{ date_str }}</small>
                                     <div class="mt-2">
@@ -192,8 +202,10 @@
                                            title="AI-powered resume optimization and application">
                                             <i class="bi bi-magic"></i> Tailor Resume & Apply
                                         </a>
-                                        <button class="btn btn-outline-secondary btn-sm" onclick="saveJob('{{ job._id }}')">
-                                            <i class="bi bi-bookmark"></i>
+                                        <button class="btn btn-outline-primary btn-sm" 
+                                                onclick="saveJob('{{ job._id }}', this)"
+                                                title="Save job for later">
+                                            <i class="bi bi-bookmark"></i> Save
                                         </button>
                                         {% endif %}
                                     </div>
@@ -298,6 +310,89 @@ function saveJob(jobId) {
         console.error('Error:', error);
         showAlert('An error occurred while saving the job', 'error');
     });
+}
+
+// Job saving functionality
+function saveJob(jobId, buttonElement) {
+    // Show loading state
+    const originalHTML = buttonElement.innerHTML;
+    buttonElement.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
+    buttonElement.disabled = true;
+    
+    fetch(`/jobs/jobs/${jobId}/save`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update button to show saved state
+            buttonElement.innerHTML = '<i class="bi bi-bookmark-check-fill"></i> Saved';
+            buttonElement.className = 'btn btn-success btn-sm';
+            buttonElement.onclick = () => unsaveJob(jobId, buttonElement);
+            
+            // Show success notification
+            showAlert(data.message, 'success');
+        } else {
+            // Show error notification
+            showAlert(data.error || 'Failed to save job', 'error');
+            
+            // Restore original button state
+            buttonElement.innerHTML = originalHTML;
+            buttonElement.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error saving job:', error);
+        showAlert('Network error while saving job', 'error');
+        
+        // Restore original button state
+        buttonElement.innerHTML = originalHTML;
+        buttonElement.disabled = false;
+    });
+}
+
+function unsaveJob(jobId, buttonElement) {
+    const originalHTML = buttonElement.innerHTML;
+    buttonElement.innerHTML = '<i class="bi bi-hourglass-split"></i> Removing...';
+    buttonElement.disabled = true;
+    
+    fetch(`/jobs/jobs/${jobId}/unsave`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update button to show unsaved state
+            buttonElement.innerHTML = '<i class="bi bi-bookmark"></i> Save';
+            buttonElement.className = 'btn btn-outline-primary btn-sm';
+            buttonElement.onclick = () => saveJob(jobId, buttonElement);
+            
+            showAlert(data.message, 'success');
+        } else {
+            showAlert(data.error || 'Failed to remove job', 'error');
+            buttonElement.innerHTML = originalHTML;
+            buttonElement.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error unsaving job:', error);
+        showAlert('Network error while removing job', 'error');
+        buttonElement.innerHTML = originalHTML;
+        buttonElement.disabled = false;
+    });
+}
+
+function getCSRFToken() {
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    return metaTag ? metaTag.getAttribute('content') : '';
 }
 
 // Simple alert function

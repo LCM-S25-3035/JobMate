@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - JobMate{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4><i class="bi bi-person me-2"></i>My Profile</h4>
+                    {% if profile_data and profile_data.percentage %}
+                    <span class="badge bg-primary">{{ profile_data.percentage }}% Complete</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <!-- Profile Picture Section -->
+                    <div class="text-center mb-4">
+                        {% if user.profile_picture and hasattr(user, 'profile_picture') %}
+                        <img src="{{ url_for('static', filename=user.profile_picture) }}" 
+                             alt="Profile Picture" 
+                             class="rounded-circle"
+                             style="width: 100px; height: 100px; object-fit: cover;">
+                        {% else %}
+                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto" 
+                             style="width: 100px; height: 100px;">
+                            <i class="bi bi-person-fill text-white" style="font-size: 2.5rem;"></i>
+                        </div>
+                        {% endif %}
+                        <h5 class="mt-2">{{ user.first_name }} {{ user.last_name }}</h5>
+                        <p class="text-muted">{{ user.email }}</p>
+                        {% if user.city %}
+                        <p class="text-muted">
+                            <i class="bi bi-geo-alt me-1"></i>{{ user.city }}{% if user.province %}, {{ user.province }}{% endif %}
+                        </p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Profile Completion Progress -->
+                    {% if profile_data and profile_data.percentage %}
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Profile Completion</span>
+                            <span>{{ profile_data.percentage }}%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: {{ profile_data.percentage }}%">
+                            </div>
+                        </div>
+                        {% if profile_data.missing %}
+                        <small class="text-muted">
+                            Complete these fields: {{ ', '.join(profile_data.missing[:3]) }}{% if profile_data.missing|length > 3 %}...{% endif %}
+                        </small>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Profile Form -->
+                    <form method="POST" action="{{ url_for('main.update_profile') }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">First Name *</label>
+                                <input type="text" class="form-control" name="first_name" 
+                                       value="{{ user.first_name or '' }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" name="last_name" 
+                                       value="{{ user.last_name or '' }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-control" value="{{ user.email }}" readonly>
+                            <small class="text-muted">Contact support to change your email address</small>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" name="phone" 
+                                       value="{{ user.phone or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">City</label>
+                                <input type="text" class="form-control" name="city" 
+                                       value="{{ user.city or '' }}">
+                            </div>
+                        </div>
+                        
+                        {% if hasattr(user, 'experience_level') %}
+                        <div class="mb-3">
+                            <label class="form-label">Experience Level</label>
+                            <select class="form-select" name="experience_level">
+                                <option value="">Select experience level</option>
+                                <option value="entry" {{ 'selected' if user.experience_level == 'entry' }}>Entry Level (0-2 years)</option>
+                                <option value="junior" {{ 'selected' if user.experience_level == 'junior' }}>Junior (2-4 years)</option>
+                                <option value="mid" {{ 'selected' if user.experience_level == 'mid' }}>Mid Level (4-7 years)</option>
+                                <option value="senior" {{ 'selected' if user.experience_level == 'senior' }}>Senior (7+ years)</option>
+                                <option value="lead" {{ 'selected' if user.experience_level == 'lead' }}>Lead/Principal</option>
+                            </select>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Professional Bio</label>
+                            <textarea class="form-control" name="bio" rows="4" 
+                                      placeholder="Tell us about yourself, your experience, and career goals...">{{ user.bio or '' }}</textarea>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Skills</label>
+                            <textarea class="form-control" name="skills" rows="3" 
+                                      placeholder="List your technical skills, tools, and technologies...">{{ user.skills or '' }}</textarea>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <a href="{{ url_for('main.applicant_dashboard') }}" class="btn btn-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                                </a>
+                                {% if template_exists('main/enhanced_profile.html') %}
+                                <a href="{{ url_for('main.enhanced_profile') }}" class="btn btn-outline-info ms-2">
+                                    <i class="bi bi-stars me-2"></i>Enhanced Profile
+                                </a>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-outline-warning me-2" 
+                                        data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                                    <i class="bi bi-key me-2"></i>Change Password
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-2"></i>Update Profile
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            {% if stats %}
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h6><i class="bi bi-graph-up me-2"></i>Quick Stats</h6>
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <h4 class="text-primary">{{ stats.total_applications or 0 }}</h4>
+                            <small class="text-muted">Applications</small>
+                        </div>
+                        <div class="col-md-4">
+                            <h4 class="text-success">{{ profile_data.completed if profile_data else 0 }}</h4>
+                            <small class="text-muted">Fields Complete</small>
+                        </div>
+                        <div class="col-md-4">
+                            <h4 class="text-info">{{ profile_data.percentage if profile_data else 0 }}%</h4>
+                            <small class="text-muted">Profile Complete</small>
+                        </div>
+                    </div>
+                    
+                    {% if stats.recent_applications %}
+                    <hr>
+                    <h6 class="small text-muted mb-2">Recent Applications:</h6>
+                    {% for app in stats.recent_applications[:3] %}
+                    <div class="small mb-1">
+                        <strong>{{ app.job_title }}</strong>
+                        <br><span class="text-muted">{{ app.company }} - {{ app.applied_date.strftime('%m/%d') }}</span>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Change Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('main.change_password') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" class="form-control" name="current_password" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <input type="password" class="form-control" name="new_password" 
+                               minlength="6" required>
+                        <small class="text-muted">Must be at least 6 characters long</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" name="confirm_password" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-key me-2"></i>Change Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

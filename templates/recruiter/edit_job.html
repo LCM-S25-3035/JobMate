@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Job Posting - JobMate{% endblock %}
+
+{% block head %}
+<style>
+    .page-header {
+        background: var(--gradient-primary);
+        color: white;
+        border-radius: 0 0 20px 20px;
+        margin-top: -20px;
+        padding: 30px 0;
+    }
+    
+    .form-container {
+        background: var(--gradient-card);
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: var(--shadow-card);
+        margin-top: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .form-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--gradient-primary);
+        z-index: 1;
+    }
+    
+    .form-floating > .form-control, .form-select {
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    
+    .form-floating > .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem var(--shadow-color);
+        background: white;
+    }
+    
+    .form-floating > label {
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+    
+    .section-title {
+        color: var(--primary-dark);
+        font-weight: 700;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 3px solid var(--primary-color);
+        position: relative;
+        font-size: 1.4rem;
+    }
+    
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: -3px;
+        left: 0;
+        width: 50px;
+        height: 3px;
+        background: var(--gradient-primary);
+        border-radius: 2px;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+    
+    .form-section:hover {
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-6 fw-bold mb-2">
+                    <i class="bi bi-pencil-square me-3"></i>Edit Job Posting
+                </h1>
+                <p class="lead mb-0 opacity-90">
+                    Update your job posting details
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <a href="{{ url_for('recruiter.view_job', job_id=job.id) }}" class="btn btn-light btn-lg">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Job
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            <i class="bi bi-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Form -->
+            <div class="form-container">
+                <form method="POST" id="editJobForm">
+                    {{ csrf_token() }}
+                    
+                    <!-- Basic Information Section -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="bi bi-info-circle me-2"></i>Basic Information
+                        </h4>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="title" name="title" 
+                                           placeholder="Job Title" required maxlength="100"
+                                           value="{{ job.title }}">
+                                    <label for="title">Job Title *</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="company_name" name="company_name" 
+                                           placeholder="Company Name" required maxlength="50"
+                                           value="{{ job.company_name }}">
+                                    <label for="company_name">Company Name *</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="location" name="location" 
+                                           placeholder="Location" required 
+                                           value="{{ job.location }}">
+                                    <label for="location">Location *</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="employment_type" class="form-label">Employment Type *</label>
+                                <select class="form-select" id="employment_type" name="employment_type" required>
+                                    <option value="full_time" {{ 'selected' if job.employment_type == 'full_time' else '' }}>Full Time</option>
+                                    <option value="part_time" {{ 'selected' if job.employment_type == 'part_time' else '' }}>Part Time</option>
+                                    <option value="contract" {{ 'selected' if job.employment_type == 'contract' else '' }}>Contract</option>
+                                    <option value="internship" {{ 'selected' if job.employment_type == 'internship' else '' }}>Internship</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="remote_type" class="form-label">Work Arrangement *</label>
+                                <select class="form-select" id="remote_type" name="remote_type" required>
+                                    <option value="office" {{ 'selected' if job.remote_type == 'office' else '' }}>On-site</option>
+                                    <option value="remote" {{ 'selected' if job.remote_type == 'remote' else '' }}>Remote</option>
+                                    <option value="hybrid" {{ 'selected' if job.remote_type == 'hybrid' else '' }}>Hybrid</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="experience_level" class="form-label">Experience Level *</label>
+                                <select class="form-select" id="experience_level" name="experience_level" required>
+                                    <option value="entry" {{ 'selected' if job.experience_level == 'entry' else '' }}>Entry Level</option>
+                                    <option value="mid" {{ 'selected' if job.experience_level == 'mid' else '' }}>Mid Level</option>
+                                    <option value="senior" {{ 'selected' if job.experience_level == 'senior' else '' }}>Senior Level</option>
+                                    <option value="lead" {{ 'selected' if job.experience_level == 'lead' else '' }}>Lead</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Salary Range -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control" id="salary_min" name="salary_min" 
+                                           placeholder="Minimum Salary" 
+                                           value="{{ job.salary_min or '' }}">
+                                    <label for="salary_min">Minimum Salary (CAD)</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control" id="salary_max" name="salary_max" 
+                                           placeholder="Maximum Salary"
+                                           value="{{ job.salary_max or '' }}">
+                                    <label for="salary_max">Maximum Salary (CAD)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Job Status -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">Job Status *</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="active" {{ 'selected' if job.status == 'active' else '' }}>Active</option>
+                                    <option value="paused" {{ 'selected' if job.status == 'paused' else '' }}>Paused</option>
+                                    <option value="closed" {{ 'selected' if job.status == 'closed' else '' }}>Closed</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Job Description Section -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="bi bi-file-text me-2"></i>Job Description & Requirements
+                        </h4>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Job Description *</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="6" required 
+                                      placeholder="Describe the role, responsibilities, and what makes this position exciting...">{{ job.description }}</textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="requirements" class="form-label">Requirements *</label>
+                            <textarea class="form-control" id="requirements" name="requirements" 
+                                      rows="6" required 
+                                      placeholder="List the required qualifications, skills, and experience...">{{ job.requirements }}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('recruiter.view_job', job_id=job.id) }}" class="btn btn-secondary btn-lg">
+                            <i class="bi bi-x-circle me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle me-2"></i>Update Job Posting
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

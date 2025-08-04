@@ -1,0 +1,545 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - JobMate{% endblock %}
+
+{% block head %}
+<style>
+    .bg-gradient-theme {
+        background: var(--gradient-primary);
+    }
+    
+    .card-theme {
+        background: white;
+        border: 1px solid rgba(0,0,0,0.125);
+        transition: all 0.3s ease;
+    }
+    
+    .text-theme {
+        color: var(--primary-color);
+    }
+    
+    .applicant-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--gradient-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+    
+    .status-dropdown {
+        min-width: 130px;
+        font-size: 0.9rem;
+    }
+    
+    .notes-textarea {
+        resize: vertical;
+        font-size: 0.9rem;
+        border: 1px solid #dee2e6;
+        transition: border-color 0.3s ease;
+    }
+    
+    .notes-textarea:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25);
+    }
+    
+    .btn-theme {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+    }
+    
+    .btn-theme:hover {
+        background: var(--primary-hover);
+        border-color: var(--primary-hover);
+        color: white;
+    }
+    
+    .page-header {
+        background: var(--gradient-primary);
+        color: white;
+        border-radius: 0 0 20px 20px;
+        margin-top: -20px;
+        padding: 30px 0;
+    }
+    
+    .filters-section {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: var(--shadow-card);
+        margin-bottom: 30px;
+    }
+    
+    .job-header {
+        background: var(--gradient-card);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 30px;
+        color: white;
+    }
+    
+    .table th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.9rem;
+    }
+    
+    .table td {
+        vertical-align: middle;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .status-changed {
+        background-color: #fff3cd !important;
+        border-left: 4px solid #ffc107;
+    }
+    
+    .notes-changed {
+        background-color: #d1ecf1 !important;
+        border-left: 4px solid #17a2b8;
+    }
+    
+    .change-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: #ffc107;
+        border-radius: 50%;
+        margin-left: 5px;
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-header">
+                <div class="container">
+                    <div class="row align-items-center">
+                        <div class="col-lg-8">
+                            <h1 class="display-6 fw-bold mb-2">
+                                <i class="bi bi-funnel me-3"></i>{{ title }}
+                            </h1>
+                            <p class="lead mb-0 opacity-90">
+                                {% if single_job %}
+                                    Manage applications for {{ job.title }}
+                                {% else %}
+                                    Track and manage all job applications
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-lg-4 text-lg-end">
+                            <div class="d-flex gap-2 justify-content-lg-end justify-content-start mt-3 mt-lg-0">
+                                <span class="badge bg-light text-dark fs-6 px-3 py-2">
+                                    <i class="bi bi-people me-1"></i>{{ applications|length }} Applications
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if single_job %}
+    <!-- Job Info Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="job-header">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-2">{{ job.title }}</h4>
+                        <p class="mb-0 opacity-90">
+                            <i class="bi bi-building me-2"></i>{{ job.company_name }}
+                            <span class="mx-3">|</span>
+                            <i class="bi bi-geo-alt me-2"></i>{{ job.location }}
+                            <span class="mx-3">|</span>
+                            <i class="bi bi-calendar me-2"></i>Posted {{ job.created_at.strftime('%b %d, %Y') }}
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <a href="{{ url_for('recruiter.view_job', job_id=job.id) }}" class="btn btn-light">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Job Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Filters Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="filters-section">
+                <div class="row g-3 align-items-center">
+                    <div class="col-auto">
+                        <label class="form-label mb-0 fw-bold">Filter by Status:</label>
+                    </div>
+                    <div class="col-auto">
+                        <select class="form-select" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="applied">Applied</option>
+                            <option value="review">Review</option>
+                            <option value="interview">Interview</option>
+                            <option value="hired">Hired</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    {% if not single_job %}
+                    <div class="col-auto">
+                        <label class="form-label mb-0 fw-bold">Filter by Job:</label>
+                    </div>
+                    <div class="col-auto">
+                        <select class="form-select" id="jobFilter">
+                            <option value="">All Jobs</option>
+                            {% set job_titles = [] %}
+                            {% for app in applications %}
+                                {% if app.job_posting.id not in job_titles %}
+                                    {% set _ = job_titles.append(app.job_posting.id) %}
+                                    <option value="{{ app.job_posting.id }}">{{ app.job_posting.title }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Applications List -->
+    <div class="row">
+        <div class="col-12">
+            {% if applications %}
+                <div class="card card-theme shadow-sm">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="px-4 py-3 fw-bold">NAME</th>
+                                        <th class="px-4 py-3 fw-bold">EMAIL</th>
+                                        <th class="px-4 py-3 fw-bold text-center">STATUS</th>
+                                        <th class="px-4 py-3 fw-bold">NOTES</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for application in applications %}
+                                    <tr class="application-item" 
+                                        data-status="{{ application.status }}" 
+                                        data-job-id="{{ application.job_posting_id }}"
+                                        data-app-id="{{ application.id }}">
+                                        <td class="px-4 py-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="applicant-avatar me-3">
+                                                    {{ application.user.first_name[0].upper() }}{{ application.user.last_name[0].upper() }}
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold text-theme">{{ application.user.full_name }}</div>
+                                                    <small class="text-muted">Applied {{ application.created_at.strftime('%b %d, %Y') }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="text-muted">{{ application.user.email }}</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <select class="form-select status-dropdown" 
+                                                    data-app-id="{{ application.id }}">
+                                                <option value="applied" {{ 'selected' if application.status == 'applied' else '' }}>Applied</option>
+                                                <option value="review" {{ 'selected' if application.status == 'review' else '' }}>Review</option>
+                                                <option value="interview" {{ 'selected' if application.status == 'interview' else '' }}>Interview</option>
+                                                <option value="hired" {{ 'selected' if application.status == 'hired' else '' }}>Hired</option>
+                                                <option value="rejected" {{ 'selected' if application.status == 'rejected' else '' }}>Rejected</option>
+                                            </select>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <textarea class="form-control notes-textarea" 
+                                                      data-app-id="{{ application.id }}"
+                                                      placeholder="Add notes about this candidate..."
+                                                      rows="2">{{ application.notes or '' }}</textarea>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Save All Button -->
+                        <div class="p-4 border-top bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Make changes to status and notes, then click Save All to apply changes.
+                                </div>
+                                <button class="btn btn-theme btn-lg" onclick="saveAllChanges()">
+                                    <i class="bi bi-save me-2"></i>Save All Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="bi bi-inbox display-1 text-muted"></i>
+                        </div>
+                        <h4 class="text-muted mb-3">No Applications Available</h4>
+                        <p class="text-muted">
+                            {% if single_job %}
+                                No applications have been received for this job posting yet.
+                            {% else %}
+                                You haven't received any applications yet.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Track changes made by the user
+let pendingChanges = {};
+
+// Initialize change tracking when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const statusDropdowns = document.querySelectorAll('.status-dropdown');
+    const notesTextareas = document.querySelectorAll('.notes-textarea');
+    
+    // Store original values and add change listeners
+    statusDropdowns.forEach(dropdown => {
+        const appId = dropdown.dataset.appId;
+        const originalValue = dropdown.value;
+        
+        dropdown.addEventListener('change', function() {
+            trackStatusChange(appId, originalValue, this.value, this);
+        });
+    });
+    
+    notesTextareas.forEach(textarea => {
+        const appId = textarea.dataset.appId;
+        const originalValue = textarea.value;
+        
+        textarea.addEventListener('input', function() {
+            trackNotesChange(appId, originalValue, this.value, this);
+        });
+    });
+    
+    initializeFilters();
+});
+
+function trackStatusChange(appId, originalValue, newValue, element) {
+    if (!pendingChanges[appId]) {
+        pendingChanges[appId] = {};
+    }
+    
+    if (newValue !== originalValue) {
+        pendingChanges[appId].status = newValue;
+        element.closest('tr').classList.add('status-changed');
+        addChangeIndicator(element);
+    } else {
+        delete pendingChanges[appId].status;
+        element.closest('tr').classList.remove('status-changed');
+        removeChangeIndicator(element);
+        if (Object.keys(pendingChanges[appId]).length === 0) {
+            delete pendingChanges[appId];
+        }
+    }
+    
+    updateSaveButtonState();
+}
+
+function trackNotesChange(appId, originalValue, newValue, element) {
+    if (!pendingChanges[appId]) {
+        pendingChanges[appId] = {};
+    }
+    
+    if (newValue !== originalValue) {
+        pendingChanges[appId].notes = newValue;
+        element.closest('tr').classList.add('notes-changed');
+        addChangeIndicator(element);
+    } else {
+        delete pendingChanges[appId].notes;
+        element.closest('tr').classList.remove('notes-changed');
+        removeChangeIndicator(element);
+        if (Object.keys(pendingChanges[appId]).length === 0) {
+            delete pendingChanges[appId];
+        }
+    }
+    
+    updateSaveButtonState();
+}
+
+function addChangeIndicator(element) {
+    if (!element.parentNode.querySelector('.change-indicator')) {
+        const indicator = document.createElement('span');
+        indicator.className = 'change-indicator';
+        indicator.title = 'Unsaved changes';
+        element.parentNode.appendChild(indicator);
+    }
+}
+
+function removeChangeIndicator(element) {
+    const indicator = element.parentNode.querySelector('.change-indicator');
+    if (indicator) {
+        indicator.remove();
+    }
+}
+
+function updateSaveButtonState() {
+    const saveButton = document.querySelector('button[onclick="saveAllChanges()"]');
+    const changeCount = Object.keys(pendingChanges).length;
+    
+    if (changeCount > 0) {
+        saveButton.innerHTML = `<i class="bi bi-save me-2"></i>Save All Changes (${changeCount})`;
+        saveButton.classList.add('btn-warning');
+        saveButton.classList.remove('btn-theme');
+    } else {
+        saveButton.innerHTML = `<i class="bi bi-save me-2"></i>Save All Changes`;
+        saveButton.classList.remove('btn-warning');
+        saveButton.classList.add('btn-theme');
+    }
+}
+
+function saveAllChanges() {
+    if (Object.keys(pendingChanges).length === 0) {
+        showMessage('No changes to save', 'info');
+        return;
+    }
+    
+    const saveButton = document.querySelector('button[onclick="saveAllChanges()"]');
+    const originalText = saveButton.innerHTML;
+    saveButton.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i>Saving...';
+    saveButton.disabled = true;
+    
+    // Send all changes in batch
+    const promises = Object.keys(pendingChanges).map(appId => {
+        const changes = pendingChanges[appId];
+        return fetch(`/recruiter/application/${appId}/update-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify(changes)
+        });
+    });
+    
+    Promise.all(promises)
+        .then(responses => Promise.all(responses.map(r => r.json())))
+        .then(results => {
+            const allSuccessful = results.every(result => result.success);
+            
+            if (allSuccessful) {
+                // Clear pending changes and visual indicators
+                Object.keys(pendingChanges).forEach(appId => {
+                    const row = document.querySelector(`tr[data-app-id="${appId}"]`);
+                    row.classList.remove('status-changed', 'notes-changed');
+                    row.querySelectorAll('.change-indicator').forEach(indicator => indicator.remove());
+                });
+                
+                pendingChanges = {};
+                updateSaveButtonState();
+                showMessage('All changes saved successfully!', 'success');
+            } else {
+                showMessage('Some changes failed to save. Please try again.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error saving changes:', error);
+            showMessage('Error saving changes. Please try again.', 'error');
+        })
+        .finally(() => {
+            saveButton.innerHTML = originalText;
+            saveButton.disabled = false;
+        });
+}
+
+function showMessage(message, type) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+function initializeFilters() {
+    const statusFilter = document.getElementById('statusFilter');
+    const jobFilter = document.getElementById('jobFilter');
+    const applicationItems = document.querySelectorAll('.application-item');
+
+    function filterApplications() {
+        const selectedStatus = statusFilter?.value || '';
+        const selectedJob = jobFilter?.value || '';
+
+        applicationItems.forEach(item => {
+            const itemStatus = item.dataset.status;
+            const itemJobId = item.dataset.jobId;
+
+            const statusMatch = !selectedStatus || itemStatus === selectedStatus;
+            const jobMatch = !selectedJob || itemJobId === selectedJob;
+
+            if (statusMatch && jobMatch) {
+                item.style.display = 'table-row';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    if (statusFilter) {
+        statusFilter.addEventListener('change', filterApplications);
+    }
+    
+    if (jobFilter) {
+        jobFilter.addEventListener('change', filterApplications);
+    }
+}
+
+// Legacy functions for backward compatibility (in case they're called elsewhere)
+function updateApplicationStatus(applicationId, status) {
+    // This is now handled by the change tracking system
+    console.log('Legacy function called - using new change tracking system');
+}
+
+function saveNotes(applicationId) {
+    // This is now handled by the bulk save system
+    console.log('Legacy function called - using new bulk save system');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.browse_jobs') }}">Browse Jobs</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ job.title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Job Details -->
+        <div class="col-lg-8">
+            <div class="card card-theme shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-4">
+                        <div>
+                            <h1 class="h2 text-theme mb-2">{{ job.title }}</h1>
+                            <h3 class="h5 text-muted mb-3">
+                                <i class="bi bi-building me-2"></i>{{ job.company_name }}
+                            </h3>
+                        </div>
+                        <span class="badge bg-success fs-6 px-3 py-2">Active</span>
+                    </div>
+
+                    <!-- Job Metadata -->
+                    <div class="row g-3 mb-4 text-muted">
+                        <div class="col-md-6">
+                            <i class="bi bi-geo-alt me-2"></i>
+                            <strong>Location:</strong> {{ job.location_formatted }}
+                        </div>
+                        <div class="col-md-6">
+                            <i class="bi bi-clock me-2"></i>
+                            <strong>Type:</strong> {{ job.employment_type.replace('_', ' ').title() }}
+                        </div>
+                        {% if job.salary_range_formatted %}
+                        <div class="col-md-6">
+                            <i class="bi bi-currency-dollar me-2"></i>
+                            <strong>Salary:</strong> {{ job.salary_range_formatted }}
+                        </div>
+                        {% endif %}
+                        <div class="col-md-6">
+                            <i class="bi bi-calendar me-2"></i>
+                            <strong>Posted:</strong> {{ job.created_at.strftime('%B %d, %Y') }}
+                        </div>
+                        {% if job.experience_level %}
+                        <div class="col-md-6">
+                            <i class="bi bi-person-badge me-2"></i>
+                            <strong>Experience:</strong> {{ job.experience_level.replace('_', ' ').title() }}
+                        </div>
+                        {% endif %}
+                        <div class="col-md-6">
+                            <i class="bi bi-eye me-2"></i>
+                            <strong>Views:</strong> {{ job.view_count }}
+                        </div>
+                    </div>
+
+                    <!-- Job Description -->
+                    <div class="mb-4">
+                        <h4 class="h5 text-theme mb-3">Job Description</h4>
+                        <div class="text-muted">
+                            {{ job.description|nl2br|safe }}
+                        </div>
+                    </div>
+
+                    <!-- Requirements -->
+                    {% if job.requirements %}
+                    <div class="mb-4">
+                        <h4 class="h5 text-theme mb-3">Requirements</h4>
+                        <div class="text-muted">
+                            {{ job.requirements|nl2br|safe }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Responsibilities -->
+                    {% if job.responsibilities %}
+                    <div class="mb-4">
+                        <h4 class="h5 text-theme mb-3">Responsibilities</h4>
+                        <div class="text-muted">
+                            {{ job.responsibilities|nl2br|safe }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Benefits -->
+                    {% if job.benefits %}
+                    <div class="mb-4">
+                        <h4 class="h5 text-theme mb-3">Benefits</h4>
+                        <div class="text-muted">
+                            {{ job.benefits|nl2br|safe }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Skills -->
+                    {% if job.required_skills or job.preferred_skills %}
+                    <div class="mb-4">
+                        <h4 class="h5 text-theme mb-3">Skills</h4>
+                        
+                        {% if job.required_skills %}
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-2">Required Skills:</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for skill in job.required_skills %}
+                                <span class="badge bg-primary">{{ skill }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if job.preferred_skills %}
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-2">Preferred Skills:</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for skill in job.preferred_skills %}
+                                <span class="badge bg-secondary">{{ skill }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Apply Section -->
+            <div class="card card-theme shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" 
+                             style="width: 80px; height: 80px;">
+                            <i class="bi bi-building text-theme" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                    <h5 class="card-title text-theme mb-3">Ready to Apply?</h5>
+                    <p class="card-text text-muted mb-4">
+                        Take the next step in your career journey with {{ job.company_name }}.
+                    </p>
+                    
+                    {% if current_user.is_authenticated %}
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-theme btn-lg" onclick="applyToJob({{ job.id }})">
+                                <i class="bi bi-send me-2"></i>Apply Now
+                            </button>
+                            <button class="btn btn-outline-theme" onclick="saveJob({{ job.id }})">
+                                <i class="bi bi-bookmark me-2"></i>Save Job
+                            </button>
+                        </div>
+                    {% else %}
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-theme btn-lg">
+                                <i class="bi bi-person me-2"></i>Login to Apply
+                            </a>
+                            <a href="{{ url_for('auth.register') }}" class="btn btn-outline-theme">
+                                <i class="bi bi-person-plus me-2"></i>Create Account
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Company Info -->
+            <div class="card card-theme shadow-sm mb-4">
+                <div class="card-body">
+                    <h6 class="card-title text-theme mb-3">
+                        <i class="bi bi-info-circle me-2"></i>Company Information
+                    </h6>
+                    
+                    <div class="mb-2">
+                        <strong>Company:</strong> {{ job.company_name }}
+                    </div>
+                    
+                    {% if job.industry %}
+                    <div class="mb-2">
+                        <strong>Industry:</strong> {{ job.industry }}
+                    </div>
+                    {% endif %}
+                    
+                    {% if job.company_size %}
+                    <div class="mb-2">
+                        <strong>Company Size:</strong> {{ job.company_size.replace('_', ' ').title() }}
+                    </div>
+                    {% endif %}
+                    
+                    {% if job.company_website %}
+                    <div class="mt-3">
+                        <a href="{{ job.company_website }}" target="_blank" class="btn btn-outline-theme btn-sm">
+                            <i class="bi bi-link-45deg me-1"></i>Visit Website
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Job Stats -->
+            <div class="card card-theme shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title text-theme mb-3">
+                        <i class="bi bi-graph-up me-2"></i>Job Statistics
+                    </h6>
+                    
+                    <div class="mb-2">
+                        <small class="text-muted">Total Views:</small>
+                        <div class="fw-bold">{{ job.view_count }}</div>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <small class="text-muted">Applications:</small>
+                        <div class="fw-bold">{{ job.application_count }}</div>
+                    </div>
+                    
+                    {% if job.expires_at %}
+                    <div class="mb-2">
+                        <small class="text-muted">Expires:</small>
+                        <div class="fw-bold">{{ job.expires_at.strftime('%B %d, %Y') }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function applyToJob(jobId) {
+    // For now, show a message that application functionality will be implemented
+    alert('Application functionality will be implemented soon!');
+}
+
+function saveJob(jobId) {
+    // For now, show a message that save functionality will be implemented
+    alert('Save job functionality will be implemented soon!');
+}
+</script>
+{% endblock %}

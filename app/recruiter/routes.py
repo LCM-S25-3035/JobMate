@@ -11,6 +11,7 @@ from app.models.job_posting import JobPosting
 from app.models.application import Application
 from app import db
 from datetime import datetime, timedelta
+from app.ai_agents.salary_suggestion import get_salary_suggestion
 
 
 # Removed duplicate dashboard route - using main.recruiter_dashboard instead
@@ -359,6 +360,50 @@ def toggle_job_status(job_id):
         }), 500
 
 
+@bp.route('/api/jobs/<int:job_id>/status', methods=['POST'])
+@login_required
+def update_job_status(job_id):
+    """Update job posting to specific status"""
+    if not current_user.is_recruiter():
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    job = JobPosting.query.filter_by(id=job_id, recruiter_id=current_user.id).first()
+    if not job:
+        return jsonify({'success': False, 'message': 'Job not found'}), 404
+    
+    try:
+        data = request.get_json()
+        new_status = data.get('status')
+        
+        # Validate status
+        valid_statuses = ['active', 'paused', 'closed']
+        if new_status not in valid_statuses:
+            return jsonify({
+                'success': False, 
+                'message': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'
+            }), 400
+        
+        old_status = job.status
+        job.status = new_status
+        job.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Job status changed from {old_status} to {new_status}',
+            'old_status': old_status,
+            'new_status': new_status
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error updating job status: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Error updating job status'
+        }), 500
+
+
 @bp.route('/api/applications/<int:app_id>/update-status', methods=['POST'])
 @login_required
 def update_application_status(app_id):
@@ -400,4 +445,18 @@ def update_application_status(app_id):
         return jsonify({
             'success': False,
             'message': 'Error updating application status'
-        }), 500 
+        }), 500
+
+
+@bp.route('/api/salary-suggestion', methods=['GET'])
+def api_salary_suggestion():
+    title = request.args.get('title', '').strip()
+    location = request.args.get('location', '').strip()
+    experience_level = request.args.get('experience_level', '').strip()
+    if not title or not location:
+        return jsonify({'success': False, 'error': 'Missing title or location'}), 400
+    suggestion = get_salary_suggestion(title, location, experience_level)
+    if not suggestion:
+        return jsonify({'success': True, 'salary_range': None, 'explanation': None})
+    # If Glassdoor, suggestion is a dict with salary_range and explanation
+    return jsonify({'success': True, 'salary_range': suggestion['salary_range'], 'explanation': suggestion.get('explanation')})

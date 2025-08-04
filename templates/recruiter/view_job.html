@@ -275,14 +275,10 @@
             </div>
             <div class="col-lg-4">
                 <div class="quick-stats">
-                    <div class="quick-stat">
+                    <a href="{{ url_for('recruiter.candidates') }}" class="quick-stat text-decoration-none">
                         <div class="quick-stat-number">{{ applications|length or 0 }}</div>
                         <div class="quick-stat-label">Applications</div>
-                    </div>
-                    <div class="quick-stat">
-                        <div class="quick-stat-number">{{ job.view_count or 0 }}</div>
-                        <div class="quick-stat-label">Views</div>
-                    </div>
+                    </a>
                 </div>
             </div>
         </div>

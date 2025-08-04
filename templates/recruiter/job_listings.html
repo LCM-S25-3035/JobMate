@@ -278,39 +278,22 @@
                                 <div class="col-lg-4">
                                     <div class="d-flex flex-column gap-2 h-100 justify-content-center">
                                         <a href="{{ url_for('recruiter.view_job', job_id=job.id) }}" 
-                                           class="btn btn-theme-primary">
-                                            <i class="bi bi-eye me-2"></i>View Details
+                                           class="btn btn-primary">
+                                            <i class="bi bi-eye me-1"></i>View Details
                                         </a>
                                         <a href="{{ url_for('recruiter.edit_job', job_id=job.id) }}" 
-                                           class="btn btn-theme-outline">
-                                            <i class="bi bi-pencil me-2"></i>Edit Job
+                                           class="btn btn-outline-secondary btn-sm">
+                                            <i class="bi bi-pencil me-1"></i>Edit Job
                                         </a>
-                                        <div class="dropdown">
-                                            <button class="btn btn-theme-soft dropdown-toggle w-100" type="button" 
-                                                    data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="bi bi-three-dots me-2"></i>More Actions
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                {% if job.status == 'active' %}
-                                                <li><a class="dropdown-item" href="#" onclick="toggleJobStatus({{ job.id }}, 'paused')">
-                                                    <i class="bi bi-pause me-2"></i>Pause Job
-                                                </a></li>
-                                                {% elif job.status == 'paused' %}
-                                                <li><a class="dropdown-item" href="#" onclick="toggleJobStatus({{ job.id }}, 'active')">
-                                                    <i class="bi bi-play me-2"></i>Activate Job
-                                                </a></li>
-                                                {% endif %}
-                                                <li><a class="dropdown-item" href="#">
-                                                    <i class="bi bi-files me-2"></i>Duplicate Job
-                                                </a></li>
-                                                <li><a class="dropdown-item" href="#">
-                                                    <i class="bi bi-share me-2"></i>Share Job
-                                                </a></li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteJob({{ job.id }})">
-                                                    <i class="bi bi-trash me-2"></i>Delete Job
-                                                </a></li>
-                                            </ul>
+                                        <div class="btn-group-vertical gap-1 mt-2">
+                                            {% if job.status == 'active' %}
+                                                <button class="btn btn-warning btn-sm" onclick="toggleJobStatus({{ job.id }}, 'paused')" title="Pause">Pause</button>
+                                            {% endif %}
+                                            {% if job.status == 'paused' %}
+                                                <button class="btn btn-success btn-sm" onclick="toggleJobStatus({{ job.id }}, 'active')" title="Repost">Repost</button>
+                                            {% endif %}
+                                            <button class="btn btn-secondary btn-sm" onclick="toggleJobStatus({{ job.id }}, 'closed')" title="Close">Close</button>
+                                            <button class="btn btn-danger btn-sm" onclick="archiveJob({{ job.id }})" title="Archive">Archive</button>
                                         </div>
                                     </div>
                                 </div>
@@ -448,8 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Job action functions
 function toggleJobStatus(jobId, newStatus) {
     if (confirm(`Are you sure you want to ${newStatus} this job?`)) {
-        // TODO: Implement AJAX call to update job status
-        fetch(`/recruiter/jobs/${jobId}/status`, {
+        fetch(`/recruiter/api/jobs/${jobId}/status`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -462,7 +444,7 @@ function toggleJobStatus(jobId, newStatus) {
             if (data.success) {
                 location.reload();
             } else {
-                alert('Error updating job status');
+                alert('Error updating job status: ' + (data.message || 'Unknown error'));
             }
         })
         .catch(error => {
@@ -492,6 +474,30 @@ function deleteJob(jobId) {
         .catch(error => {
             console.error('Error:', error);
             alert('Error deleting job');
+        });
+    }
+}
+
+function archiveJob(jobId) {
+    if (confirm('Are you sure you want to archive this job?')) {
+        fetch(`/recruiter/jobs/${jobId}/archive`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error archiving job');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error archiving job');
         });
     }
 }

@@ -217,9 +217,7 @@
                 </p>
             </div>
             <div class="col-lg-4 text-lg-end">
-                <button type="button" class="btn btn-light btn-lg" onclick="saveDraft()">
-                    <i class="bi bi-save me-2"></i>Save Draft
-                </button>
+
             </div>
         </div>
     </div>
@@ -443,9 +441,7 @@
                         <button type="button" class="btn btn-theme-soft btn-lg me-3" onclick="window.history.back()">
                             <i class="bi bi-arrow-left me-2"></i>Cancel
                         </button>
-                        <button type="button" class="btn btn-theme-outline btn-lg me-3" onclick="saveDraft()">
-                            <i class="bi bi-save me-2"></i>Save as Draft
-                        </button>
+
                         <button type="submit" class="btn btn-theme-primary btn-lg">
                             <i class="bi bi-check-circle me-2"></i>Publish Job Posting
                         </button>
@@ -651,56 +647,41 @@ function validateForm() {
     return isValid;
 }
 
-function saveDraft() {
-    const formData = new FormData(document.getElementById('createJobForm'));
-    formData.append('status', 'draft');
-    
-    fetch('/recruiter/jobs/draft', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Draft saved successfully!');
-        } else {
-            alert('Error saving draft');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error saving draft');
-    });
+
+
+
+
+function fetchSalarySuggestion() {
+    const title = document.getElementById('title').value;
+    const location = document.getElementById('location').value;
+    const experienceLevel = document.getElementById('experience_level').value;
+    const suggestionBox = document.querySelector('.ai-suggestion');
+    const suggestionText = suggestionBox.querySelector('div:last-child');
+    if (title.length < 2 || location.length < 2) {
+        suggestionBox.style.display = 'none';
+        return;
+    }
+    suggestionBox.style.display = '';
+    suggestionText.textContent = 'Fetching AI salary suggestion...';
+    fetch(`/recruiter/api/salary-suggestion?title=${encodeURIComponent(title)}&location=${encodeURIComponent(location)}&experience_level=${encodeURIComponent(experienceLevel)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.salary_range) {
+                let explanation = data.explanation ? `<br><span style='font-size:0.95em;'>${data.explanation}</span>` : '';
+                suggestionText.innerHTML = `Based on the job title, location, and experience level, similar positions typically offer: <b>${data.salary_range}</b>${explanation}`;
+            } else {
+                suggestionText.textContent = 'No salary data available for this role/location.';
+            }
+        })
+        .catch(() => {
+            suggestionText.textContent = 'No salary data available for this role/location.';
+        });
 }
 
-// Auto-save functionality
-setInterval(() => {
-    const title = document.getElementById('title').value;
-    if (title) {
-        localStorage.setItem('jobDraft', JSON.stringify({
-            title: title,
-            company_name: document.getElementById('company_name').value,
-            location: document.getElementById('location').value,
-            description: document.getElementById('description').value,
-            timestamp: new Date().toISOString()
-        }));
-    }
-}, 30000); // Auto-save every 30 seconds
-
-// Load draft on page load
-window.addEventListener('load', () => {
-    const draft = localStorage.getItem('jobDraft');
-    if (draft) {
-        const data = JSON.parse(draft);
-        if (confirm('Found a saved draft. Would you like to restore it?')) {
-            Object.keys(data).forEach(key => {
-                const field = document.getElementById(key);
-                if (field && key !== 'timestamp') {
-                    field.value = data[key];
-                }
-            });
-        }
-    }
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('.ai-suggestion').style.display = 'none';
+    document.getElementById('title').addEventListener('input', fetchSalarySuggestion);
+    document.getElementById('location').addEventListener('input', fetchSalarySuggestion);
 });
 </script>
-{% endblock %} 
+{% endblock %}

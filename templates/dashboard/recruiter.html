@@ -83,9 +83,6 @@
                     <a href="{{ url_for('recruiter.create_job') }}" class="btn btn-theme-primary me-3">
                         <i class="bi bi-plus-circle me-2"></i>Post New Job
                     </a>
-                    <a href="{{ url_for('recruiter.candidates') }}" class="btn btn-theme-outline">
-                        <i class="bi bi-people me-2"></i>Browse Candidates
-                    </a>
                 </div>
                 <div class="col-lg-4 text-center">
                     <div class="stat-card-theme">
@@ -114,6 +111,15 @@
                             <div class="stat-icon">
                                 <i class="bi bi-briefcase"></i>
                             </div>
+                            <div class="stat-number">{{ total_jobs or 1 }}</div>
+                            <div class="stat-label">Total Jobs</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card-theme">
+                            <div class="stat-icon">
+                                <i class="bi bi-play-circle"></i>
+                            </div>
                             <div class="stat-number">{{ active_jobs or 0 }}</div>
                             <div class="stat-label">Active Jobs</div>
                         </div>
@@ -121,68 +127,10 @@
                     <div class="col-md-3">
                         <div class="stat-card-theme">
                             <div class="stat-icon">
-                                <i class="bi bi-person-check"></i>
+                                <i class="bi bi-person-plus"></i>
                             </div>
                             <div class="stat-number">{{ new_applications or 0 }}</div>
-                            <div class="stat-label">New Applications</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card-theme">
-                            <div class="stat-icon">
-                                <i class="bi bi-eye"></i>
-                            </div>
-                            <div class="stat-number">{{ total_views or 0 }}</div>
-                            <div class="stat-label">Job Views</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card-theme">
-                            <div class="stat-icon">
-                                <i class="bi bi-star"></i>
-                            </div>
-                            <div class="stat-number">{{ interview_scheduled or 0 }}</div>
-                            <div class="stat-label">Interviews</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="card card-theme mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0 text-theme-primary">
-                        <i class="bi bi-lightning-charge-fill me-2"></i>Quick Actions
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <a href="{{ url_for('recruiter.create_job') }}" class="quick-action-card card card-theme-flat w-100 h-100 d-flex flex-column justify-content-center text-decoration-none">
-                                <div class="card-body text-center">
-                                    <i class="bi bi-plus-circle text-theme-primary mb-2" style="font-size: 2rem;"></i>
-                                    <h6 class="text-theme-dark">Post New Job</h6>
-                                    <small class="text-theme-secondary">Create a new job posting</small>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <a href="{{ url_for('recruiter.candidates') }}" class="quick-action-card card card-theme-flat w-100 h-100 d-flex flex-column justify-content-center text-decoration-none">
-                                <div class="card-body text-center">
-                                    <i class="bi bi-people text-theme-primary mb-2" style="font-size: 2rem;"></i>
-                                    <h6 class="text-theme-dark">Browse Candidates</h6>
-                                    <small class="text-theme-secondary">Find the perfect match</small>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <a href="{{ url_for('recruiter.analytics') }}" class="quick-action-card card card-theme-flat w-100 h-100 d-flex flex-column justify-content-center text-decoration-none">
-                                <div class="card-body text-center">
-                                    <i class="bi bi-graph-up text-theme-primary mb-2" style="font-size: 2rem;"></i>
-                                    <h6 class="text-theme-dark">View Analytics</h6>
-                                    <small class="text-theme-secondary">Track your performance</small>
-                                </div>
-                            </a>
+                            <div class="stat-label">Applications</div>
                         </div>
                     </div>
                 </div>
@@ -232,12 +180,9 @@
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
-                                                <button type="button" class="btn btn-theme-outline btn-sm" title="View Applications">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-theme-soft btn-sm" title="Edit">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
+                                                <a href="{{ url_for('recruiter.view_job', job_id=job.id) }}" class="btn btn-primary btn-sm" title="View Details">
+                                                    <i class="bi bi-eye me-1"></i>View Details
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>
@@ -259,88 +204,6 @@
             </div>
         </div>
 
-        <!-- Right Column -->
-        <div class="col-lg-4">
-            <!-- Recent Applications -->
-            <div class="card card-theme mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 text-theme-primary">
-                        <i class="bi bi-person-lines-fill me-2"></i>Recent Applications
-                    </h5>
-                    <a href="{{ url_for('recruiter.candidates') }}" class="btn btn-theme-soft btn-sm">
-                        View All
-                    </a>
-                </div>
-                <div class="card-body">
-                    {% if recent_applications %}
-                        {% for application in recent_applications %}
-                        <div class="d-flex justify-content-between align-items-center py-3 {% if not loop.last %}border-bottom border-theme{% endif %}">
-                            <div class="d-flex align-items-center">
-                                <div class="me-3">
-                                    <img src="https://ui-avatars.com/api/?name={{ application.candidate_name or 'John Doe' }}&background=0d6efd&color=fff&size=40" 
-                                         class="rounded-circle" alt="Candidate" width="40" height="40">
-                                </div>
-                                <div>
-                                    <h6 class="mb-1 text-theme-dark">{{ application.candidate_name or 'John Doe' }}</h6>
-                                    <p class="text-theme-secondary mb-0 small">Applied for {{ application.position or 'Software Developer' }}</p>
-                                </div>
-                            </div>
-                            <div class="text-end">
-                                <div class="btn-group btn-group-sm mb-1">
-                                    <button class="btn btn-theme-soft btn-sm" title="Accept">
-                                        <i class="bi bi-check-lg"></i>
-                                    </button>
-                                    <button class="btn btn-outline-danger btn-sm" title="Reject">
-                                        <i class="bi bi-x-lg"></i>
-                                    </button>
-                                </div>
-                                <p class="text-theme-secondary mb-0 small">2 hours ago</p>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                    <div class="text-center py-4">
-                        <i class="bi bi-inbox text-theme-primary" style="font-size: 3rem; opacity: 0.5;"></i>
-                        <h6 class="text-theme-secondary mt-2">No applications yet</h6>
-                        <p class="text-theme-secondary small">Applications will appear here once candidates start applying</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- AI Insights -->
-            <div class="card card-theme">
-                <div class="card-header">
-                    <h5 class="mb-0 text-theme-primary">
-                        <i class="bi bi-robot me-2"></i>AI Insights
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-theme-info mb-3">
-                        <i class="bi bi-lightbulb text-theme-primary me-2"></i>
-                        <strong>Tip:</strong> Jobs posted on Tuesday get 23% more applications!
-                    </div>
-                    
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="me-3">
-                            <div class="rounded-circle bg-gradient-theme d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                                <i class="bi bi-graph-up text-white"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <h6 class="mb-1 text-theme-dark">Performance Score</h6>
-                            <div class="progress progress-theme">
-                                <div class="progress-bar progress-bar-theme" style="width: 85%"></div>
-                            </div>
-                            <small class="text-theme-secondary">85% - Excellent</small>
-                        </div>
-                    </div>
-                    
-                    <a href="{{ url_for('recruiter.analytics') }}" class="btn btn-theme-outline btn-sm w-100">
-                        <i class="bi bi-arrow-right me-2"></i>View Full Report
-                    </a>
-                </div>
-            </div>
         </div>
     </div>
 </div>

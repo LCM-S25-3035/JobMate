@@ -34,7 +34,17 @@ def job_listings():
     # Calculate statistics
     total_jobs = len(jobs)
     active_jobs = len([job for job in jobs if job.status == 'active'])
-    total_applications = sum(job.application_count for job in jobs)
+    
+    # Calculate total active applications (excluding rejected)
+    job_ids = [job.id for job in jobs]
+    if job_ids:
+        from app.models.application import Application
+        total_applications = Application.query.filter(
+            Application.job_posting_id.in_(job_ids),
+            Application.status != 'rejected'
+        ).count()
+    else:
+        total_applications = 0
     
     stats = {
         'total_jobs': total_jobs,

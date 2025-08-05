@@ -218,7 +218,8 @@ def recruiter_dashboard():
         ).order_by(Application.created_at.desc()).limit(5).all()
         
         total_applications = Application.query.filter(
-            Application.job_posting_id.in_(job_ids)
+            Application.job_posting_id.in_(job_ids),
+            Application.status != 'rejected'
         ).count()
         
         # Applications from last 7 days

@@ -260,9 +260,8 @@
       <div class="d-flex justify-content-between align-items-center">
         <h4 class="mt-4">Suggestions</h4>
         <div>
-          <button id="auto-optimize-resume-btn" class="btn btn-success">
-            <i class="fas fa-magic"></i> Auto-Optimize to 90%+ ATS Score
-          </button>
+          <!-- Auto-Optimize button removed - ATS optimization is now built into the regular tailor process -->
+          <!-- The tailor process now automatically includes ATS optimization for better results -->
         </div>
       </div>
       
@@ -458,7 +457,7 @@
 // Resume edit toggle
 const editResumeBtn = document.getElementById('edit-resume-btn');
 const resumeTextarea = document.getElementById('resume-textarea');
-const resumePre = document.getElementById('resume-pre');
+const resumePre = document.getElementById('tailored-resume-content');
 const resumeInput = document.getElementById('resume-text-input');
 editResumeBtn.addEventListener('click', function() {
   if (resumeTextarea.style.display === 'none') {
@@ -478,20 +477,74 @@ editResumeBtn.addEventListener('click', function() {
     resumePre.textContent = resumeTextarea.value;
     resumeInput.value = resumeTextarea.value;
     
-    // Check if content changed and offer to recalculate
+    // Check if content changed and save the changes to database
     if (resumeTextarea.value !== resumeTextarea.getAttribute('data-original')) {
-      const recalculate = confirm('You made changes to your resume. Would you like to recalculate your ATS score?');
-      if (recalculate && document.getElementById('recalculate-ats-btn')) {
-        // Trigger the recalculate function
-        document.getElementById('recalculate-ats-btn').click();
-      }
+      // Show saving indicator
+      const originalBtnText = editResumeBtn.textContent;
+      editResumeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+      editResumeBtn.disabled = true;
+      
+      // Get the job ID from the URL
+      const jobId = '{{ job._id }}';
+      
+      // Save the changes via AJAX
+      fetch('{{ url_for("main.save_edited_resume") }}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+          job_id: jobId,
+          resume_content: resumeTextarea.value,
+          content_type: 'resume'
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        editResumeBtn.disabled = false;
+        editResumeBtn.textContent = originalBtnText;
+        
+        if (data.success) {
+          // Update ATS score if it was returned
+          if (data.ats_score) {
+            const atsScoreElement = document.querySelector('.card-body div[style*="font-size:2.5rem"]');
+            if (atsScoreElement) {
+              atsScoreElement.textContent = data.ats_score;
+            }
+          }
+          
+          // Show success message
+          const alertDiv = document.createElement('div');
+          alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+          alertDiv.innerHTML = `
+            <strong>Success!</strong> Your resume has been updated.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          `;
+          document.querySelector('#resume').insertBefore(alertDiv, document.querySelector('#resume h4'));
+          
+          // Auto-dismiss after 3 seconds
+          setTimeout(() => {
+            alertDiv.classList.remove('show');
+            setTimeout(() => alertDiv.remove(), 500);
+          }, 3000);
+        } else {
+          // Show error message
+          alert('Error saving changes: ' + data.error);
+        }
+      })
+      .catch(error => {
+        editResumeBtn.disabled = false;
+        editResumeBtn.textContent = originalBtnText;
+        alert('Error saving changes: ' + error);
+      });
     }
   }
 });
 // Cover letter edit toggle
 const editCoverBtn = document.getElementById('edit-cover-btn');
 const coverTextarea = document.getElementById('cover-textarea');
-const coverPre = document.getElementById('cover-pre');
+const coverPre = document.getElementById('tailored-cover-letter-content');
 const coverInput = document.getElementById('cover-text-input');
 editCoverBtn.addEventListener('click', function() {
   if (coverTextarea.style.display === 'none') {
@@ -499,12 +552,70 @@ editCoverBtn.addEventListener('click', function() {
     coverPre.style.display = 'none';
     editCoverBtn.textContent = 'Done';
     coverTextarea.value = coverPre.textContent;
+    
+    // Store original text to check if changes were made
+    coverTextarea.setAttribute('data-original', coverTextarea.value);
   } else {
     coverTextarea.style.display = 'none';
     coverPre.style.display = 'block';
     editCoverBtn.textContent = 'Edit';
     coverPre.textContent = coverTextarea.value;
     coverInput.value = coverTextarea.value;
+    
+    // Check if content changed and save the changes to database
+    if (coverTextarea.value !== coverTextarea.getAttribute('data-original')) {
+      // Show saving indicator
+      const originalBtnText = editCoverBtn.textContent;
+      editCoverBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+      editCoverBtn.disabled = true;
+      
+      // Get the job ID from the URL
+      const jobId = '{{ job._id }}';
+      
+      // Save the changes via AJAX
+      fetch('{{ url_for("main.save_edited_resume") }}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+          job_id: jobId,
+          cover_letter_content: coverTextarea.value,
+          content_type: 'cover_letter'
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        editCoverBtn.disabled = false;
+        editCoverBtn.textContent = originalBtnText;
+        
+        if (data.success) {
+          // Show success message
+          const alertDiv = document.createElement('div');
+          alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+          alertDiv.innerHTML = `
+            <strong>Success!</strong> Your cover letter has been updated.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          `;
+          document.querySelector('#cover').insertBefore(alertDiv, document.querySelector('#cover h4'));
+          
+          // Auto-dismiss after 3 seconds
+          setTimeout(() => {
+            alertDiv.classList.remove('show');
+            setTimeout(() => alertDiv.remove(), 500);
+          }, 3000);
+        } else {
+          // Show error message
+          alert('Error saving changes: ' + data.error);
+        }
+      })
+      .catch(error => {
+        editCoverBtn.disabled = false;
+        editCoverBtn.textContent = originalBtnText;
+        alert('Error saving changes: ' + error);
+      });
+    }
   }
 });
 </script>
@@ -652,9 +763,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Auto-optimize functionality
+    // Auto-optimize functionality is removed - ATS optimization is now built into the regular tailoring process
+    console.log('ATS optimization is now built into the regular tailoring process');
+    
+    /* 
+    // The following code is commented out as the auto-optimize feature has been removed
+    // and integrated into the main tailoring function
     const autoOptimizeBtn = document.getElementById('auto-optimize-resume-btn');
-    const resumePre = document.getElementById('resume-pre');
+    const resumePre = document.getElementById('tailored-resume-content');
     const resumeTextarea = document.getElementById('resume-textarea');
     
     if (autoOptimizeBtn && (resumePre || resumeTextarea)) {
@@ -666,6 +782,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Get current resume content from either pre or textarea
             const resumeContent = resumePre ? resumePre.textContent : (resumeTextarea ? resumeTextarea.value : '');
             const jobId = '{{ job._id }}'; // Get job ID from template
+    */
             
             if (!resumeContent.trim()) {
                 alert('Please upload and process a resume first.');
@@ -822,10 +939,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         actionButtons = `
                             <div class="mt-2">
                                 <span class="badge bg-warning me-2">🔄 ${data.estimated_score}% ATS Score</span>
-                                <button onclick="document.getElementById('auto-optimize-resume-btn').click()" 
-                                        class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-redo"></i> Try Again for 90+
-                                </button>
+                                <!-- Auto-optimize button removed - ATS optimization is now built into regular tailor process -->
+                                <!-- The auto-optimize feature has been integrated into the main tailor function -->
+                                <span class="badge bg-secondary me-2">
+                                    <i class="fas fa-info-circle"></i> ATS Optimization Built-in
+                                </span>
                             </div>
                         `;
                     }

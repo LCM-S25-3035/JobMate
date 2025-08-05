@@ -272,26 +272,16 @@ def profile():
         
         # Try to render the enhanced profile template, with fallback
         try:
-            from app.main.forms import ProfileUpdateForm, SocialLinksForm
-            form = ProfileUpdateForm(obj=current_user)
-            social_form = SocialLinksForm(obj=current_user)
             return render_template('main/enhanced_profile.html', 
                                  user=current_user, 
-                                 stats=profile_stats,
-                                 form=form,
-                                 social_form=social_form)
+                                 stats=profile_stats)
         except Exception as template_error:
             current_app.logger.error(f"Enhanced profile template error: {str(template_error)}")
             # Fallback to a simple profile page
             try:
-                from app.main.forms import ProfileUpdateForm, SocialLinksForm
-                form = ProfileUpdateForm(obj=current_user)
-                social_form = SocialLinksForm(obj=current_user)
                 return render_template('main/simple_profile.html', 
                                      user=current_user, 
-                                     stats=profile_stats,
-                                     form=form,
-                                     social_form=social_form)
+                                     stats=profile_stats)
             except Exception as fallback_error:
                 current_app.logger.error(f"Simple profile template error: {str(fallback_error)}")
                 # Last resort - show error page
@@ -303,14 +293,9 @@ def profile():
         current_app.logger.error(f"Profile page error: {str(e)}", exc_info=True)
         # Instead of redirecting, show a simple error page
         try:
-            from app.main.forms import ProfileUpdateForm, SocialLinksForm
-            form = ProfileUpdateForm(obj=current_user)
-            social_form = SocialLinksForm(obj=current_user)
             return render_template('main/profile_error.html', 
                                  user=current_user,
-                                 error_message=str(e),
-                                 form=form,
-                                 social_form=social_form)
+                                 error_message=str(e))
         except:
             # Ultimate fallback - just redirect to dashboard
             flash('Error loading profile', 'error')
@@ -320,30 +305,45 @@ def profile():
 @bp.route('/profile/update', methods=['POST'])
 @login_required
 def update_profile():
-    """Update user profile information with CSRF protection"""
-    from app.main.forms import ProfileUpdateForm
-    form = ProfileUpdateForm()
-    if form.validate_on_submit():
-        try:
-            current_app.logger.info(f"Updating profile for user {current_user.id}")
-            current_user.first_name = form.first_name.data.strip()
-            current_user.last_name = form.last_name.data.strip()
-            current_user.phone = form.phone.data.strip() if form.phone.data else None
-            current_user.city = form.city.data.strip() if form.city.data else None
-            current_user.experience_level = form.experience_level.data if form.experience_level.data != 'not_specified' else None
-            current_user.bio = form.bio.data.strip() if form.bio.data else None
-            current_user.skills = form.skills.data.strip() if form.skills.data else None
-            db.session.commit()
-            current_app.logger.info(f"Profile updated successfully for user {current_user.id}")
-            flash('Profile updated successfully!', 'success')
-        except Exception as e:
-            current_app.logger.error(f"Error updating profile for user {current_user.id}: {str(e)}")
-            db.session.rollback()
-            flash('Error updating profile. Please try again.', 'error')
-        return redirect(url_for('main.profile'))
-    else:
-        flash('Form validation failed. Please check your input and try again.', 'error')
-        return redirect(url_for('main.profile'))
+    """Update user profile information"""
+    try:
+        current_app.logger.info(f"Updating profile for user {current_user.id}")
+        
+        # Get form data
+        first_name = request.form.get('first_name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
+        phone = request.form.get('phone', '').strip()
+        city = request.form.get('city', '').strip()
+        experience_level = request.form.get('experience_level', '').strip()
+        bio = request.form.get('bio', '').strip()
+        skills = request.form.get('skills', '').strip()
+        
+        # Validate required fields
+        if not first_name or not last_name:
+            flash('First name and last name are required.', 'error')
+            return redirect(url_for('main.profile'))
+        
+        # Update user fields
+        current_user.first_name = first_name
+        current_user.last_name = last_name
+        current_user.phone = phone if phone else None
+        current_user.city = city if city else None
+        current_user.experience_level = experience_level if experience_level != 'not_specified' else None
+        current_user.bio = bio if bio else None
+        current_user.skills = skills if skills else None
+        
+        # Commit changes
+        db.session.commit()
+        
+        current_app.logger.info(f"Profile updated successfully for user {current_user.id}")
+        flash('Profile updated successfully!', 'success')
+        
+    except Exception as e:
+        current_app.logger.error(f"Error updating profile for user {current_user.id}: {str(e)}")
+        db.session.rollback()
+        flash('Error updating profile. Please try again.', 'error')
+    
+    return redirect(url_for('main.profile'))
 
 
 @bp.route('/profile/upload-picture', methods=['POST'])
@@ -490,48 +490,47 @@ def change_password():
 @bp.route('/profile/update-social', methods=['POST'])
 @login_required
 def update_social_links():
-    """Update user social media links with CSRF protection"""
-    from app.main.forms import SocialLinksForm
-    form = SocialLinksForm()
-    if form.validate_on_submit():
-        try:
-            # Basic URL validation
-            def validate_url(url, platform):
-                if not url:
-                    return None
-                if not url.startswith(('http://', 'https://')):
-                    url = 'https://' + url
-                
-                # Platform-specific validation
-                if platform == 'linkedin' and 'linkedin.com' not in url:
-                    return None
-                elif platform == 'github' and 'github.com' not in url:
-                    return None
-                
-                return url
+    """Update user social media links"""
+    try:
+        linkedin_url = request.form.get('linkedin_url', '').strip()
+        github_url = request.form.get('github_url', '').strip()
+        portfolio_url = request.form.get('portfolio_url', '').strip()
+        
+        # Basic URL validation
+        def validate_url(url, platform):
+            if not url:
+                return None
+            if not url.startswith(('http://', 'https://')):
+                url = 'https://' + url
             
-            # Validate and update URLs
-            if hasattr(current_user, 'linkedin_url'):
-                current_user.linkedin_url = validate_url(form.linkedin_url.data, 'linkedin')
-            if hasattr(current_user, 'github_url'):
-                current_user.github_url = validate_url(form.github_url.data, 'github')
-            if hasattr(current_user, 'portfolio_url'):
-                current_user.portfolio_url = validate_url(form.portfolio_url.data, 'portfolio')
+            # Platform-specific validation
+            if platform == 'linkedin' and 'linkedin.com' not in url:
+                return None
+            elif platform == 'github' and 'github.com' not in url:
+                return None
             
-            if hasattr(current_user, 'updated_at'):
-                current_user.updated_at = datetime.utcnow()
-            
-            db.session.commit()
-            
-            current_app.logger.info(f"Social links updated for user {current_user.id}")
-            flash('Social media links updated successfully! 🔗', 'success')
-            
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Social links update error: {str(e)}")
-            flash('Error updating social media links. Please try again.', 'error')
-    else:
-        flash('Form validation failed. Please check your input and try again.', 'error')
+            return url
+        
+        # Validate and update URLs
+        if hasattr(current_user, 'linkedin_url'):
+            current_user.linkedin_url = validate_url(linkedin_url, 'linkedin')
+        if hasattr(current_user, 'github_url'):
+            current_user.github_url = validate_url(github_url, 'github')
+        if hasattr(current_user, 'portfolio_url'):
+            current_user.portfolio_url = validate_url(portfolio_url, 'portfolio')
+        
+        if hasattr(current_user, 'updated_at'):
+            current_user.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        current_app.logger.info(f"Social links updated for user {current_user.id}")
+        flash('Social media links updated successfully! 🔗', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Social links update error: {str(e)}")
+        flash('Error updating social media links. Please try again.', 'error')
     
     return redirect(url_for('main.profile'))
 
@@ -1267,17 +1266,20 @@ def download_tailored(job_id, doc_type):
     if current_section:
         sections[current_section] = section_buffer
 
-    # --- Section order: SUMMARY, EXPERIENCE, then others as found ---
+    # --- Section order: SUMMARY, SKILLS, EXPERIENCE, then others as found ---
     ordered_section_titles = []
     for key in sections.keys():
         if key.lower().startswith('summary'):
             ordered_section_titles.append(key)
     for key in sections.keys():
+        if key.lower().startswith('skills'):
+            ordered_section_titles.append(key)
+    for key in sections.keys():
         if key.lower().startswith('experience'):
             ordered_section_titles.append(key)
     for key in sections.keys():
-        # Exclude SUMMARY, EXPERIENCE, and LANGUAGE sections
-        if key.lower().startswith('summary') or key.lower().startswith('experience') or key.lower().startswith('language'):
+        # Exclude SUMMARY, SKILLS, EXPERIENCE, and LANGUAGE sections
+        if key.lower().startswith('summary') or key.lower().startswith('skills') or key.lower().startswith('experience') or key.lower().startswith('language'):
             continue
         ordered_section_titles.append(key)
 
@@ -1467,10 +1469,13 @@ def download_my_tailored(job_id, doc_type):
         if key.lower().startswith('summary'):
             ordered_section_titles.append(key)
     for key in sections.keys():
+        if key.lower().startswith('skills'):
+            ordered_section_titles.append(key)
+    for key in sections.keys():
         if key.lower().startswith('experience'):
             ordered_section_titles.append(key)
     for key in sections.keys():
-        if key.lower().startswith('summary') or key.lower().startswith('experience') or key.lower().startswith('language'):
+        if key.lower().startswith('summary') or key.lower().startswith('skills') or key.lower().startswith('experience') or key.lower().startswith('language'):
             continue
         ordered_section_titles.append(key)
     def flush_section(title, buffer):

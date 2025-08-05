@@ -80,20 +80,33 @@
                         <!-- Salary Range Filter -->
                         {% if facets.salary_range.min_salary %}
                         <div class="mb-3">
-                            <label class="form-label">Salary Range</label>
+                            <label class="form-label fw-bold">Salary Range ($)</label>
                             <div class="row">
                                 <div class="col-6">
-                                    <input type="number" class="form-control" name="salary_min" 
-                                           placeholder="Min" value="{{ current_filters.salary_min or '' }}">
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" name="salary_min" 
+                                               placeholder="Min salary" value="{{ current_filters.salary_min or '' }}"
+                                               min="{{ facets.salary_range.min_salary|int }}" 
+                                               max="{{ facets.salary_range.max_salary|int }}">
+                                    </div>
                                 </div>
                                 <div class="col-6">
-                                    <input type="number" class="form-control" name="salary_max" 
-                                           placeholder="Max" value="{{ current_filters.salary_max or '' }}">
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" name="salary_max" 
+                                               placeholder="Max salary" value="{{ current_filters.salary_max or '' }}"
+                                               min="{{ facets.salary_range.min_salary|int }}" 
+                                               max="{{ facets.salary_range.max_salary|int }}">
+                                    </div>
                                 </div>
                             </div>
-                            <small class="text-muted">
-                                Range: ${{ "{:,}".format(facets.salary_range.min_salary|int) }} - 
+                            <small class="text-muted d-block mt-1">
+                                Available range: ${{ "{:,}".format(facets.salary_range.min_salary|int) }} - 
                                 ${{ "{:,}".format(facets.salary_range.max_salary|int) }}
+                            </small>
+                            <small class="text-primary d-block mt-1">
+                                <i class="bi bi-info-circle"></i> Enter both values for an exact range
                             </small>
                         </div>
                         {% endif %}
@@ -132,8 +145,14 @@
                     {% endif %}
                     {% if current_filters.salary_min or current_filters.salary_max %}
                         <span class="badge bg-danger">
-                            Salary: {% if current_filters.salary_min %}${{ "{:,}".format(current_filters.salary_min) }}+{% endif %}
-                            {% if current_filters.salary_max %} - ${{ "{:,}".format(current_filters.salary_max) }}{% endif %}
+                            <i class="bi bi-currency-dollar me-1"></i>
+                            {% if current_filters.salary_min and current_filters.salary_max %}
+                                Salary Range: ${{ "{:,}".format(current_filters.salary_min) }} - ${{ "{:,}".format(current_filters.salary_max) }}
+                            {% elif current_filters.salary_min %}
+                                Salary: ${{ "{:,}".format(current_filters.salary_min) }}+
+                            {% elif current_filters.salary_max %}
+                                Salary: Up to ${{ "{:,}".format(current_filters.salary_max) }}
+                            {% endif %}
                         </span>
                     {% endif %}
                 </div>
@@ -259,21 +278,58 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('jobFiltersForm');
     const selects = form.querySelectorAll('select');
     
+    // Add event listeners to select dropdowns
     selects.forEach(select => {
         select.addEventListener('change', function() {
             form.submit();
         });
     });
     
+    // Salary range validation and handling
+    const salaryMin = form.querySelector('input[name="salary_min"]');
+    const salaryMax = form.querySelector('input[name="salary_max"]');
+    
+    if (salaryMin && salaryMax) {
+        // Validate salary range before submission
+        form.addEventListener('submit', function(e) {
+            const minValue = parseInt(salaryMin.value) || 0;
+            const maxValue = parseInt(salaryMax.value) || 0;
+            
+            // If both values are provided and min > max
+            if (minValue > 0 && maxValue > 0 && minValue > maxValue) {
+                e.preventDefault();
+                alert('Minimum salary cannot be greater than maximum salary.');
+                return false;
+            }
+        });
+        
+        // Auto-submit when both min and max are filled or when one is cleared
+        salaryMin.addEventListener('change', function() {
+            // Only auto-submit if not empty or if clearing a value
+            if (this.value.trim() === '' || (parseInt(this.value) > 0 && salaryMax.value.trim() !== '')) {
+                form.submit();
+            }
+        });
+        
+        salaryMax.addEventListener('change', function() {
+            // Only auto-submit if not empty or if clearing a value
+            if (this.value.trim() === '' || (parseInt(this.value) > 0 && salaryMin.value.trim() !== '')) {
+                form.submit();
+            }
+        });
+    }
+    
     // Debounce search input
     const searchInput = document.getElementById('search');
     let searchTimeout;
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            form.submit();
-        }, 500);
-    });
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                form.submit();
+            }, 500);
+        });
+    }
 });
 
 // Save/unsave job function

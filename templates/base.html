@@ -29,6 +29,9 @@
     <!-- Jobs CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/jobs.css') }}">
     
+    <!-- Ghost Job Indicator CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ghost-job-indicator.css') }}?v=20250805001">
+    
     <!-- Theme System CSS with cache busting -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}?v=20241220003">
     
@@ -690,7 +693,13 @@
     </script>
     
     <!-- Custom JS -->
+        <!-- Main JavaScript -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- Ghost Job Indicators JavaScript -->
+    <script src="{{ url_for('static', filename='js/ghost-job-indicators.js') }}?v=20250805001"></script>
+</body>
+</html>
     
     {% block scripts %}{% endblock %}
 </body>

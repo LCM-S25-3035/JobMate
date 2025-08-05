@@ -372,4 +372,20 @@ class JobFacetService:
                 'display': ' '.join(salary_range)
             })
         
+        if filters.get('ghost_risk'):
+            ghost_risk_display = ''
+            if filters['ghost_risk'] == 'low':
+                ghost_risk_display = 'Low Risk Only'
+            elif filters['ghost_risk'] == 'exclude_high':
+                ghost_risk_display = 'Exclude High Risk'
+            elif filters['ghost_risk'] == 'show_high':
+                ghost_risk_display = 'High Risk Only'
+            
+            active.append({
+                'type': 'ghost_risk',
+                'label': 'Ghost Job Risk',
+                'value': filters['ghost_risk'],
+                'display': ghost_risk_display
+            })
+        
         return active

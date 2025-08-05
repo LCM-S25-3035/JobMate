@@ -453,6 +453,7 @@ def jobs_list():
     salary_max = request.args.get('salary_max', type=int)
     company = request.args.get('company', '')
     search_query = request.args.get('search', '')
+    ghost_risk = request.args.get('ghost_risk', '')
     
     # Pagination parameters
     page = request.args.get('page', 1, type=int)
@@ -633,6 +634,7 @@ def api_facets():
     salary_max = request.args.get('salary_max', type=int)
     company = request.args.get('company', '')
     search_query = request.args.get('search', '')
+    ghost_risk = request.args.get('ghost_risk', '')
     
     mongo_db = get_mongo_db()
     if mongo_db is None:
@@ -826,7 +828,7 @@ def create_query_without_filter(base_query, filter_fields):
     return new_query
 
 
-def build_enhanced_query(search_query=None, location=None, job_type=None, job_level=None, company=None, salary_min=None, salary_max=None):
+def build_enhanced_query(search_query=None, location=None, job_type=None, job_level=None, company=None, salary_min=None, salary_max=None, ghost_risk=None):
     """Build MongoDB query with enhanced logic and edge case handling"""
     query = {}
     
@@ -1100,6 +1102,9 @@ def build_enhanced_query(search_query=None, location=None, job_type=None, job_le
         if salary_conditions:
             query['$and'] = query.get('$and', [])
             query['$and'].extend(salary_conditions)
+    
+    # Ghost job risk filter - disabled as per request
+    # We'll still show ghost job indicators but not filter by them
     
     return query
 

@@ -19,6 +19,7 @@ class Config:
     
     # Core Flask Configuration
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'jobmate-super-secret-key-change-in-production'
+    FLASK_ENV = os.environ.get('FLASK_ENV', 'development')
     
     # Database Configuration
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')

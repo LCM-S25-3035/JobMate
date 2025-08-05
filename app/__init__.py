@@ -144,6 +144,11 @@ def create_app(config_class=None):
     from app.main import bp as main_bp
     app.register_blueprint(main_bp)
     
+    # Register debug routes in development environment
+    if app.config.get('FLASK_ENV', 'development') != 'production' and not app.config.get('PRODUCTION', False):
+        from app.debug_routes import register_debug_routes
+        register_debug_routes(app)
+    
     # Custom template filters
     @app.template_filter('format_number')
     def format_number(value):

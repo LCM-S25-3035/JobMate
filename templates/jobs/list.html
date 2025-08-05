@@ -197,6 +197,33 @@
                                         {% endif %}
                                     </div>
                                     {% endif %}
+                                    
+                                    <!-- Ghost Job Detection Indicator -->
+                                    {% if job.ghost_job_percentage is defined or job.ghost_score is defined %}
+                                    <div class="ghost-job-indicator mt-2">
+                                        {% set percentage = job.ghost_job_percentage|default(0)|int %}
+                                        {% if percentage == 0 and job.ghost_score is defined and job.ghost_score %}
+                                            {% set percentage = (job.ghost_score * 100)|int %}
+                                        {% endif %}
+                                        
+                                        <div class="ghost-job-badge" data-job-id="{{ job._id }}" data-percentage="{{ percentage }}">
+                                            <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i> 
+                                            Ghost Job Likelihood: 
+                                            <span class="ghost-percentage fw-bold ms-1">{{ percentage }}%</span>
+                                        </div>
+                                        <div class="ghost-job-progress mt-1">
+                                            {% set bar_color = '#4dc94d' %}
+                                            {% if percentage >= 70 %}
+                                                {% set bar_color = '#ff4d4d' %}
+                                            {% elif percentage >= 40 %}
+                                                {% set bar_color = '#ffa64d' %}
+                                            {% elif percentage >= 20 %}
+                                                {% set bar_color = '#ffdb4d' %}
+                                            {% endif %}
+                                            <div class="ghost-job-bar" style="width: {{ percentage }}%; background-color: {{ bar_color }}"></div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-4 text-end">
                                     {% if job.min_amount or job.max_amount %}
@@ -466,5 +493,87 @@ function showAlert(message, type) {
         alertDiv.remove();
     }, 5000);
 }
+
+// Ghost job indicator tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    // Setup ghost job indicator tooltips
+    document.querySelectorAll('.ghost-job-badge').forEach(badge => {
+        badge.addEventListener('click', async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const jobId = this.getAttribute('data-job-id');
+            const percentage = this.getAttribute('data-percentage');
+            
+            // Remove any existing tooltips
+            document.querySelectorAll('.ghost-tooltip').forEach(el => el.remove());
+            
+            // Create tooltip
+            const tooltip = document.createElement('div');
+            tooltip.className = 'ghost-tooltip';
+            
+            // Determine risk level
+            let riskLevel = 'Low';
+            let riskClass = 'text-success';
+            
+            if (percentage >= 70) {
+                riskLevel = 'High';
+                riskClass = 'text-danger';
+            } else if (percentage >= 40) {
+                riskLevel = 'Medium';
+                riskClass = 'text-warning';
+            }
+            
+            // Default reasons if API call fails
+            let reasons = [
+                "Job posting has suspicious characteristics",
+                "Our algorithm detected potential issues with this listing"
+            ];
+            
+            try {
+                // Try to fetch detailed reasons from API
+                const response = await fetch(`/api/jobs/${jobId}/ghost-details`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.reasons && data.reasons.length > 0) {
+                        reasons = data.reasons;
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching ghost job details:', error);
+            }
+            
+            // Set tooltip content
+            tooltip.innerHTML = `
+                <div class="ghost-tooltip-header ${riskClass}">
+                    Ghost Job Risk: ${riskLevel} (${percentage}%)
+                </div>
+                <div class="ghost-tooltip-body">
+                    <p>This job shows signs of being potentially suspicious based on:</p>
+                    <ul>
+                        ${reasons.map(reason => `<li>${reason}</li>`).join('')}
+                    </ul>
+                    <p class="mt-2 mb-0 small text-muted">Ghost jobs are potentially fraudulent or misleading job listings.</p>
+                </div>
+            `;
+            
+            // Position the tooltip
+            const rect = this.getBoundingClientRect();
+            tooltip.style.top = `${rect.bottom + window.scrollY + 5}px`;
+            tooltip.style.left = `${rect.left + window.scrollX}px`;
+            
+            // Add to document
+            document.body.appendChild(tooltip);
+            
+            // Close when clicking elsewhere
+            document.addEventListener('click', function closeTooltip(e) {
+                if (!tooltip.contains(e.target) && e.target !== badge) {
+                    tooltip.remove();
+                    document.removeEventListener('click', closeTooltip);
+                }
+            });
+        });
+    });
+});
 </script>
 {% endblock %}

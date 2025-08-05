@@ -85,13 +85,15 @@
                     </a>
                 </div>
                 <div class="col-lg-4 text-center">
-                    <div class="stat-card-theme">
-                        <div class="stat-icon">
-                            <i class="bi bi-graph-up-arrow"></i>
+                    <a href="{{ url_for('main.talent_journey') }}" class="text-decoration-none">
+                        <div class="stat-card-theme">
+                            <div class="stat-icon">
+                                <i class="bi bi-graph-up-arrow"></i>
+                            </div>
+                            <div class="stat-number">{{ total_applications or 0 }}</div>
+                            <div class="stat-label">Total Applications</div>
                         </div>
-                        <div class="stat-number">{{ total_applications or 0 }}</div>
-                        <div class="stat-label">Total Applications</div>
-                    </div>
+                    </a>
                 </div>
             </div>
         </div>
@@ -129,8 +131,8 @@
                             <div class="stat-icon">
                                 <i class="bi bi-person-plus"></i>
                             </div>
-                            <div class="stat-number">{{ new_applications or 0 }}</div>
-                            <div class="stat-label">Applications</div>
+                            <div class="stat-number">{{ applications_24h or 0 }}</div>
+                            <div class="stat-label">Applications (24h)</div>
                         </div>
                     </div>
                 </div>
@@ -169,14 +171,38 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="badge badge-theme-primary">23 new</span>
-                                            <small class="text-theme-secondary d-block">45 total</small>
+                                            {% if job.new_applications > 0 %}
+                                                <span class="badge badge-theme-primary">{{ job.new_applications }} new</span>
+                                            {% endif %}
+                                            <small class="text-theme-secondary d-block">{{ job.total_applications }} total</small>
                                         </td>
                                         <td>
-                                            <span class="badge bg-success">Active</span>
+                                            {% if job.status == 'active' %}
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle-fill me-1"></i>Active
+                                                </span>
+                                            {% elif job.status == 'paused' %}
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-pause-fill me-1"></i>Paused
+                                                </span>
+                                            {% elif job.status == 'closed' %}
+                                                <span class="badge bg-danger">
+                                                    <i class="bi bi-lock-fill me-1"></i>Closed
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-primary">{{ job.status|title }}</span>
+                                            {% endif %}
                                         </td>
                                         <td>
-                                            <small class="text-theme-secondary">2 days ago</small>
+                                            <small class="text-theme-secondary">
+                                                {% if job.days_ago == 0 %}
+                                                    Today
+                                                {% elif job.days_ago == 1 %}
+                                                    1 day ago
+                                                {% else %}
+                                                    {{ job.days_ago }} days ago
+                                                {% endif %}
+                                            </small>
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm">

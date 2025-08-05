@@ -1,0 +1,437 @@
+<!-- templates/talent_journey.html -->
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+.status-filter-item:hover {
+    background-color: #f8f9fa !important;
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+.status-filter-item.active-filter {
+    background-color: #e3f2fd !important;
+    border-left: 4px solid #2196f3 !important;
+    font-weight: 600;
+}
+
+.status-filter-item.active-filter .badge {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+#filter-indicator {
+    border-radius: 0 !important;
+    border-left: 4px solid #17a2b8;
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Talent Journey Header -->
+    <div class="card mb-4" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); border: none; border-radius: 15px;">
+        <div class="card-body text-center py-4">
+            <h2 class="text-white mb-2" style="font-weight: 600;">
+                <i class="bi bi-people-fill me-2"></i>Talent Journey
+            </h2>
+            <p class="text-white mb-0" style="opacity: 0.9;">Track and manage your candidates through the hiring process</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Main Content - Candidates Table -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    {% if candidates %}
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Candidate Name</th>
+                                <th>Job Applied</th>
+                                <th>Status</th>
+                                <th>ATS Score</th>
+                                <th>Applied Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for candidate in candidates %}
+                            <tr data-status="{{ candidate.status }}" class="candidate-row">
+                                <td>{{ candidate.name }}</td>
+                                <td>{{ candidate.job }}</td>
+                                <td>
+                                    <select class="form-select form-select-sm" style="width: auto; min-width: 150px;" onchange="updateCandidateStatus(this, {{ candidate.application_id|default('null', true) }})">
+                                        <option value="applied" {% if candidate.status == 'applied' %}selected{% endif %}>Applied</option>
+                                        <option value="screening" {% if candidate.status == 'screening' %}selected{% endif %}>Phone Screening</option>
+                                        <option value="interview_scheduled" {% if candidate.status == 'interview_scheduled' %}selected{% endif %}>Tech Interview</option>
+                                        <option value="interviewed" {% if candidate.status == 'interviewed' %}selected{% endif %}>Final Interview</option>
+                                        <option value="offer_received" {% if candidate.status == 'offer_received' %}selected{% endif %}>Job Offer</option>
+                                        <option value="accepted" {% if candidate.status == 'accepted' %}selected{% endif %}>Job Accepted</option>
+                                        <option value="rejected" {% if candidate.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <span class="{{ candidate.ats_score_class }}">
+                                        {{ candidate.ats_score_display }}
+                                        {% if candidate.ats_score %}
+                                            {% if candidate.ats_score >= 80 %}
+                                                <i class="bi bi-check-circle-fill ms-1"></i>
+                                            {% elif candidate.ats_score >= 60 %}
+                                                <i class="bi bi-exclamation-triangle-fill ms-1"></i>
+                                            {% else %}
+                                                <i class="bi bi-x-circle-fill ms-1"></i>
+                                            {% endif %}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>{{ candidate.applied_date }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-people fs-1 text-muted"></i>
+                        <h4 class="text-muted mt-3">No Applications Yet</h4>
+                        <p class="text-muted">Applications to your job postings will appear here.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Sidebar - Status Overview Dashboard -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pie-chart-fill me-2 text-primary"></i>Status Overview
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if candidates %}
+                        <!-- Status Statistics -->
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item d-flex justify-content-between align-items-center status-filter-item" 
+                                 data-status="applied" style="cursor: pointer;" title="Click to filter by Applied status">
+                                <div class="d-flex align-items-center">
+                                    <div class="badge bg-primary rounded-circle p-2 me-3">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                    </div>
+                                    <span class="fw-medium">Applied</span>
+                                </div>
+                                <span class="badge bg-primary rounded-pill" id="status-applied">
+                                    {{ candidates | selectattr('status', 'equalto', 'applied') | list | length }}
+                                </span>
+                            </div>
+                            
+                            <div class="list-group-item d-flex justify-content-between align-items-center status-filter-item"
+                                 data-status="screening" style="cursor: pointer;" title="Click to filter by Phone Screening status">
+                                <div class="d-flex align-items-center">
+                                    <div class="badge bg-info rounded-circle p-2 me-3">
+                                        <i class="bi bi-telephone"></i>
+                                    </div>
+                                    <span class="fw-medium">Phone Screening</span>
+                                </div>
+                                <span class="badge bg-info rounded-pill" id="status-screening">
+                                    {{ candidates | selectattr('status', 'equalto', 'screening') | list | length }}
+                                </span>
+                            </div>
+                            
+                            <div class="list-group-item d-flex justify-content-between align-items-center status-filter-item"
+                                 data-status="interview_scheduled" style="cursor: pointer;" title="Click to filter by Tech Interview status">
+                                <div class="d-flex align-items-center">
+                                    <div class="badge bg-warning rounded-circle p-2 me-3">
+                                        <i class="bi bi-code-slash"></i>
+                                    </div>
+                                    <span class="fw-medium">Tech Interview</span>
+                                </div>
+                                <span class="badge bg-warning rounded-pill" id="status-interview-scheduled">
+                                    {{ candidates | selectattr('status', 'equalto', 'interview_scheduled') | list | length }}
+                                </span>
+                            </div>
+                            
+                            <div class="list-group-item d-flex justify-content-between align-items-center status-filter-item"
+                                 data-status="interviewed" style="cursor: pointer;" title="Click to filter by Final Interview status">
+                                <div class="d-flex align-items-center">
+                                    <div class="badge bg-secondary rounded-circle p-2 me-3">
+                                        <i class="bi bi-people"></i>
+                                    </div>
+                                    <span class="fw-medium">Final Interview</span>
+                                </div>
+                                <span class="badge bg-secondary rounded-pill" id="status-interviewed">
+                                    {{ candidates | selectattr('status', 'equalto', 'interviewed') | list | length }}
+                                </span>
+                            </div>
+                            
+                            <div class="list-group-item d-flex justify-content-between align-items-center status-filter-item"
+                                 data-status="offer_received" style="cursor: pointer;" title="Click to filter by Job Offer status">
+                                <div class="d-flex align-items-center">
+                                    <div class="badge bg-success rounded-circle p-2 me-3">
+                                        <i class="bi bi-gift"></i>
+                                    </div>
+                                    <span class="fw-medium">Job Offer</span>
+                                </div>
+                                <span class="badge bg-success rounded-pill" id="status-offer-received">
+                                    {{ candidates | selectattr('status', 'equalto', 'offer_received') | list | length }}
+                                </span>
+                            </div>
+                            
+                            <div class="list-group-item d-flex justify-content-between align-items-center status-filter-item"
+                                 data-status="accepted" style="cursor: pointer;" title="Click to filter by Job Accepted status">
+                                <div class="d-flex align-items-center">
+                                    <div class="badge bg-success rounded-circle p-2 me-3">
+                                        <i class="bi bi-check-circle"></i>
+                                    </div>
+                                    <span class="fw-medium">Job Accepted</span>
+                                </div>
+                                <span class="badge bg-success rounded-pill" id="status-accepted">
+                                    {{ candidates | selectattr('status', 'equalto', 'accepted') | list | length }}
+                                </span>
+                            </div>
+                            
+                            <div class="list-group-item d-flex justify-content-between align-items-center status-filter-item"
+                                 data-status="rejected" style="cursor: pointer;" title="Click to filter by Rejected status">
+                                <div class="d-flex align-items-center">
+                                    <div class="badge bg-danger rounded-circle p-2 me-3">
+                                        <i class="bi bi-x-circle"></i>
+                                    </div>
+                                    <span class="fw-medium">Rejected</span>
+                                </div>
+                                <span class="badge bg-danger rounded-pill" id="status-rejected">
+                                    {{ candidates | selectattr('status', 'equalto', 'rejected') | list | length }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Total Summary -->
+                        <div class="card-footer bg-light">
+                            <div class="d-flex justify-content-between align-items-center status-filter-item" 
+                                 data-status="all" style="cursor: pointer;" title="Click to show all candidates">
+                                <span class="fw-bold text-primary">Total Candidates</span>
+                                <span class="badge bg-primary fs-6 px-3 py-2">{{ candidates | length }}</span>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-bar-chart fs-1 text-muted"></i>
+                            <p class="text-muted mt-2 mb-0">No candidates to analyze</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateCandidateStatus(selectElement, applicationId) {
+    const newStatus = selectElement.value;
+    const oldStatus = selectElement.getAttribute('data-original-status') || 'applied';
+    
+    if (!applicationId) return;
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('meta[name=csrf-token]');
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    
+    // Add CSRF token if available
+    if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken.getAttribute('content');
+    }
+    
+    // AJAX call to update status
+    fetch('/api/update-application-status', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+            application_id: applicationId,
+            status: newStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Status updated successfully
+            console.log('Status updated successfully');
+            
+            // Update the status counts in the sidebar
+            updateStatusCounts(oldStatus, newStatus);
+            
+            // Update the data attribute for future changes
+            selectElement.setAttribute('data-original-status', newStatus);
+        } else {
+            alert('Failed to update status: ' + (data.error || 'Unknown error'));
+            // Revert to previous selection on error
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to update status');
+        // Revert to previous selection on error
+        location.reload();
+    });
+}
+
+function updateStatusCounts(oldStatus, newStatus) {
+    // Map status values to their corresponding element IDs
+    const statusMap = {
+        'applied': 'status-applied',
+        'screening': 'status-screening', 
+        'interview_scheduled': 'status-interview-scheduled',
+        'interviewed': 'status-interviewed',
+        'offer_received': 'status-offer-received',
+        'accepted': 'status-accepted',
+        'rejected': 'status-rejected'
+    };
+    
+    // Decrease old status count
+    if (oldStatus && statusMap[oldStatus]) {
+        const oldElement = document.getElementById(statusMap[oldStatus]);
+        if (oldElement) {
+            const oldCount = parseInt(oldElement.textContent) || 0;
+            oldElement.textContent = Math.max(0, oldCount - 1);
+        }
+    }
+    
+    // Increase new status count
+    if (newStatus && statusMap[newStatus]) {
+        const newElement = document.getElementById(statusMap[newStatus]);
+        if (newElement) {
+            const newCount = parseInt(newElement.textContent) || 0;
+            newElement.textContent = newCount + 1;
+        }
+    }
+}
+
+// Initialize original status tracking when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const selects = document.querySelectorAll('select[onchange*="updateCandidateStatus"]');
+    selects.forEach(select => {
+        // Store the original status for tracking changes
+        select.setAttribute('data-original-status', select.value);
+    });
+    
+    // Initialize status filtering
+    initStatusFiltering();
+});
+
+// Status filtering functionality
+function initStatusFiltering() {
+    const filterItems = document.querySelectorAll('.status-filter-item');
+    let currentFilter = 'all';
+    
+    filterItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const status = this.getAttribute('data-status');
+            
+            // Remove active class from all items
+            filterItems.forEach(f => f.classList.remove('active-filter'));
+            
+            // Add active class to clicked item
+            this.classList.add('active-filter');
+            
+            // Apply filter
+            filterCandidatesByStatus(status);
+            currentFilter = status;
+        });
+    });
+}
+
+function filterCandidatesByStatus(status) {
+    const rows = document.querySelectorAll('.candidate-row');
+    const noDataDiv = document.querySelector('.text-center.py-5');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        const rowStatus = row.getAttribute('data-status');
+        
+        if (status === 'all' || rowStatus === status) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Update filter indicator
+    updateFilterIndicator(status, visibleCount);
+    
+    // Show/hide no data message
+    if (visibleCount === 0 && rows.length > 0) {
+        if (!document.getElementById('no-filter-results')) {
+            const tableBody = document.querySelector('tbody');
+            const noResultsRow = document.createElement('tr');
+            noResultsRow.id = 'no-filter-results';
+            noResultsRow.innerHTML = `
+                <td colspan="5" class="text-center py-4 text-muted">
+                    <i class="bi bi-funnel fs-3"></i>
+                    <div class="mt-2">No candidates found with this status</div>
+                    <small>Click "Total Candidates" to show all</small>
+                </td>
+            `;
+            tableBody.appendChild(noResultsRow);
+        }
+    } else {
+        const noResultsRow = document.getElementById('no-filter-results');
+        if (noResultsRow) {
+            noResultsRow.remove();
+        }
+    }
+}
+
+function updateFilterIndicator(status, count) {
+    const statusLabels = {
+        'all': 'All Candidates',
+        'applied': 'Applied',
+        'screening': 'Phone Screening',
+        'interview_scheduled': 'Tech Interview',
+        'interviewed': 'Final Interview',
+        'offer_received': 'Job Offer',
+        'accepted': 'Job Accepted',
+        'rejected': 'Rejected'
+    };
+    
+    // Update table header or add filter indicator
+    let filterIndicator = document.getElementById('filter-indicator');
+    if (!filterIndicator) {
+        const tableCard = document.querySelector('.col-lg-8 .card');
+        filterIndicator = document.createElement('div');
+        filterIndicator.id = 'filter-indicator';
+        filterIndicator.className = 'alert alert-info mb-0 rounded-0';
+        tableCard.insertBefore(filterIndicator, tableCard.firstChild);
+    }
+    
+    if (status === 'all') {
+        filterIndicator.style.display = 'none';
+    } else {
+        filterIndicator.style.display = 'block';
+        filterIndicator.innerHTML = `
+            <i class="bi bi-funnel me-2"></i>
+            Showing <strong>${count}</strong> candidate${count !== 1 ? 's' : ''} with status: <strong>${statusLabels[status]}</strong>
+            <button type="button" class="btn btn-sm btn-outline-info ms-2" onclick="clearFilter()">
+                <i class="bi bi-x-circle me-1"></i>Clear Filter
+            </button>
+        `;
+    }
+}
+
+function clearFilter() {
+    // Remove active class from all filter items
+    document.querySelectorAll('.status-filter-item').forEach(item => {
+        item.classList.remove('active-filter');
+    });
+    
+    // Add active class to "Total Candidates"
+    document.querySelector('[data-status="all"]').classList.add('active-filter');
+    
+    // Show all candidates
+    filterCandidatesByStatus('all');
+}
+</script>
+{% endblock %}

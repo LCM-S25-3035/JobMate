@@ -44,6 +44,9 @@ def jobs_list():
     # Build MongoDB query with proper type checking
     query = {}
     
+    # Only show active jobs to applicants (hide paused, closed, etc.)
+    query['status'] = 'active'
+    
     # Text search
     if search_query:
         query['$or'] = [

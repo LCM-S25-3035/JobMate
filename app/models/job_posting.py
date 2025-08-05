@@ -99,7 +99,7 @@ class JobPosting(db.Model):
     
     # Job Status
     status = db.Column(db.Enum(
-        'draft', 'active', 'paused', 'filled', 'expired', 'cancelled',
+        'draft', 'active', 'paused', 'closed', 'filled', 'expired', 'cancelled',
         name='job_status'
     ), nullable=False, default='draft')
     

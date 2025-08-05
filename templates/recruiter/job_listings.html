@@ -66,6 +66,16 @@
         color: #856404; 
         border: 1px solid #ffeaa7;
     }
+    .status-closed { 
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); 
+        color: #721c24; 
+        border: 1px solid #f5c6cb;
+    }
+    .status-cancelled { 
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); 
+        color: #721c24; 
+        border: 1px solid #f5c6cb;
+    }
     .status-draft { 
         background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); 
         color: #721c24; 
@@ -239,7 +249,15 @@
                                     <div class="d-flex justify-content-between align-items-start mb-3">
                                         <h5 class="mb-1 text-theme-dark">{{ job.title }}</h5>
                                         <span class="status-badge status-{{ job.status }}">
-                                            {{ job.status.title() }}
+                                            {% if job.status == 'paused' %}
+                                                <i class="bi bi-pause-fill me-1"></i>Paused
+                                            {% elif job.status == 'active' %}
+                                                <i class="bi bi-check-circle-fill me-1"></i>Active
+                                            {% elif job.status == 'closed' %}
+                                                <i class="bi bi-lock-fill me-1"></i>Closed
+                                            {% else %}
+                                                {{ job.status.title() }}
+                                            {% endif %}
                                         </span>
                                     </div>
                                     <h6 class="text-theme-primary mb-2">
@@ -248,6 +266,25 @@
                                     <p class="text-theme-secondary mb-3">
                                         {{ job.description[:200] }}{% if job.description|length > 200 %}...{% endif %}
                                     </p>
+                                    
+                                    {% if job.status == 'paused' %}
+                                    <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                        <small>
+                                            <strong>This job is paused</strong> and not visible to applicants. 
+                                            Click <strong>Resume</strong> to make it live again.
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                    {% if job.status == 'closed' %}
+                                    <div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
+                                        <i class="bi bi-lock-fill me-2"></i>
+                                        <small>
+                                            <strong>This job is closed</strong> and no longer accepting new applications. 
+                                            Existing applications and data are preserved for reference.
+                                        </small>
+                                    </div>
+                                    {% endif %}
                                     
                                     <div class="job-stats">
                                         <div class="job-stat">
@@ -287,13 +324,51 @@
                                         </a>
                                         <div class="btn-group-vertical gap-1 mt-2">
                                             {% if job.status == 'active' %}
-                                                <button class="btn btn-warning btn-sm" onclick="toggleJobStatus({{ job.id }}, 'paused')" title="Pause">Pause</button>
+                                                <button class="btn btn-warning btn-sm" 
+                                                        onclick="toggleJobStatus({{ job.id }}, 'paused')" 
+                                                        title="Pause this job posting - it will be hidden from job seekers but all data will be preserved"
+                                                        data-bs-toggle="tooltip">
+                                                    <i class="bi bi-pause-fill me-1"></i>Pause
+                                                </button>
                                             {% endif %}
                                             {% if job.status == 'paused' %}
-                                                <button class="btn btn-success btn-sm" onclick="toggleJobStatus({{ job.id }}, 'active')" title="Repost">Repost</button>
+                                                <button class="btn btn-success btn-sm" 
+                                                        onclick="toggleJobStatus({{ job.id }}, 'active')" 
+                                                        title="Resume this job posting - make it visible to job seekers again"
+                                                        data-bs-toggle="tooltip">
+                                                    <i class="bi bi-play-fill me-1"></i>Resume
+                                                </button>
                                             {% endif %}
-                                            <button class="btn btn-secondary btn-sm" onclick="toggleJobStatus({{ job.id }}, 'closed')" title="Close">Close</button>
-                                            <button class="btn btn-danger btn-sm" onclick="archiveJob({{ job.id }})" title="Archive">Archive</button>
+                                            {% if job.status in ['active', 'paused'] %}
+                                                <button class="btn btn-secondary btn-sm" 
+                                                        onclick="toggleJobStatus({{ job.id }}, 'closed')" 
+                                                        title="Close this job posting permanently - no new applications will be accepted"
+                                                        data-bs-toggle="tooltip">
+                                                    <i class="bi bi-x-circle me-1"></i>Close
+                                                </button>
+                                            {% endif %}
+                                            {% if job.status == 'closed' %}
+                                                <span class="btn btn-outline-secondary btn-sm disabled" 
+                                                      title="This job posting is closed - no new applications are accepted"
+                                                      data-bs-toggle="tooltip">
+                                                    <i class="bi bi-lock-fill me-1"></i>Closed
+                                                </span>
+                                                <!-- Optional: Add Reopen button if you want to allow reopening -->
+                                                <!--
+                                                <button class="btn btn-info btn-sm" 
+                                                        onclick="toggleJobStatus({{ job.id }}, 'active')" 
+                                                        title="Reopen this job posting to accept new applications"
+                                                        data-bs-toggle="tooltip">
+                                                    <i class="bi bi-unlock-fill me-1"></i>Reopen
+                                                </button>
+                                                -->
+                                            {% endif %}
+                                            <button class="btn btn-danger btn-sm" 
+                                                    onclick="removeJob({{ job.id }})" 
+                                                    title="Permanently remove this job posting from the system"
+                                                    data-bs-toggle="tooltip">
+                                                <i class="bi bi-trash me-1"></i>Remove
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -430,18 +505,52 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Job action functions
 function toggleJobStatus(jobId, newStatus) {
-    if (confirm(`Are you sure you want to ${newStatus} this job?`)) {
+    let confirmMessage = '';
+    
+    switch(newStatus) {
+        case 'paused':
+            confirmMessage = 'Are you sure you want to pause this job? It will be hidden from job seekers but all data will be preserved.';
+            break;
+        case 'active':
+            confirmMessage = 'Are you sure you want to resume this job? It will become visible to job seekers again.';
+            break;
+        case 'closed':
+            confirmMessage = 'Are you sure you want to close this job permanently? No new applications will be accepted, but existing data will be preserved for reference and analytics.';
+            break;
+        default:
+            confirmMessage = `Are you sure you want to ${newStatus} this job?`;
+    }
+    
+    if (confirm(confirmMessage)) {
         fetch(`/recruiter/api/jobs/${jobId}/status`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
             body: JSON.stringify({ status: newStatus })
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // Show success message
+                let successMessage = '';
+                switch(newStatus) {
+                    case 'paused':
+                        successMessage = 'Job has been paused and is no longer visible to applicants.';
+                        break;
+                    case 'active':
+                        successMessage = 'Job has been resumed and is now visible to applicants.';
+                        break;
+                    case 'closed':
+                        successMessage = 'Job has been closed permanently. No new applications will be accepted.';
+                        break;
+                    default:
+                        successMessage = data.message || 'Job status updated successfully.';
+                }
+                
+                // You could show a toast notification here instead of alert
+                alert(successMessage);
                 location.reload();
             } else {
                 alert('Error updating job status: ' + (data.message || 'Unknown error'));
@@ -460,7 +569,7 @@ function deleteJob(jobId) {
         fetch(`/recruiter/jobs/${jobId}`, {
             method: 'DELETE',
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             }
         })
         .then(response => response.json())
@@ -478,13 +587,38 @@ function deleteJob(jobId) {
     }
 }
 
+function removeJob(jobId) {
+    if (confirm('Are you sure you want to permanently remove this job posting? This action cannot be undone and will delete the job and all associated applications.')) {
+        fetch(`/recruiter/jobs/${jobId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Job posting has been permanently removed.');
+                location.reload();
+            } else {
+                alert('Error removing job: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error removing job posting');
+        });
+    }
+}
+
 function archiveJob(jobId) {
     if (confirm('Are you sure you want to archive this job?')) {
         fetch(`/recruiter/jobs/${jobId}/archive`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             }
         })
         .then(response => response.json())
@@ -501,5 +635,14 @@ function archiveJob(jobId) {
         });
     }
 }
+
+// Initialize Bootstrap tooltips
+document.addEventListener('DOMContentLoaded', function () {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
 </script>
 {% endblock %} 

@@ -83,6 +83,12 @@ def job_match_details(job_id):
         return redirect(url_for('main.dashboard'))
     
     job = JobPosting.query.get_or_404(job_id)
+    
+    # Only allow access to active jobs for applicants
+    if job.status != 'active':
+        flash('This job posting is no longer available.', 'warning')
+        return redirect(url_for('match.recommended_jobs'))
+    
     preferences = current_user.job_preferences.first()
     primary_resume = current_user.resumes.filter_by(is_primary=True).first()
     
@@ -137,6 +143,11 @@ def api_quick_match(job_id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     job = JobPosting.query.get_or_404(job_id)
+    
+    # Only allow access to active jobs for applicants
+    if job.status != 'active':
+        return jsonify({'error': 'Job posting is no longer available'}), 404
+    
     preferences = current_user.job_preferences.first()
     primary_resume = current_user.resumes.filter_by(is_primary=True).first()
     

@@ -12,6 +12,7 @@ from app.models.application import Application
 from app import db
 from datetime import datetime, timedelta
 from app.ai_agents.salary_suggestion import get_salary_suggestion
+from app.ai_agents.skills_suggestion import suggest_skills
 
 
 # Removed duplicate dashboard route - using main.recruiter_dashboard instead
@@ -188,36 +189,6 @@ def edit_job(job_id):
             flash('Error updating job posting. Please try again.', 'error')
     
     return render_template('recruiter/edit_job.html', title=f'Edit: {job.title}', job=job)
-
-
-@bp.route('/jobs/<int:job_id>/delete', methods=['POST'])
-@login_required
-def delete_job(job_id):
-    """Delete a job posting"""
-    if not current_user.is_recruiter():
-        return jsonify({'success': False, 'message': 'Access denied'}), 403
-    
-    job = JobPosting.query.filter_by(id=job_id, recruiter_id=current_user.id).first()
-    if not job:
-        return jsonify({'success': False, 'message': 'Job not found'}), 404
-    
-    try:
-        job_title = job.title
-        db.session.delete(job)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': f'Job posting "{job_title}" deleted successfully.'
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Error deleting job posting: {e}")
-        return jsonify({
-            'success': False,
-            'message': 'Error deleting job posting.'
-        }), 500
 
 
 @bp.route('/candidates')
@@ -458,5 +429,63 @@ def api_salary_suggestion():
     suggestion = get_salary_suggestion(title, location, experience_level)
     if not suggestion:
         return jsonify({'success': True, 'salary_range': None, 'explanation': None})
-    # If Glassdoor, suggestion is a dict with salary_range and explanation
+    # AI-powered suggestion returns a dict with salary_range and explanation
     return jsonify({'success': True, 'salary_range': suggestion['salary_range'], 'explanation': suggestion.get('explanation')})
+
+@bp.route('/api/skills-suggestion', methods=['GET'])
+def api_skills_suggestion():
+    """API endpoint for AI-powered skills suggestions based on job title"""
+    title = request.args.get('title', '').strip()
+    max_skills = request.args.get('max_skills', 10)
+    
+    if not title:
+        return jsonify({'success': False, 'error': 'Missing job title'}), 400
+    
+    try:
+        max_skills = int(max_skills)
+        if max_skills <= 0 or max_skills > 20:
+            max_skills = 15
+    except (ValueError, TypeError):
+        max_skills = 15
+    
+    suggested_skills = suggest_skills(title, max_skills)
+    
+    return jsonify({
+        'success': True, 
+        'skills': suggested_skills,
+        'count': len(suggested_skills)
+    })
+
+
+@bp.route('/jobs/<int:job_id>', methods=['DELETE'])
+@login_required
+def delete_job(job_id):
+    """Permanently delete a job posting and all associated data"""
+    if not current_user.is_recruiter():
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    job = JobPosting.query.filter_by(id=job_id, recruiter_id=current_user.id).first()
+    if not job:
+        return jsonify({'success': False, 'message': 'Job not found'}), 404
+    
+    try:
+        # Delete all applications for this job
+        from app.models.application import Application
+        Application.query.filter_by(job_posting_id=job_id).delete()
+        
+        # Delete the job posting
+        db.session.delete(job)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Job posting and all associated data have been permanently deleted'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting job {job_id}: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Error deleting job posting'
+        }), 500

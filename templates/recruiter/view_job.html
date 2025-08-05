@@ -275,7 +275,7 @@
             </div>
             <div class="col-lg-4">
                 <div class="quick-stats">
-                    <a href="{{ url_for('recruiter.candidates') }}" class="quick-stat text-decoration-none">
+                    <a href="{{ url_for('main.talent_journey') }}" class="quick-stat text-decoration-none">
                         <div class="quick-stat-number">{{ applications|length or 0 }}</div>
                         <div class="quick-stat-label">Applications</div>
                     </a>
@@ -400,7 +400,7 @@
                         
                         {% if applications|length > 5 %}
                         <div class="text-center mt-3">
-                            <a href="{{ url_for('recruiter.candidates') }}" class="btn btn-theme-outline">
+                            <a href="{{ url_for('main.talent_journey') }}" class="btn btn-theme-outline">
                                 View All {{ applications|length }} Applications
                             </a>
                         </div>

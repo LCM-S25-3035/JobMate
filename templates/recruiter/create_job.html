@@ -193,6 +193,19 @@
         transform: translateY(-1px);
     }
     
+    .suggested-skill {
+        background: #e3f2fd !important;
+        color: #1976d2 !important;
+        border: 1px dashed #90caf9;
+    }
+    
+    .suggested-skill:hover {
+        background: #1976d2 !important;
+        color: white !important;
+        border: 1px solid #1976d2;
+        transform: translateY(-1px);
+    }
+    
     .form-help {
         background: var(--info-light);
         border-left: 4px solid var(--info-color);
@@ -262,7 +275,7 @@
             <!-- Form -->
             <div class="form-container">
                 <form method="POST" id="createJobForm">
-                    {{ csrf_token() }}
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     
                     <!-- Basic Information Section -->
                     <div class="form-section" id="section-1">
@@ -422,16 +435,12 @@
                         </div>
                         <div class="skill-tags" id="skillTags"></div>
                         
-                        <div class="ai-suggestion mt-3">
+                        <div class="ai-suggestion mt-3" id="skillsSuggestion" style="display: none;">
                             <div class="suggestion-label">
-                                <i class="bi bi-robot me-1"></i>Suggested Skills
+                                <i class="bi bi-robot me-1"></i>AI Suggested Skills
                             </div>
-                            <div class="skill-tags">
-                                <span class="skill-tag" onclick="addSkill('JavaScript')">JavaScript</span>
-                                <span class="skill-tag" onclick="addSkill('Python')">Python</span>
-                                <span class="skill-tag" onclick="addSkill('React')">React</span>
-                                <span class="skill-tag" onclick="addSkill('Node.js')">Node.js</span>
-                                <span class="skill-tag" onclick="addSkill('SQL')">SQL</span>
+                            <div class="skill-tags" id="suggestedSkillTags">
+                                <div class="text-muted">Enter a job title to get AI-powered skill suggestions...</div>
                             </div>
                         </div>
                     </div>
@@ -467,6 +476,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize skills functionality
     initializeSkills();
+    
+    // Initialize AI skills suggestions
+    initializeSkillsSuggestion();
     
     // Form validation and submission
     form.addEventListener('submit', function(e) {
@@ -572,6 +584,64 @@ function removeSkill(skillToRemove) {
     const currentSkills = skillsInput.value.split(',').map(s => s.trim()).filter(s => s !== skillToRemove);
     skillsInput.value = currentSkills.join(', ');
     updateSkillTags(currentSkills);
+}
+
+// AI Skills Suggestion Functions
+function initializeSkillsSuggestion() {
+    const titleInput = document.getElementById('title');
+    let skillsTimeout;
+    
+    titleInput.addEventListener('input', function() {
+        clearTimeout(skillsTimeout);
+        const title = this.value.trim();
+        
+        if (title.length >= 3) {
+            // Debounce API calls - wait 1 second after user stops typing
+            skillsTimeout = setTimeout(() => {
+                fetchSkillsSuggestion(title);
+            }, 1000);
+        } else {
+            hideSkillsSuggestion();
+        }
+    });
+}
+
+function fetchSkillsSuggestion(title) {
+    const suggestionBox = document.getElementById('skillsSuggestion');
+    const suggestedSkillTags = document.getElementById('suggestedSkillTags');
+    
+    // Show loading state
+    suggestionBox.style.display = 'block';
+    suggestedSkillTags.innerHTML = '<div class="text-muted"><i class="spinner-border spinner-border-sm me-2"></i>Getting AI skill suggestions...</div>';
+    
+    fetch(`/recruiter/api/skills-suggestion?title=${encodeURIComponent(title)}&max_skills=15`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.skills && data.skills.length > 0) {
+                displaySkillsSuggestions(data.skills);
+            } else {
+                suggestedSkillTags.innerHTML = '<div class="text-muted">No skill suggestions available for this job title.</div>';
+            }
+        })
+        .catch(() => {
+            suggestedSkillTags.innerHTML = '<div class="text-muted">Unable to load skill suggestions at the moment.</div>';
+        });
+}
+
+function displaySkillsSuggestions(skills) {
+    const suggestedSkillTags = document.getElementById('suggestedSkillTags');
+    
+    let skillsHtml = '';
+    skills.forEach(skill => {
+        skillsHtml += `<span class="skill-tag suggested-skill" onclick="addSkill('${skill.replace(/'/g, '\\\'')}')">${skill}</span>`;
+    });
+    
+    suggestedSkillTags.innerHTML = skillsHtml;
+}
+
+function hideSkillsSuggestion() {
+    const suggestionBox = document.getElementById('skillsSuggestion');
+    suggestionBox.style.display = 'none';
 }
 
 function trackProgress() {
@@ -682,6 +752,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('.ai-suggestion').style.display = 'none';
     document.getElementById('title').addEventListener('input', fetchSalarySuggestion);
     document.getElementById('location').addEventListener('input', fetchSalarySuggestion);
+    document.getElementById('experience_level').addEventListener('change', fetchSalarySuggestion);
 });
 </script>
 {% endblock %}

@@ -9,7 +9,6 @@ window.JobMate = {
         this.initTooltips();
         this.initAnimations();
         this.initFormValidation();
-        this.initNotifications();
         this.initSearchFunctionality();
         this.initThemeToggle();
     },
@@ -123,102 +122,6 @@ window.JobMate = {
             field.classList.add('is-invalid');
             if (feedback) feedback.textContent = message;
         }
-    },
-
-    // Notification system
-    initNotifications: function() {
-        // Auto-hide alerts after 5 seconds
-        const alerts = document.querySelectorAll('.alert');
-        alerts.forEach(alert => {
-            if (!alert.classList.contains('alert-danger')) {
-                setTimeout(() => {
-                    alert.classList.remove('show');
-                    setTimeout(() => alert.remove(), 150);
-                }, 5000);
-            }
-        });
-
-        // Fetch and update notification count
-        this.updateNotificationCount();
-        
-        // Poll for new notifications every 30 seconds
-        setInterval(() => {
-            this.updateNotificationCount();
-        }, 30000);
-    },
-
-    updateNotificationCount: function() {
-        if (!document.getElementById('notification-count')) return;
-
-        fetch('/api/notifications')
-            .then(response => response.json())
-            .then(data => {
-                const unread = data.filter(n => !n.read).length;
-                const countElement = document.getElementById('notification-count');
-                
-                if (unread > 0) {
-                    countElement.textContent = unread;
-                    countElement.style.display = 'block';
-                } else {
-                    countElement.style.display = 'none';
-                }
-                
-                // Update dropdown content
-                this.updateNotificationDropdown(data);
-            })
-            .catch(error => console.error('Error fetching notifications:', error));
-    },
-
-    updateNotificationDropdown: function(notifications) {
-        const dropdown = document.getElementById('notifications-dropdown');
-        if (!dropdown) return;
-
-        const content = notifications.length > 0 ? 
-            notifications.slice(0, 5).map(n => `
-                <li>
-                    <a class="dropdown-item ${!n.read ? 'fw-bold' : ''}" href="#">
-                        <div class="d-flex align-items-start">
-                            <i class="bi bi-${this.getNotificationIcon(n.type)} me-2 mt-1"></i>
-                            <div>
-                                <h6 class="mb-1">${n.title}</h6>
-                                <p class="mb-0 small text-muted">${n.message}</p>
-                                <small class="text-muted">${this.timeAgo(n.created_at)}</small>
-                            </div>
-                        </div>
-                    </a>
-                </li>
-            `).join('<li><hr class="dropdown-divider"></li>') :
-            '<li class="text-center p-3 text-muted">No new notifications</li>';
-
-        dropdown.innerHTML = `
-            <li><h6 class="dropdown-header">Notifications</h6></li>
-            <li><hr class="dropdown-divider"></li>
-            ${content}
-        `;
-    },
-
-    getNotificationIcon: function(type) {
-        const icons = {
-            'info': 'info-circle',
-            'success': 'check-circle',
-            'warning': 'exclamation-triangle',
-            'error': 'x-circle'
-        };
-        return icons[type] || 'bell';
-    },
-
-    timeAgo: function(dateString) {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diff = now - date;
-        const minutes = Math.floor(diff / 60000);
-        const hours = Math.floor(minutes / 60);
-        const days = Math.floor(hours / 24);
-
-        if (days > 0) return `${days}d ago`;
-        if (hours > 0) return `${hours}h ago`;
-        if (minutes > 0) return `${minutes}m ago`;
-        return 'Just now';
     },
 
     // Search functionality

@@ -418,6 +418,11 @@
                                 <i class="bi bi-briefcase me-1"></i>My Jobs
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-theme" href="{{ url_for('main.talent_journey') }}">
+                                <i class="bi bi-people me-1"></i>Talent Journey
+                            </a>
+                        </li>
                         {% endif %}
                     {% else %}
                         <li class="nav-item">
@@ -431,21 +436,6 @@
                 
                 <ul class="navbar-nav">
                     {% if current_user.is_authenticated %}
-                        <!-- Notifications -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link nav-link-theme position-relative" href="#" data-bs-toggle="dropdown">
-                                <i class="bi bi-bell"></i>
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notification-count" style="display: none;">
-                                    0
-                                </span>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" id="notifications-dropdown" style="width: 300px;">
-                                <li><h6 class="dropdown-header">Notifications</h6></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li class="text-center p-3 text-muted">No new notifications</li>
-                            </ul>
-                        </li>
-                        
                         <!-- User menu -->
                         <li class="nav-item dropdown">
                             <a class="nav-link nav-link-theme dropdown-toggle" href="#" data-bs-toggle="dropdown">

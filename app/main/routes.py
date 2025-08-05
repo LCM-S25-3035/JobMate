@@ -192,6 +192,26 @@ def recruiter_dashboard():
     total_applications = 0
     new_applications = 0
     
+    # Add application counts to each job posting
+    seven_days_ago = datetime.utcnow() - timedelta(days=7)
+    twenty_four_hours_ago = datetime.utcnow() - timedelta(hours=24)
+    
+    for job in job_postings:
+        # Count total applications for this job
+        job.total_applications = Application.query.filter_by(job_posting_id=job.id).count()
+        
+        # Count new applications (last 7 days) for this job
+        job.new_applications = Application.query.filter(
+            Application.job_posting_id == job.id,
+            Application.created_at >= seven_days_ago
+        ).count()
+        
+        # Calculate days since posted
+        if job.created_at:
+            job.days_ago = (datetime.utcnow() - job.created_at).days
+        else:
+            job.days_ago = 0
+    
     if job_ids:
         recent_applications = Application.query.filter(
             Application.job_posting_id.in_(job_ids)
@@ -202,21 +222,28 @@ def recruiter_dashboard():
         ).count()
         
         # Applications from last 7 days
-        seven_days_ago = datetime.utcnow() - timedelta(days=7)
         new_applications = Application.query.filter(
             Application.job_posting_id.in_(job_ids),
             Application.created_at >= seven_days_ago
         ).count()
+        
+        # Applications from last 24 hours
+        applications_24h = Application.query.filter(
+            Application.job_posting_id.in_(job_ids),
+            Application.created_at >= twenty_four_hours_ago
+        ).count()
+    else:
+        applications_24h = 0
     
     # Mock data for demonstration
     stats = {
         'active_jobs': active_jobs,
         'total_applications': total_applications,
         'new_applications': new_applications,
+        'applications_24h': applications_24h,
         'total_views': 1250,  # Mock data
         'interview_scheduled': 8  # Mock data
     }
-    
     return render_template('dashboard/recruiter.html',
                          title='Recruiter Dashboard',
                          user=current_user,
@@ -433,25 +460,6 @@ def dashboard_stats():
         }
     
     return jsonify(stats)
-
-
-@bp.route('/api/notifications')
-@login_required
-def notifications():
-    """Get user notifications"""
-    # TODO: Implement notifications system
-    notifications = [
-        {
-            'id': 1,
-            'type': 'info',
-            'title': 'Welcome to JobMate!',
-            'message': 'Complete your profile to get better job matches.',
-            'created_at': '2024-01-01T10:00:00Z',
-            'read': False
-        }
-    ]
-    
-    return jsonify(notifications)
 
 
 @bp.route('/api/available-jobs')
@@ -966,7 +974,7 @@ def download_tailored(job_id, doc_type):
                 line_strip = line.strip()
                 if not line_strip:
                     continue
-                    
+                
                 # Check if this is a skill category heading (ends with a colon)
                 if ':' in line_strip and not line_strip.startswith('-') and not line_strip.startswith('•'):
                     # This is a category heading like "Programming Languages: Python, Java"
@@ -1417,6 +1425,11 @@ def send_application(job_id):
         if not job:
             return jsonify({"success": False, "error": "Job not found"})
         
+        # Check if job is active (not paused or closed)
+        job_status = job.get('status', 'active')  # Default to active for legacy data
+        if job_status not in ['active']:
+            return jsonify({"success": False, "error": "This job is no longer accepting applications"})
+        
         # Get application email from job data
         application_email = job.get('email') or job.get('application_email') or job.get('contact_email')
         if not application_email:
@@ -1564,52 +1577,118 @@ def debug_profile_completion():
             resume = mongo_db.resumes.find_one({'user_id': str(current_user.id)})
             if resume:
                 resume_status = f"Resume found: {resume.get('filename', 'Unknown')}"
-    except Exception as e:
-        resume_status = f"Error checking resume: {str(e)}"
-    
-    debug_info = {
-        'current_user_attributes': user_data,
+    except Exception:
+        pass
+
+    return jsonify({
+        'user_data': user_data,
         'profile_completion': profile_data,
-        'resume_status': resume_status,
-        'form_last_submitted': session.get('last_profile_update', 'Never')
-    }
-    
-    return f"""
-    <html>
-    <head><title>Profile Debug</title></head>
-    <body style="font-family: monospace; padding: 20px; background: #f5f5f5;">
-        <h2 style="color: #333;">Profile Completion Debug</h2>
-        <pre style="background: white; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #ddd;">{json.dumps(debug_info, indent=2, default=str)}</pre>
-        <hr>
-        <a href="{url_for('main.applicant_dashboard')}" style="color: #007bff; text-decoration: none;">← Back to Dashboard</a> | 
-        <a href="{url_for('main.profile')}" style="color: #007bff; text-decoration: none;">Edit Profile</a>
-    </body>
-    </html>
-    """
+        'resume_status': resume_status
+    })
 
 
-@bp.route('/debug/user-model')
-@login_required  
-def debug_user_model():
-    """Check what attributes the User model has"""
+@bp.route('/talent-journey')
+@login_required
+def talent_journey():
+    """Talent Journey (Hiring Pipeline) page"""
     
-    user_attrs = []
-    for attr in dir(current_user):
-        if not attr.startswith('_') and not callable(getattr(current_user, attr)):
+    # If user is a recruiter, show applications to their jobs
+    if current_user.is_recruiter():
+        # Get all job postings by current recruiter
+        recruiter_jobs = current_user.job_postings.all()
+        job_ids = [job.id for job in recruiter_jobs]
+        
+        # Get applications to recruiter's jobs
+        applications = Application.query.filter(
+            Application.job_posting_id.in_(job_ids)
+        ).join(User).all() if job_ids else []
+        
+        # Format data for template
+        candidates = []
+        for app in applications:
+            # Map application status to hiring pipeline stages
+            status_mapping = {
+                'applied': 'applied',
+                'screening': 'screening', 
+                'interview_scheduled': 'interview_scheduled',
+                'interviewed': 'interviewed',
+                'offer_received': 'offer_received',
+                'accepted': 'accepted',
+                'rejected': 'rejected',
+                'withdrawn': 'withdrawn'
+            }
+            
+            # Get ATS score from MongoDB tailored_resumes collection
+            ats_score = None
+            ats_score_display = "Not Available"
+            ats_score_class = "text-muted"
+            
             try:
-                value = getattr(current_user, attr)
-                user_attrs.append(f"{attr}: {value} ({type(value).__name__})")
+                from flask import current_app
+                if hasattr(current_app, 'mongo_db') and current_app.mongo_db:
+                    tailored_resume = current_app.mongo_db.tailored_resumes.find_one({
+                        "user_id": str(app.user_id),
+                        "job_id": str(app.job_posting_id)
+                    })
+                    
+                    if tailored_resume and tailored_resume.get('ats_score'):
+                        ats_score = float(tailored_resume.get('ats_score', 0))
+                        ats_score_display = f"{ats_score:.0f}%"
+                        
+                        # Color coding based on score
+                        if ats_score >= 80:
+                            ats_score_class = "text-success fw-bold"  # Green for excellent
+                        elif ats_score >= 60:
+                            ats_score_class = "text-warning fw-bold"  # Yellow for good
+                        else:
+                            ats_score_class = "text-danger fw-bold"   # Red for poor
             except Exception as e:
-                user_attrs.append(f"{attr}: ERROR - {str(e)}")
+                print(f"Error fetching ATS score: {e}")
+            
+            candidates.append({
+                'application_id': app.id,
+                'name': f"{app.user.first_name or ''} {app.user.last_name or ''}".strip() or app.user.email,
+                'job': app.job_title,
+                'status': status_mapping.get(app.status, app.status),
+                'applied_date': app.created_at.strftime('%b %d, %Y') if app.created_at else 'N/A',
+                'ats_score': ats_score,
+                'ats_score_display': ats_score_display,
+                'ats_score_class': ats_score_class
+            })
+    else:
+        # For applicants, show empty or redirect
+        candidates = []
     
-    return f"""
-    <html>
-    <head><title>User Model Debug</title></head>
-    <body style="font-family: monospace; padding: 20px; background: #f5f5f5;">
-        <h2 style="color: #333;">User Model Attributes</h2>
-        <pre style="background: white; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #ddd;">{'<br>'.join(sorted(user_attrs))}</pre>
-        <hr>
-        <a href="{url_for('main.applicant_dashboard')}" style="color: #007bff; text-decoration: none;">← Back to Dashboard</a>
-    </body>
-    </html>
-    """
+    return render_template('talent_journey.html', candidates=candidates)
+
+
+@bp.route('/api/update-application-status', methods=['POST'])
+@login_required
+def update_application_status():
+    """API endpoint to update application status"""
+    try:
+        data = request.get_json()
+        application_id = data.get('application_id')
+        new_status = data.get('status')
+        
+        if not application_id or not new_status:
+            return jsonify({'success': False, 'error': 'Missing application_id or status'})
+        
+        # Get the application
+        application = Application.query.get(application_id)
+        if not application:
+            return jsonify({'success': False, 'error': 'Application not found'})
+        
+        # Check if current user is the recruiter for this job
+        if not current_user.is_recruiter() or application.job_posting.recruiter_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Unauthorized'})
+        
+        # Update the status
+        application.status = new_status
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Status updated successfully'})
+        
+    except Exception as e:
+        current_app.logger.error(f"Error updating application status: {str(e)}")
+        return jsonify({'success': False, 'error': 'Internal server error'})

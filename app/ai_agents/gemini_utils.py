@@ -1,51 +1,53 @@
 import os
 import requests
+import time
 from flask import current_app
 
-def call_gemini_api(prompt, model=None):
+def call_gemini_api(prompt, model=None, max_retries=2):
     """
     Calls the Gemini API with the given prompt and returns the response.
-    Maintains backward compatibility while adding error handling.
+    Includes retry logic for 503 (overloaded) errors.
     """
-    try:
-        api_key = current_app.config.get('GEMINI_API_KEY')
-        if not api_key:
-            current_app.logger.error("GEMINI_API_KEY not configured")
-            return {"error": "API key not configured", "status_code": 500}
-        
-        model = model or current_app.config.get('GEMINI_MODEL', 'gemini-1.5-flash')
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-        headers = {"Content-Type": "application/json"}
-        data = {
-            "contents": [{"parts": [{"text": prompt}]}]
-        }
-        
-        # Add timeout to prevent infinite hanging (60 seconds should be enough for AI processing)
-        response = requests.post(url, headers=headers, json=data, timeout=60)
-        current_app.logger.info(f"Gemini API response status: {response.status_code}")
-        
-        if response.status_code == 200:
-            # Return the original response format for backward compatibility
-            return response.json()
-        else:
-            error_msg = f"Gemini API error: Status {response.status_code}, Response: {response.text}"
-            current_app.logger.error(error_msg)
-            return {"error": response.text, "status_code": response.status_code}
+    api_key = current_app.config.get('GEMINI_API_KEY')
+    if not api_key:
+        current_app.logger.error("GEMINI_API_KEY not configured")
+        return {"error": "API key not configured", "status_code": 500}
+    
+    model = model or current_app.config.get('GEMINI_MODEL', 'gemini-1.5-flash')
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "contents": [{"parts": [{"text": prompt}]}]
+    }
+    
+    for attempt in range(max_retries + 1):
+        try:
+            # Add timeout to prevent infinite hanging
+            response = requests.post(url, headers=headers, json=data, timeout=60)
+            current_app.logger.info(f"Gemini API response status: {response.status_code}")
             
-    except requests.exceptions.Timeout:
-        error_msg = "Gemini API request timed out after 60 seconds"
-        current_app.logger.error(error_msg)
-        return {"error": error_msg, "status_code": 408}
-        
-    except requests.exceptions.RequestException as e:
-        error_msg = f"Gemini API request failed: {str(e)}"
-        current_app.logger.error(error_msg)
-        return {"error": error_msg, "status_code": 500}
-        
-    except Exception as e:
-        error_msg = f"Unexpected error in Gemini API call: {str(e)}"
-        current_app.logger.error(error_msg)
-        return {"error": error_msg, "status_code": 500}
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 503 and attempt < max_retries:
+                # Gemini is overloaded, wait and retry
+                wait_time = (attempt + 1) * 2  # 2, 4 seconds
+                current_app.logger.warning(f"Gemini overloaded (503), retrying in {wait_time}s (attempt {attempt + 1}/{max_retries + 1})")
+                time.sleep(wait_time)
+                continue
+            else:
+                error_msg = f"Gemini API error: Status {response.status_code}, Response: {response.text}"
+                current_app.logger.error(error_msg)
+                return {"error": response.text, "status_code": response.status_code}
+                
+        except requests.exceptions.Timeout:
+            error_msg = "Gemini API request timed out after 60 seconds"
+            current_app.logger.error(error_msg)
+            return {"error": error_msg, "status_code": 408}
+            
+        except requests.exceptions.RequestException as e:
+            error_msg = f"Gemini API request failed: {str(e)}"
+            current_app.logger.error(error_msg)
+            return {"error": error_msg, "status_code": 500}
 
 def call_gemini_api_simple(prompt, model=None):
     """

@@ -1693,3 +1693,117 @@ def update_application_status():
     except Exception as e:
         current_app.logger.error(f"Error updating application status: {str(e)}")
         return jsonify({'success': False, 'error': 'Internal server error'})
+
+
+@bp.route('/download-resume/<int:application_id>')
+@login_required
+def download_resume(application_id):
+    """Download resume for a specific application"""
+    try:
+        # Get the application
+        application = Application.query.get_or_404(application_id)
+        
+        # Check if current user is the recruiter for this job
+        if not current_user.is_recruiter() or application.job_posting.recruiter_id != current_user.id:
+            flash('Unauthorized access to resume', 'error')
+            return redirect(url_for('main.talent_journey'))
+        
+        # First try to find the tailored resume in MongoDB
+        try:
+            if hasattr(current_app, 'mongo_db') and current_app.mongo_db:
+                tailored_resume = current_app.mongo_db.tailored_resumes.find_one({
+                    "user_id": str(application.user_id),
+                    "job_id": str(application.job_posting_id)
+                })
+                
+                if tailored_resume and tailored_resume.get('resume_text'):
+                    # Generate PDF from tailored resume text
+                    return generate_resume_pdf(
+                        tailored_resume['resume_text'], 
+                        f"{application.user.first_name}_{application.user.last_name}_tailored_resume.pdf"
+                    )
+        except Exception as e:
+            current_app.logger.error(f"Error accessing tailored resume: {e}")
+        
+        # Fallback to user's primary resume file
+        primary_resume = Resume.query.filter_by(
+            user_id=application.user_id,
+            is_primary=True,
+            is_active=True
+        ).first()
+        
+        if primary_resume and primary_resume.file_path:
+            # Check if file exists
+            if os.path.exists(primary_resume.file_path):
+                return send_file(
+                    primary_resume.file_path,
+                    as_attachment=True,
+                    download_name=primary_resume.filename or f"{application.user.first_name}_{application.user.last_name}_resume.pdf"
+                )
+        
+        # If no resume found, return error
+        flash('Resume not found for this application', 'error')
+        return redirect(url_for('main.talent_journey'))
+        
+    except Exception as e:
+        current_app.logger.error(f"Error downloading resume: {str(e)}")
+        flash('Error downloading resume', 'error')
+        return redirect(url_for('main.talent_journey'))
+
+
+def generate_resume_pdf(resume_text, filename):
+    """Generate a PDF from resume text content"""
+    try:
+        # Create a BytesIO buffer
+        buffer = io.BytesIO()
+        
+        # Create PDF document
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        styles = getSampleStyleSheet()
+        story = []
+        
+        # Add title
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=16,
+            textColor=colors.darkblue,
+            alignment=TA_CENTER,
+            spaceAfter=20
+        )
+        story.append(Paragraph("Resume", title_style))
+        story.append(Spacer(1, 12))
+        
+        # Add resume content
+        content_style = ParagraphStyle(
+            'Content',
+            parent=styles['Normal'],
+            fontSize=11,
+            leading=14,
+            textColor=colors.black
+        )
+        
+        # Split resume text into paragraphs and add to story
+        paragraphs = resume_text.split('\n\n')
+        for para in paragraphs:
+            if para.strip():
+                # Clean and format the paragraph
+                cleaned_para = para.strip().replace('\n', '<br/>')
+                story.append(Paragraph(cleaned_para, content_style))
+                story.append(Spacer(1, 6))
+        
+        # Build PDF
+        doc.build(story)
+        
+        # Prepare response
+        buffer.seek(0)
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error generating PDF: {str(e)}")
+        raise e

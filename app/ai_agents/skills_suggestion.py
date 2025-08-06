@@ -45,11 +45,17 @@ JavaScript, React, HTML, CSS, TypeScript, Node.js, Git, Responsive Design, REST 
         result = call_gemini_api_simple(prompt)
         print(f"Gemini skills response received for {job_title}")
         
+        # Check if the API call was successful
+        if isinstance(result, dict) and not result.get('success', False):
+            print(f"Gemini API error: {result.get('error', 'Unknown error')}")
+            return get_fallback_skills(job_title, max_skills)
+        
         # Parse the response
-        text = result.get('content') if isinstance(result, dict) else result
+        text = result.get('content') if isinstance(result, dict) else str(result)
         
         if not text:
-            return []
+            print("No content from Gemini, using fallback")
+            return get_fallback_skills(job_title, max_skills)
         
         # Extract skills from the response
         # Look for comma-separated list
@@ -87,11 +93,113 @@ JavaScript, React, HTML, CSS, TypeScript, Node.js, Git, Responsive Design, REST 
                     break
         
         # Return up to max_skills
-        return skills[:max_skills] if skills else []
+        return skills[:max_skills] if skills else get_fallback_skills(job_title, max_skills)
         
     except Exception as e:
         print(f"Gemini AI skills suggestion error: {str(e)}")
-        return []
+        return get_fallback_skills(job_title, max_skills)
+
+def get_fallback_skills(job_title, max_skills=15):
+    """Provide fallback skills when AI service is unavailable"""
+    
+    job_title_lower = job_title.lower()
+    
+    # Predefined skills for common job titles
+    skills_database = {
+        'data analyst': [
+            'Python', 'SQL', 'Excel', 'Tableau', 'Power BI', 'R', 'Statistics',
+            'Data Visualization', 'Machine Learning', 'Pandas', 'NumPy', 'ETL',
+            'Business Intelligence', 'Data Mining', 'Analytics'
+        ],
+        'software engineer': [
+            'Python', 'Java', 'JavaScript', 'Git', 'APIs', 'Docker', 'SQL',
+            'Agile', 'System Design', 'Testing', 'Debugging', 'Cloud Computing',
+            'Microservices', 'DevOps', 'Object-Oriented Programming'
+        ],
+        'software developer': [
+            'Programming', 'Git', 'JavaScript', 'Python', 'Java', 'SQL', 'APIs',
+            'Testing', 'Debugging', 'Agile', 'Problem Solving', 'Version Control',
+            'Web Development', 'Database Design', 'Software Architecture'
+        ],
+        'frontend developer': [
+            'JavaScript', 'React', 'HTML', 'CSS', 'TypeScript', 'Vue.js', 'Angular',
+            'Responsive Design', 'Git', 'REST APIs', 'SASS', 'Webpack', 'Testing',
+            'UI/UX', 'Cross-browser Compatibility'
+        ],
+        'backend developer': [
+            'Python', 'Java', 'Node.js', 'SQL', 'APIs', 'Microservices', 'Docker',
+            'Git', 'Database Design', 'System Architecture', 'Security', 'Testing',
+            'Cloud Services', 'Performance Optimization', 'DevOps'
+        ],
+        'full stack developer': [
+            'JavaScript', 'Python', 'React', 'Node.js', 'SQL', 'HTML', 'CSS',
+            'Git', 'APIs', 'Database Design', 'Testing', 'Agile', 'DevOps',
+            'System Design', 'Problem Solving'
+        ],
+        'data scientist': [
+            'Python', 'R', 'Machine Learning', 'Statistics', 'SQL', 'Pandas',
+            'NumPy', 'Scikit-learn', 'TensorFlow', 'Data Visualization', 'Jupyter',
+            'Deep Learning', 'Feature Engineering', 'Model Deployment', 'Big Data'
+        ],
+        'product manager': [
+            'Product Strategy', 'Agile', 'Scrum', 'Market Research', 'Analytics',
+            'Roadmap Planning', 'Stakeholder Management', 'User Research', 'Wireframing',
+            'A/B Testing', 'SQL', 'Project Management', 'Leadership', 'Communication', 'Prioritization'
+        ],
+        'devops engineer': [
+            'Docker', 'Kubernetes', 'AWS', 'CI/CD', 'Jenkins', 'Git', 'Linux',
+            'Terraform', 'Ansible', 'Monitoring', 'Python', 'Bash', 'Cloud Computing',
+            'Infrastructure as Code', 'Security'
+        ],
+        'qa engineer': [
+            'Test Automation', 'Selenium', 'Manual Testing', 'Test Planning',
+            'Bug Tracking', 'API Testing', 'Performance Testing', 'Regression Testing',
+            'Test Cases', 'Quality Assurance', 'Agile', 'JIRA', 'Python', 'JavaScript', 'Testing Frameworks'
+        ],
+        'ui/ux designer': [
+            'Figma', 'Adobe XD', 'Sketch', 'Prototyping', 'User Research',
+            'Wireframing', 'Visual Design', 'Interaction Design', 'Usability Testing',
+            'Design Systems', 'HTML', 'CSS', 'User Experience', 'Information Architecture', 'Responsive Design'
+        ],
+        'business analyst': [
+            'Requirements Analysis', 'Process Mapping', 'SQL', 'Excel', 'Documentation',
+            'Stakeholder Management', 'Business Process', 'Data Analysis', 'Reporting',
+            'Project Management', 'Agile', 'Communication', 'Problem Solving', 'Wireframing', 'Testing'
+        ],
+        'project manager': [
+            'Project Management', 'Agile', 'Scrum', 'Risk Management', 'Stakeholder Management',
+            'Budget Management', 'Timeline Planning', 'Resource Planning', 'Communication',
+            'Leadership', 'Problem Solving', 'Microsoft Project', 'JIRA', 'Team Management', 'Reporting'
+        ],
+        'marketing manager': [
+            'Digital Marketing', 'SEO', 'SEM', 'Social Media Marketing', 'Content Marketing',
+            'Email Marketing', 'Analytics', 'Campaign Management', 'Brand Management',
+            'Market Research', 'Google Analytics', 'A/B Testing', 'Lead Generation', 'CRM', 'Strategy'
+        ]
+    }
+    
+    # Find matching skills
+    matched_skills = []
+    for job_pattern, skills_list in skills_database.items():
+        if (job_pattern == job_title_lower or 
+            job_pattern in job_title_lower or 
+            job_title_lower in job_pattern or
+            any(word in job_title_lower for word in job_pattern.split()) or
+            any(word in job_pattern for word in job_title_lower.split())):
+            matched_skills = skills_list
+            break
+    
+    # If no specific match, provide general tech skills
+    if not matched_skills:
+        matched_skills = [
+            'Communication', 'Problem Solving', 'Teamwork', 'Time Management',
+            'Analytical Thinking', 'Adaptability', 'Leadership', 'Technical Writing',
+            'Project Management', 'Attention to Detail', 'Critical Thinking',
+            'Customer Service', 'Microsoft Office', 'Research', 'Planning'
+        ]
+    
+    # Return up to max_skills
+    return matched_skills[:max_skills]
 
 # For backward compatibility and alternative function name
 get_skills_suggestion = suggest_skills

@@ -1,0 +1,119 @@
+/*
+ * Ghost Job Indicator Styles
+ * Custom styles for displaying ghost job probabilities
+ */
+
+.ghost-job-indicator {
+  margin: 10px 0;
+  font-size: 1em;
+  padding: 10px 15px;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+  border-left: 6px solid #ff9900;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: block !important;
+  visibility: visible !important;
+}
+
+.ghost-job-badge {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.ghost-job-badge:hover {
+  opacity: 0.9;
+}
+
+.ghost-job-badge i {
+  margin-right: 8px;
+  color: #ff9900;
+  font-size: 1.1em;
+}
+
+.ghost-percentage {
+  font-weight: bold;
+  margin-left: 6px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.08);
+  color: #000;
+}
+
+.ghost-job-progress {
+  height: 10px;
+  width: 100%;
+  background-color: #e9ecef;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-top: 6px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.ghost-job-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* Risk level indicators */
+/* High risk (70-100%) */
+.ghost-job-badge[data-percentage^="7"],
+.ghost-job-badge[data-percentage^="8"],
+.ghost-job-badge[data-percentage^="9"],
+.ghost-job-badge[data-percentage="100"] {
+  color: #ff4d4d;
+  font-weight: 700;
+}
+
+/* Medium risk (40-69%) */
+.ghost-job-badge[data-percentage^="4"],
+.ghost-job-badge[data-percentage^="5"],
+.ghost-job-badge[data-percentage^="6"] {
+  color: #ffa64d;
+  font-weight: 700;
+}
+
+/* Low risk (20-39%) */
+.ghost-job-badge[data-percentage^="2"],
+.ghost-job-badge[data-percentage^="3"] {
+  color: #ffdb4d;
+  font-weight: 700;
+}
+
+/* Very low risk (1-19%) */
+.ghost-job-badge[data-percentage^="1"] {
+  color: #5cb85c;
+}
+
+/* Ghost job tooltip */
+.ghost-tooltip {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  padding: 0;
+  width: 300px;
+  z-index: 1000;
+  position: absolute;
+  max-width: 90vw;
+}
+
+.ghost-tooltip-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+  padding: 8px 12px;
+  font-weight: bold;
+}
+
+.ghost-tooltip-body {
+  padding: 10px 12px;
+}
+
+.ghost-tooltip-body ul {
+  margin-top: 5px;
+  padding-left: 20px;
+}

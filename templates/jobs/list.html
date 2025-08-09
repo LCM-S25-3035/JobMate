@@ -80,20 +80,33 @@
                         <!-- Salary Range Filter -->
                         {% if facets.salary_range.min_salary %}
                         <div class="mb-3">
-                            <label class="form-label">Salary Range</label>
+                            <label class="form-label fw-bold">Salary Range ($)</label>
                             <div class="row">
                                 <div class="col-6">
-                                    <input type="number" class="form-control" name="salary_min" 
-                                           placeholder="Min" value="{{ current_filters.salary_min or '' }}">
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" name="salary_min" 
+                                               placeholder="Min salary" value="{{ current_filters.salary_min or '' }}"
+                                               min="{{ facets.salary_range.min_salary|int }}" 
+                                               max="{{ facets.salary_range.max_salary|int }}">
+                                    </div>
                                 </div>
                                 <div class="col-6">
-                                    <input type="number" class="form-control" name="salary_max" 
-                                           placeholder="Max" value="{{ current_filters.salary_max or '' }}">
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" name="salary_max" 
+                                               placeholder="Max salary" value="{{ current_filters.salary_max or '' }}"
+                                               min="{{ facets.salary_range.min_salary|int }}" 
+                                               max="{{ facets.salary_range.max_salary|int }}">
+                                    </div>
                                 </div>
                             </div>
-                            <small class="text-muted">
-                                Range: ${{ "{:,}".format(facets.salary_range.min_salary|int) }} - 
+                            <small class="text-muted d-block mt-1">
+                                Available range: ${{ "{:,}".format(facets.salary_range.min_salary|int) }} - 
                                 ${{ "{:,}".format(facets.salary_range.max_salary|int) }}
+                            </small>
+                            <small class="text-primary d-block mt-1">
+                                <i class="bi bi-info-circle"></i> Enter both values for an exact range
                             </small>
                         </div>
                         {% endif %}
@@ -132,8 +145,14 @@
                     {% endif %}
                     {% if current_filters.salary_min or current_filters.salary_max %}
                         <span class="badge bg-danger">
-                            Salary: {% if current_filters.salary_min %}${{ "{:,}".format(current_filters.salary_min) }}+{% endif %}
-                            {% if current_filters.salary_max %} - ${{ "{:,}".format(current_filters.salary_max) }}{% endif %}
+                            <i class="bi bi-currency-dollar me-1"></i>
+                            {% if current_filters.salary_min and current_filters.salary_max %}
+                                Salary Range: ${{ "{:,}".format(current_filters.salary_min) }} - ${{ "{:,}".format(current_filters.salary_max) }}
+                            {% elif current_filters.salary_min %}
+                                Salary: ${{ "{:,}".format(current_filters.salary_min) }}+
+                            {% elif current_filters.salary_max %}
+                                Salary: Up to ${{ "{:,}".format(current_filters.salary_max) }}
+                            {% endif %}
                         </span>
                     {% endif %}
                 </div>
@@ -178,9 +197,46 @@
                                         {% endif %}
                                     </div>
                                     {% endif %}
+                                    
+                                    <!-- Ghost Job Detection Indicator -->
+                                    {% if job.ghost_job_percentage is defined or job.ghost_score is defined %}
+                                    <div class="ghost-job-indicator mt-2">
+                                        {% set percentage = job.ghost_job_percentage|default(0)|int %}
+                                        {% if percentage == 0 and job.ghost_score is defined and job.ghost_score %}
+                                            {% set percentage = (job.ghost_score * 100)|int %}
+                                        {% endif %}
+                                        
+                                        <div class="ghost-job-badge" data-job-id="{{ job._id }}" data-percentage="{{ percentage }}">
+                                            <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i> 
+                                            Ghost Job Likelihood: 
+                                            <span class="ghost-percentage fw-bold ms-1">{{ percentage }}%</span>
+                                        </div>
+                                        <div class="ghost-job-progress mt-1">
+                                            {% set bar_color = '#4dc94d' %}
+                                            {% if percentage >= 70 %}
+                                                {% set bar_color = '#ff4d4d' %}
+                                            {% elif percentage >= 40 %}
+                                                {% set bar_color = '#ffa64d' %}
+                                            {% elif percentage >= 20 %}
+                                                {% set bar_color = '#ffdb4d' %}
+                                            {% endif %}
+                                            <div class="ghost-job-bar" style="width: {{ percentage }}%; background-color: {{ bar_color }}"></div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-4 text-end">
-                                    <p class="text-success fw-bold">{{ job.salary_display }}</p>
+                                    {% if job.min_amount or job.max_amount %}
+                                    <p class="text-success fw-bold">
+                                        {% if job.min_amount and job.max_amount %}
+                                            ${{ "{:,}".format(job.min_amount|int) }} - ${{ "{:,}".format(job.max_amount|int) }}
+                                        {% elif job.min_amount %}
+                                            ${{ "{:,}".format(job.min_amount|int) }}+
+                                        {% elif job.max_amount %}
+                                            Up to ${{ "{:,}".format(job.max_amount|int) }}
+                                        {% endif %}
+                                    </p>
+                                    {% endif %}
                                     {% set date_str = job.date_posted.strftime('%Y-%m-%d') if job.date_posted and job.date_posted.__class__.__name__ == 'datetime' else (job.date_posted if job.date_posted and job.date_posted is string else 'Recently') %}
                                     <small class="text-muted">Posted: {{ date_str }}</small>
                                     <div class="mt-2">
@@ -192,8 +248,10 @@
                                            title="AI-powered resume optimization and application">
                                             <i class="bi bi-magic"></i> Tailor Resume & Apply
                                         </a>
-                                        <button class="btn btn-outline-secondary btn-sm" onclick="saveJob('{{ job._id }}')">
-                                            <i class="bi bi-bookmark"></i>
+                                        <button class="btn btn-outline-primary btn-sm" 
+                                                onclick="saveJob('{{ job._id }}', this)"
+                                                title="Save job for later">
+                                            <i class="bi bi-bookmark"></i> Save
                                         </button>
                                         {% endif %}
                                     </div>
@@ -247,21 +305,58 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('jobFiltersForm');
     const selects = form.querySelectorAll('select');
     
+    // Add event listeners to select dropdowns
     selects.forEach(select => {
         select.addEventListener('change', function() {
             form.submit();
         });
     });
     
+    // Salary range validation and handling
+    const salaryMin = form.querySelector('input[name="salary_min"]');
+    const salaryMax = form.querySelector('input[name="salary_max"]');
+    
+    if (salaryMin && salaryMax) {
+        // Validate salary range before submission
+        form.addEventListener('submit', function(e) {
+            const minValue = parseInt(salaryMin.value) || 0;
+            const maxValue = parseInt(salaryMax.value) || 0;
+            
+            // If both values are provided and min > max
+            if (minValue > 0 && maxValue > 0 && minValue > maxValue) {
+                e.preventDefault();
+                alert('Minimum salary cannot be greater than maximum salary.');
+                return false;
+            }
+        });
+        
+        // Auto-submit when both min and max are filled or when one is cleared
+        salaryMin.addEventListener('change', function() {
+            // Only auto-submit if not empty or if clearing a value
+            if (this.value.trim() === '' || (parseInt(this.value) > 0 && salaryMax.value.trim() !== '')) {
+                form.submit();
+            }
+        });
+        
+        salaryMax.addEventListener('change', function() {
+            // Only auto-submit if not empty or if clearing a value
+            if (this.value.trim() === '' || (parseInt(this.value) > 0 && salaryMin.value.trim() !== '')) {
+                form.submit();
+            }
+        });
+    }
+    
     // Debounce search input
     const searchInput = document.getElementById('search');
     let searchTimeout;
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            form.submit();
-        }, 500);
-    });
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                form.submit();
+            }, 500);
+        });
+    }
 });
 
 // Save/unsave job function
@@ -300,6 +395,89 @@ function saveJob(jobId) {
     });
 }
 
+// Job saving functionality
+function saveJob(jobId, buttonElement) {
+    // Show loading state
+    const originalHTML = buttonElement.innerHTML;
+    buttonElement.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
+    buttonElement.disabled = true;
+    
+    fetch(`/jobs/jobs/${jobId}/save`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update button to show saved state
+            buttonElement.innerHTML = '<i class="bi bi-bookmark-check-fill"></i> Saved';
+            buttonElement.className = 'btn btn-success btn-sm';
+            buttonElement.onclick = () => unsaveJob(jobId, buttonElement);
+            
+            // Show success notification
+            showAlert(data.message, 'success');
+        } else {
+            // Show error notification
+            showAlert(data.error || 'Failed to save job', 'error');
+            
+            // Restore original button state
+            buttonElement.innerHTML = originalHTML;
+            buttonElement.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error saving job:', error);
+        showAlert('Network error while saving job', 'error');
+        
+        // Restore original button state
+        buttonElement.innerHTML = originalHTML;
+        buttonElement.disabled = false;
+    });
+}
+
+function unsaveJob(jobId, buttonElement) {
+    const originalHTML = buttonElement.innerHTML;
+    buttonElement.innerHTML = '<i class="bi bi-hourglass-split"></i> Removing...';
+    buttonElement.disabled = true;
+    
+    fetch(`/jobs/jobs/${jobId}/unsave`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update button to show unsaved state
+            buttonElement.innerHTML = '<i class="bi bi-bookmark"></i> Save';
+            buttonElement.className = 'btn btn-outline-primary btn-sm';
+            buttonElement.onclick = () => saveJob(jobId, buttonElement);
+            
+            showAlert(data.message, 'success');
+        } else {
+            showAlert(data.error || 'Failed to remove job', 'error');
+            buttonElement.innerHTML = originalHTML;
+            buttonElement.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error unsaving job:', error);
+        showAlert('Network error while removing job', 'error');
+        buttonElement.innerHTML = originalHTML;
+        buttonElement.disabled = false;
+    });
+}
+
+function getCSRFToken() {
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    return metaTag ? metaTag.getAttribute('content') : '';
+}
+
 // Simple alert function
 function showAlert(message, type) {
     const alertDiv = document.createElement('div');
@@ -315,5 +493,87 @@ function showAlert(message, type) {
         alertDiv.remove();
     }, 5000);
 }
+
+// Ghost job indicator tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    // Setup ghost job indicator tooltips
+    document.querySelectorAll('.ghost-job-badge').forEach(badge => {
+        badge.addEventListener('click', async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const jobId = this.getAttribute('data-job-id');
+            const percentage = this.getAttribute('data-percentage');
+            
+            // Remove any existing tooltips
+            document.querySelectorAll('.ghost-tooltip').forEach(el => el.remove());
+            
+            // Create tooltip
+            const tooltip = document.createElement('div');
+            tooltip.className = 'ghost-tooltip';
+            
+            // Determine risk level
+            let riskLevel = 'Low';
+            let riskClass = 'text-success';
+            
+            if (percentage >= 70) {
+                riskLevel = 'High';
+                riskClass = 'text-danger';
+            } else if (percentage >= 40) {
+                riskLevel = 'Medium';
+                riskClass = 'text-warning';
+            }
+            
+            // Default reasons if API call fails
+            let reasons = [
+                "Job posting has suspicious characteristics",
+                "Our algorithm detected potential issues with this listing"
+            ];
+            
+            try {
+                // Try to fetch detailed reasons from API
+                const response = await fetch(`/api/jobs/${jobId}/ghost-details`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.reasons && data.reasons.length > 0) {
+                        reasons = data.reasons;
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching ghost job details:', error);
+            }
+            
+            // Set tooltip content
+            tooltip.innerHTML = `
+                <div class="ghost-tooltip-header ${riskClass}">
+                    Ghost Job Risk: ${riskLevel} (${percentage}%)
+                </div>
+                <div class="ghost-tooltip-body">
+                    <p>This job shows signs of being potentially suspicious based on:</p>
+                    <ul>
+                        ${reasons.map(reason => `<li>${reason}</li>`).join('')}
+                    </ul>
+                    <p class="mt-2 mb-0 small text-muted">Ghost jobs are potentially fraudulent or misleading job listings.</p>
+                </div>
+            `;
+            
+            // Position the tooltip
+            const rect = this.getBoundingClientRect();
+            tooltip.style.top = `${rect.bottom + window.scrollY + 5}px`;
+            tooltip.style.left = `${rect.left + window.scrollX}px`;
+            
+            // Add to document
+            document.body.appendChild(tooltip);
+            
+            // Close when clicking elsewhere
+            document.addEventListener('click', function closeTooltip(e) {
+                if (!tooltip.contains(e.target) && e.target !== badge) {
+                    tooltip.remove();
+                    document.removeEventListener('click', closeTooltip);
+                }
+            });
+        });
+    });
+});
 </script>
 {% endblock %}

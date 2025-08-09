@@ -72,8 +72,8 @@
                                         <a href="{{ url_for('main.tailor_resume', job_id=job._id) }}" class="btn btn-success btn-sm">
                                             <i class="bi bi-magic"></i> Tailor Resume & Apply
                                         </a>
-                                        <button class="btn btn-warning btn-sm" onclick="unsaveJob('{{ job._id }}')" title="Remove from saved">
-                                            <i class="bi bi-bookmark-fill"></i>
+                                        <button class="btn btn-warning btn-sm" onclick="unsaveJob('{{ job._id }}', this)" title="Remove from saved">
+                                            <i class="bi bi-bookmark-fill"></i> Remove
                                         </button>
                                     </div>
                                 </div>
@@ -119,9 +119,13 @@
 
 <script>
 // Remove job from saved list
-function unsaveJob(jobId) {
+function unsaveJob(jobId, buttonElement) {
     if (confirm('Remove this job from your saved list?')) {
-        fetch(`/jobs/save/${jobId}`, {
+        const originalHTML = buttonElement.innerHTML;
+        buttonElement.innerHTML = '<i class="bi bi-hourglass-split"></i> Removing...';
+        buttonElement.disabled = true;
+        
+        fetch(`/jobs/jobs/${jobId}/unsave`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -131,28 +135,40 @@ function unsaveJob(jobId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Remove the job card from the list
-                event.target.closest('.col-12').remove();
+                // Remove the job card from the list with animation
+                const jobCard = buttonElement.closest('.col-12');
+                jobCard.style.transition = 'opacity 0.3s ease';
+                jobCard.style.opacity = '0';
                 
-                // Update the counter
-                const counter = document.querySelector('.badge');
-                const currentCount = parseInt(counter.textContent.split(' ')[0]);
-                counter.textContent = `${currentCount - 1} jobs saved`;
-                
-                // Show empty state if no jobs left
-                const jobsList = document.querySelector('.row');
-                if (!jobsList.children.length) {
-                    location.reload();
-                }
+                setTimeout(() => {
+                    jobCard.remove();
+                    
+                    // Update the counter
+                    const counter = document.querySelector('.badge');
+                    if (counter) {
+                        const currentCount = parseInt(counter.textContent.split(' ')[0]);
+                        counter.textContent = `${Math.max(0, currentCount - 1)} jobs saved`;
+                    }
+                    
+                    // Show empty state if no jobs left
+                    const remainingJobs = document.querySelectorAll('.job-card');
+                    if (remainingJobs.length === 0) {
+                        location.reload();
+                    }
+                }, 300);
                 
                 showToast('Job removed from saved list', 'success');
             } else {
-                showToast(data.message || 'An error occurred', 'error');
+                showToast(data.error || 'An error occurred', 'error');
+                buttonElement.innerHTML = originalHTML;
+                buttonElement.disabled = false;
             }
         })
         .catch(error => {
             console.error('Error:', error);
             showToast('An error occurred while removing the job', 'error');
+            buttonElement.innerHTML = originalHTML;
+            buttonElement.disabled = false;
         });
     }
 }

@@ -1,0 +1,103 @@
+/*
+ * Ghost Job Indicator Styles (Fixed)
+ * Custom styles for displaying ghost job probabilities
+ */
+
+.ghost-job-indicator {
+  margin: 8px 0;
+  font-size: 0.9em;
+}
+
+.ghost-job-badge {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ghost-job-badge:hover {
+  opacity: 0.9;
+}
+
+.ghost-job-badge i {
+  margin-right: 5px;
+  color: #ff9900;
+}
+
+.ghost-percentage {
+  font-weight: bold;
+  margin-left: 4px;
+}
+
+.ghost-job-progress {
+  height: 6px;
+  width: 100%;
+  background-color: #e9ecef;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.ghost-job-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* Risk level indicators */
+/* High risk (70-100%) */
+.ghost-job-badge[data-percentage^="7"],
+.ghost-job-badge[data-percentage^="8"],
+.ghost-job-badge[data-percentage^="9"],
+.ghost-job-badge[data-percentage="100"] {
+  color: #ff4d4d;
+}
+
+/* Medium risk (40-69%) */
+.ghost-job-badge[data-percentage^="4"],
+.ghost-job-badge[data-percentage^="5"],
+.ghost-job-badge[data-percentage^="6"] {
+  color: #ffa64d;
+}
+
+/* Low risk (20-39%) */
+.ghost-job-badge[data-percentage^="2"],
+.ghost-job-badge[data-percentage^="3"] {
+  color: #ffdb4d;
+}
+
+/* Very low risk (1-19%) */
+.ghost-job-badge[data-percentage^="1"] {
+  color: #5cb85c;
+}
+
+/* Important: No longer hiding badges with 0% values */
+
+/* Ghost job tooltip */
+.ghost-job-tooltip {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  padding: 0;
+  width: 300px;
+  z-index: 1000;
+  position: absolute;
+  max-width: 90vw;
+}
+
+.ghost-tooltip-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+  padding: 8px 12px;
+  font-weight: bold;
+}
+
+.ghost-tooltip-body {
+  padding: 10px 12px;
+}
+
+.ghost-tooltip-body ul {
+  margin-top: 5px;
+  padding-left: 20px;
+}

@@ -192,59 +192,31 @@ def recruiter_dashboard():
     total_applications = 0
     new_applications = 0
     
-    # Add application counts to each job posting
-    seven_days_ago = datetime.utcnow() - timedelta(days=7)
-    twenty_four_hours_ago = datetime.utcnow() - timedelta(hours=24)
-    
-    for job in job_postings:
-        # Count total applications for this job
-        job.total_applications = Application.query.filter_by(job_posting_id=job.id).count()
-        
-        # Count new applications (last 7 days) for this job
-        job.new_applications = Application.query.filter(
-            Application.job_posting_id == job.id,
-            Application.created_at >= seven_days_ago
-        ).count()
-        
-        # Calculate days since posted
-        if job.created_at:
-            job.days_ago = (datetime.utcnow() - job.created_at).days
-        else:
-            job.days_ago = 0
-    
     if job_ids:
         recent_applications = Application.query.filter(
             Application.job_posting_id.in_(job_ids)
         ).order_by(Application.created_at.desc()).limit(5).all()
         
         total_applications = Application.query.filter(
-            Application.job_posting_id.in_(job_ids),
-            Application.status != 'rejected'
+            Application.job_posting_id.in_(job_ids)
         ).count()
         
         # Applications from last 7 days
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
         new_applications = Application.query.filter(
             Application.job_posting_id.in_(job_ids),
             Application.created_at >= seven_days_ago
         ).count()
-        
-        # Applications from last 24 hours
-        applications_24h = Application.query.filter(
-            Application.job_posting_id.in_(job_ids),
-            Application.created_at >= twenty_four_hours_ago
-        ).count()
-    else:
-        applications_24h = 0
     
     # Mock data for demonstration
     stats = {
         'active_jobs': active_jobs,
         'total_applications': total_applications,
         'new_applications': new_applications,
-        'applications_24h': applications_24h,
         'total_views': 1250,  # Mock data
         'interview_scheduled': 8  # Mock data
     }
+    
     return render_template('dashboard/recruiter.html',
                          title='Recruiter Dashboard',
                          user=current_user,
@@ -257,18 +229,315 @@ def recruiter_dashboard():
 @bp.route('/profile')
 @login_required
 def profile():
-    """User profile page where they can complete their details"""
-    
-    profile_data = calculate_profile_completion(current_user)
-    
-    return render_template('main/profile.html',
-                         title='My Profile',
-                         user=current_user,
-                         profile_data=profile_data)
+    """Enhanced user profile page with better error handling"""
+    try:
+        current_app.logger.info(f"Loading profile for user {current_user.id}")
+        
+        # Calculate profile completion using the enhanced function
+        try:
+            profile_completion = calculate_profile_completion(current_user)
+            current_app.logger.info(f"Profile completion calculated: {profile_completion['percentage']}%")
+        except Exception as e:
+            current_app.logger.error(f"Profile completion calculation error: {str(e)}")
+            # Provide fallback data
+            profile_completion = {
+                'percentage': 0,
+                'completed_fields': 0,
+                'total_fields': 9,
+                'missing_fields': ['Unable to calculate'],
+                'filled_fields': []
+            }
+        
+        # Get application stats (safe fallback)
+        try:
+            total_applications = current_user.applications.count() if hasattr(current_user, 'applications') else 0
+            recent_applications = []
+            if hasattr(current_user, 'applications'):
+                recent_applications = current_user.applications.order_by(
+                    Application.created_at.desc()
+                ).limit(5).all()
+        except Exception as e:
+            current_app.logger.error(f"Application stats error: {str(e)}")
+            total_applications = 0
+            recent_applications = []
+        
+        profile_stats = {
+            'total_applications': total_applications,
+            'recent_applications': recent_applications,
+            'profile_completion': profile_completion
+        }
+        
+        # Debug log current user fields
+        current_app.logger.info(f"User {current_user.id} profile data loading successful")
+        
+        # Try to render the enhanced profile template, with fallback
+        try:
+            return render_template('main/enhanced_profile.html', 
+                                 user=current_user, 
+                                 stats=profile_stats)
+        except Exception as template_error:
+            current_app.logger.error(f"Enhanced profile template error: {str(template_error)}")
+            # Fallback to a simple profile page
+            try:
+                return render_template('main/simple_profile.html', 
+                                     user=current_user, 
+                                     stats=profile_stats)
+            except Exception as fallback_error:
+                current_app.logger.error(f"Simple profile template error: {str(fallback_error)}")
+                # Last resort - show error page
+                return render_template('main/profile_error.html', 
+                                     user=current_user,
+                                     error_message=str(template_error))
+                             
+    except Exception as e:
+        current_app.logger.error(f"Profile page error: {str(e)}", exc_info=True)
+        # Instead of redirecting, show a simple error page
+        try:
+            return render_template('main/profile_error.html', 
+                                 user=current_user,
+                                 error_message=str(e))
+        except:
+            # Ultimate fallback - just redirect to dashboard
+            flash('Error loading profile', 'error')
+            return redirect(url_for('main.applicant_dashboard'))
+
 
 @bp.route('/profile/update', methods=['POST'])
 @login_required
 def update_profile():
+    """Update user profile information"""
+    try:
+        current_app.logger.info(f"Updating profile for user {current_user.id}")
+        
+        # Get form data
+        first_name = request.form.get('first_name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
+        phone = request.form.get('phone', '').strip()
+        city = request.form.get('city', '').strip()
+        experience_level = request.form.get('experience_level', '').strip()
+        bio = request.form.get('bio', '').strip()
+        skills = request.form.get('skills', '').strip()
+        
+        # Validate required fields
+        if not first_name or not last_name:
+            flash('First name and last name are required.', 'error')
+            return redirect(url_for('main.profile'))
+        
+        # Update user fields
+        current_user.first_name = first_name
+        current_user.last_name = last_name
+        current_user.phone = phone if phone else None
+        current_user.city = city if city else None
+        current_user.experience_level = experience_level if experience_level != 'not_specified' else None
+        current_user.bio = bio if bio else None
+        current_user.skills = skills if skills else None
+        
+        # Commit changes
+        db.session.commit()
+        
+        current_app.logger.info(f"Profile updated successfully for user {current_user.id}")
+        flash('Profile updated successfully!', 'success')
+        
+    except Exception as e:
+        current_app.logger.error(f"Error updating profile for user {current_user.id}: {str(e)}")
+        db.session.rollback()
+        flash('Error updating profile. Please try again.', 'error')
+    
+    return redirect(url_for('main.profile'))
+
+
+@bp.route('/profile/upload-picture', methods=['POST'])
+@login_required 
+def upload_profile_picture():
+    """Upload and update user profile picture"""
+    try:
+        if 'profile_picture' not in request.files:
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+        
+        file = request.files['profile_picture']
+        
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+        
+        # File validation
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+        if not ('.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
+            return jsonify({'success': False, 'error': 'Invalid file type. Use PNG, JPG, JPEG, or GIF'}), 400
+        
+        # Check file size (5MB limit)
+        file.seek(0, 2)  # Seek to end
+        file_size = file.tell()
+        file.seek(0)  # Reset to beginning
+        
+        if file_size > 5 * 1024 * 1024:  # 5MB
+            return jsonify({'success': False, 'error': 'File too large. Maximum size is 5MB'}), 400
+        
+        # Generate secure filename
+        import os
+        from datetime import datetime
+        
+        filename = secure_filename(file.filename)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"profile_{current_user.id}_{timestamp}_{filename}"
+        
+        # Create upload directory
+        upload_dir = os.path.join(current_app.static_folder, 'uploads', 'profiles')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        file_path = os.path.join(upload_dir, filename)
+        file.save(file_path)
+        
+        # Update user profile picture path
+        if hasattr(current_user, 'profile_picture'):
+            current_user.profile_picture = f'uploads/profiles/{filename}'
+        if hasattr(current_user, 'updated_at'):
+            current_user.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        current_app.logger.info(f"Profile picture updated for user {current_user.id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Profile picture updated successfully!',
+            'picture_url': url_for('static', filename=f'uploads/profiles/{filename}')
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Profile picture upload error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Error uploading profile picture'}), 500
+
+
+@bp.route('/profile/delete-picture', methods=['POST'])
+@login_required
+def delete_profile_picture():
+    """Delete user profile picture"""
+    try:
+        if hasattr(current_user, 'profile_picture') and current_user.profile_picture:
+            # Delete the file from filesystem
+            try:
+                import os
+                old_path = os.path.join(current_app.static_folder, current_user.profile_picture)
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+            except Exception as e:
+                current_app.logger.warning(f"Could not delete old profile picture file: {e}")
+            
+            # Clear from database
+            current_user.profile_picture = None
+            if hasattr(current_user, 'updated_at'):
+                current_user.updated_at = datetime.utcnow()
+            
+            db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Profile picture deleted successfully!'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Profile picture delete error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Error deleting profile picture'}), 500
+
+
+@bp.route('/profile/change-password', methods=['POST'])
+@login_required
+def change_password():
+    """Change user password"""
+    try:
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if not all([current_password, new_password, confirm_password]):
+            flash('All password fields are required', 'error')
+            return redirect(url_for('main.profile'))
+        
+        # Verify current password
+        if not current_user.check_password(current_password):
+            flash('Current password is incorrect', 'error')
+            return redirect(url_for('main.profile'))
+        
+        # Validate new password
+        if len(new_password) < 8:
+            flash('New password must be at least 8 characters long', 'error')
+            return redirect(url_for('main.profile'))
+        
+        if new_password != confirm_password:
+            flash('New passwords do not match', 'error')
+            return redirect(url_for('main.profile'))
+        
+        # Update password
+        current_user.set_password(new_password)
+        if hasattr(current_user, 'updated_at'):
+            current_user.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        current_app.logger.info(f"Password changed for user {current_user.id}")
+        flash('Password changed successfully! 🔒', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Password change error: {str(e)}")
+        flash('Error changing password. Please try again.', 'error')
+    
+    return redirect(url_for('main.profile'))
+
+
+@bp.route('/profile/update-social', methods=['POST'])
+@login_required
+def update_social_links():
+    """Update user social media links"""
+    try:
+        linkedin_url = request.form.get('linkedin_url', '').strip()
+        github_url = request.form.get('github_url', '').strip()
+        portfolio_url = request.form.get('portfolio_url', '').strip()
+        
+        # Basic URL validation
+        def validate_url(url, platform):
+            if not url:
+                return None
+            if not url.startswith(('http://', 'https://')):
+                url = 'https://' + url
+            
+            # Platform-specific validation
+            if platform == 'linkedin' and 'linkedin.com' not in url:
+                return None
+            elif platform == 'github' and 'github.com' not in url:
+                return None
+            
+            return url
+        
+        # Validate and update URLs
+        if hasattr(current_user, 'linkedin_url'):
+            current_user.linkedin_url = validate_url(linkedin_url, 'linkedin')
+        if hasattr(current_user, 'github_url'):
+            current_user.github_url = validate_url(github_url, 'github')
+        if hasattr(current_user, 'portfolio_url'):
+            current_user.portfolio_url = validate_url(portfolio_url, 'portfolio')
+        
+        if hasattr(current_user, 'updated_at'):
+            current_user.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        current_app.logger.info(f"Social links updated for user {current_user.id}")
+        flash('Social media links updated successfully! 🔗', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Social links update error: {str(e)}")
+        flash('Error updating social media links. Please try again.', 'error')
+    
+    return redirect(url_for('main.profile'))
+
+
+@bp.route('/update_profile', methods=['POST'])
+@login_required
+def update_profile_legacy():
     """Handle profile update form submission with detailed logging"""
     
     try:
@@ -325,13 +594,42 @@ def update_profile():
         current_app.logger.info(f"Profile completion after save: {profile_data['percentage']}%")
         
         flash('Profile updated successfully!', 'success')
-        return redirect(url_for('main.applicant_dashboard'))
+        return redirect(url_for('main.profile'))
         
     except Exception as e:
         current_app.logger.error(f"Profile update error: {str(e)}", exc_info=True)
         db.session.rollback()
         flash('Error updating profile. Please try again.', 'error')
         return redirect(url_for('main.profile'))
+
+
+@bp.route('/profile/debug')
+@login_required
+def profile_debug():
+    """Debug route to check user profile data"""
+    try:
+        user_data = {
+            'id': current_user.id,
+            'email': current_user.email,
+            'first_name': getattr(current_user, 'first_name', None),
+            'last_name': getattr(current_user, 'last_name', None),
+            'phone': getattr(current_user, 'phone', None),
+            'city': getattr(current_user, 'city', None),
+            'bio': getattr(current_user, 'bio', None),
+            'skills': getattr(current_user, 'skills', None),
+            'experience_level': getattr(current_user, 'experience_level', None),
+            'profile_picture': getattr(current_user, 'profile_picture', None),
+        }
+        
+        return jsonify({
+            'user_data': user_data,
+            'data_types': {k: str(type(v)) for k, v in user_data.items()},
+            'non_empty_fields': [k for k, v in user_data.items() if v and str(v).strip()],
+            'empty_fields': [k for k, v in user_data.items() if not v or not str(v).strip()]
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @bp.route('/debug/profile')
@@ -461,6 +759,25 @@ def dashboard_stats():
         }
     
     return jsonify(stats)
+
+
+@bp.route('/api/notifications')
+@login_required
+def notifications():
+    """Get user notifications"""
+    # TODO: Implement notifications system
+    notifications = [
+        {
+            'id': 1,
+            'type': 'info',
+            'title': 'Welcome to JobMate!',
+            'message': 'Complete your profile to get better job matches.',
+            'created_at': '2024-01-01T10:00:00Z',
+            'read': False
+        }
+    ]
+    
+    return jsonify(notifications)
 
 
 @bp.route('/api/available-jobs')
@@ -949,17 +1266,20 @@ def download_tailored(job_id, doc_type):
     if current_section:
         sections[current_section] = section_buffer
 
-    # --- Section order: SUMMARY, EXPERIENCE, then others as found ---
+    # --- Section order: SUMMARY, SKILLS, EXPERIENCE, then others as found ---
     ordered_section_titles = []
     for key in sections.keys():
         if key.lower().startswith('summary'):
             ordered_section_titles.append(key)
     for key in sections.keys():
+        if key.lower().startswith('skills'):
+            ordered_section_titles.append(key)
+    for key in sections.keys():
         if key.lower().startswith('experience'):
             ordered_section_titles.append(key)
     for key in sections.keys():
-        # Exclude SUMMARY, EXPERIENCE, and LANGUAGE sections
-        if key.lower().startswith('summary') or key.lower().startswith('experience') or key.lower().startswith('language'):
+        # Exclude SUMMARY, SKILLS, EXPERIENCE, and LANGUAGE sections
+        if key.lower().startswith('summary') or key.lower().startswith('skills') or key.lower().startswith('experience') or key.lower().startswith('language'):
             continue
         ordered_section_titles.append(key)
 
@@ -975,7 +1295,7 @@ def download_tailored(job_id, doc_type):
                 line_strip = line.strip()
                 if not line_strip:
                     continue
-                
+                    
                 # Check if this is a skill category heading (ends with a colon)
                 if ':' in line_strip and not line_strip.startswith('-') and not line_strip.startswith('•'):
                     # This is a category heading like "Programming Languages: Python, Java"
@@ -1149,10 +1469,13 @@ def download_my_tailored(job_id, doc_type):
         if key.lower().startswith('summary'):
             ordered_section_titles.append(key)
     for key in sections.keys():
+        if key.lower().startswith('skills'):
+            ordered_section_titles.append(key)
+    for key in sections.keys():
         if key.lower().startswith('experience'):
             ordered_section_titles.append(key)
     for key in sections.keys():
-        if key.lower().startswith('summary') or key.lower().startswith('experience') or key.lower().startswith('language'):
+        if key.lower().startswith('summary') or key.lower().startswith('skills') or key.lower().startswith('experience') or key.lower().startswith('language'):
             continue
         ordered_section_titles.append(key)
     def flush_section(title, buffer):
@@ -1238,77 +1561,115 @@ def download_my_tailored(job_id, doc_type):
 
 
 def calculate_profile_completion(user):
-    """Calculate profile completion percentage with detailed logging"""
-    
-    current_app.logger.info(f"=== Calculating Profile Completion for User {user.id} ===")
-    
-    completion_items = []
-    total_possible = 0
-    completed = 0
-    
-    # Essential profile fields to check
-    profile_checks = [
-        ('email', 'Email address', getattr(user, 'email', None)),
-        ('first_name', 'First name', getattr(user, 'first_name', None)),
-        ('last_name', 'Last name', getattr(user, 'last_name', None)),
-        ('phone', 'Phone number', getattr(user, 'phone', None)),
-        ('city', 'Location', getattr(user, 'city', None)),
-        ('bio', 'Professional summary', getattr(user, 'bio', None)),
-        ('skills', 'Skills', getattr(user, 'skills', None)),
-        ('experience_level', 'Experience level', getattr(user, 'experience_level', None))
-    ]
-    
-    # Check each field
-    for field_name, display_name, field_value in profile_checks:
-        total_possible += 1
+    """Calculate accurate profile completion percentage"""
+    try:
+        # Define all fields we want to check for completion
+        fields_to_check = [
+            ('first_name', 'First Name', True),  # (field_name, display_name, is_required)
+            ('last_name', 'Last Name', True),
+            ('email', 'Email', True),  # Always filled
+            ('phone', 'Phone Number', False),
+            ('city', 'City', False),
+            ('bio', 'Professional Bio', False),
+            ('skills', 'Skills', False),
+            ('experience_level', 'Experience Level', False),
+            ('profile_picture', 'Profile Picture', False),
+            ('linkedin_url', 'LinkedIn Profile', False),
+            ('github_url', 'GitHub Profile', False),
+            ('portfolio_url', 'Portfolio Website', False)
+        ]
         
-        # Log the raw value
-        current_app.logger.info(f"Checking {field_name}: raw value = '{field_value}' (type: {type(field_value)})")
+        completed_fields = 0
+        total_fields = len(fields_to_check)
+        missing_fields = []
+        filled_fields = []
+        completion_items = []
         
-        is_complete = False
-        if field_value is not None:
-            if isinstance(field_value, str):
-                is_complete = field_value.strip() != ''
-                current_app.logger.info(f"  String check: stripped = '{field_value.strip()}', is_complete = {is_complete}")
-            elif isinstance(field_value, list):
-                is_complete = len(field_value) > 0
-                current_app.logger.info(f"  List check: length = {len(field_value)}, is_complete = {is_complete}")
+        for field, label, is_required in fields_to_check:
+            value = getattr(user, field, None)
+            
+            # Check if field has meaningful content
+            is_filled = False
+            
+            if field == 'email':
+                # Email is always considered filled if user exists
+                is_filled = bool(value and str(value).strip())
+            elif field == 'profile_picture':
+                # Profile picture is filled if not default
+                is_filled = bool(value and str(value).strip() and 
+                               str(value) not in ['uploads/profiles/default.png', '', 'None', 'null'])
+            elif field == 'experience_level':
+                # Experience level is filled if not default/empty
+                is_filled = bool(value and str(value).strip() and 
+                               str(value) not in ['not_specified', 'Not Specified', '', 'None', 'null'])
+            elif field in ['linkedin_url', 'github_url', 'portfolio_url']:
+                # Social media URLs are filled if they contain valid URLs
+                is_filled = bool(value and str(value).strip() and 
+                               str(value).startswith(('http://', 'https://')) and
+                               str(value) not in ['', 'None', 'null'])
+            elif field == 'skills':
+                # Skills can be stored as string or array
+                if isinstance(value, str):
+                    # Check if it's not empty string or empty array string
+                    is_filled = bool(value.strip() and value.strip() not in ['[]', '{}', '', 'None', 'null'])
+                elif isinstance(value, (list, tuple)):
+                    is_filled = bool(value and len(value) > 0)
+                else:
+                    is_filled = bool(value)
             else:
-                is_complete = True
-                current_app.logger.info(f"  Other type check: is_complete = {is_complete}")
-        else:
-            current_app.logger.info(f"  Value is None: is_complete = {is_complete}")
+                # Standard text fields
+                is_filled = bool(value and str(value).strip() and 
+                               str(value).strip() not in ['', 'None', 'null', 'nan'])
+            
+            # Create completion item
+            completion_items.append({
+                'field': field,
+                'name': label,
+                'completed': is_filled,
+                'value': value
+            })
+            
+            if is_filled:
+                completed_fields += 1
+                filled_fields.append(label)
+            else:
+                missing_fields.append(label)
+                
+                # Log missing field values for debugging
+                current_app.logger.debug(f"Missing field '{field}': value='{value}', type={type(value)}")
         
-        completion_items.append({
-            'field': field_name,
-            'name': display_name,
-            'completed': is_complete,
-            'value': field_value
-        })
+        completion_percentage = round((completed_fields / total_fields) * 100) if total_fields > 0 else 0
         
-        if is_complete:
-            completed += 1
-            current_app.logger.info(f"  ✓ {display_name} completed")
-        else:
-            current_app.logger.info(f"  ✗ {display_name} missing")
-    
-    # Calculate percentage (resume upload not required for completion)
-    completion_percentage = round((completed / total_possible) * 100) if total_possible > 0 else 0
-    
-    # Final logging
-    current_app.logger.info(f"=== Profile Completion Summary ===")
-    current_app.logger.info(f"Completed: {completed}/{total_possible} = {completion_percentage}%")
-    for item in completion_items:
-        status = "✓" if item['completed'] else "✗"
-        current_app.logger.info(f"  {status} {item['name']}: '{item['value']}'")
-    
-    return {
-        'percentage': completion_percentage,
-        'completed': completed,
-        'total': total_possible,
-        'items': completion_items,
-        'missing_items': [item for item in completion_items if not item['completed']]
-    }
+        # Log completion details for debugging
+        current_app.logger.info(f"Profile completion for user {user.id}: {completion_percentage}% ({completed_fields}/{total_fields})")
+        current_app.logger.debug(f"Filled fields: {filled_fields}")
+        current_app.logger.debug(f"Missing fields: {missing_fields}")
+        
+        return {
+            'percentage': completion_percentage,
+            'completed': completed_fields,
+            'total': total_fields,
+            'items': completion_items,
+            'missing_items': [item for item in completion_items if not item['completed']],
+            'missing_fields': missing_fields,
+            'filled_fields': filled_fields,
+            'completed_fields': completed_fields,
+            'total_fields': total_fields
+        }
+        
+    except Exception as e:
+        current_app.logger.error(f"Profile completion calculation error: {str(e)}")
+        return {
+            'percentage': 0,
+            'completed': 0,
+            'total': 9,
+            'items': [],
+            'missing_items': [],
+            'missing_fields': ['Unable to calculate'],
+            'filled_fields': [],
+            'completed_fields': 0,
+            'total_fields': 9
+        }
 
 def extract_resume_sections(resume_text):
     """
@@ -1425,11 +1786,6 @@ def send_application(job_id):
         job = mongo_db.jobs.find_one({"_id": ObjectId(job_id)})
         if not job:
             return jsonify({"success": False, "error": "Job not found"})
-        
-        # Check if job is active (not paused or closed)
-        job_status = job.get('status', 'active')  # Default to active for legacy data
-        if job_status not in ['active']:
-            return jsonify({"success": False, "error": "This job is no longer accepting applications"})
         
         # Get application email from job data
         application_email = job.get('email') or job.get('application_email') or job.get('contact_email')
@@ -1578,232 +1934,86 @@ def debug_profile_completion():
             resume = mongo_db.resumes.find_one({'user_id': str(current_user.id)})
             if resume:
                 resume_status = f"Resume found: {resume.get('filename', 'Unknown')}"
-    except Exception:
-        pass
-
-    return jsonify({
-        'user_data': user_data,
+    except Exception as e:
+        resume_status = f"Error checking resume: {str(e)}"
+    
+    debug_info = {
+        'current_user_attributes': user_data,
         'profile_completion': profile_data,
-        'resume_status': resume_status
-    })
-
-
-@bp.route('/talent-journey')
-@login_required
-def talent_journey():
-    """Talent Journey (Hiring Pipeline) page"""
+        'resume_status': resume_status,
+        'form_last_submitted': session.get('last_profile_update', 'Never')
+    }
     
-    # If user is a recruiter, show applications to their jobs
-    if current_user.is_recruiter():
-        # Get all job postings by current recruiter
-        recruiter_jobs = current_user.job_postings.all()
-        job_ids = [job.id for job in recruiter_jobs]
-        
-        # Get applications to recruiter's jobs
-        applications = Application.query.filter(
-            Application.job_posting_id.in_(job_ids)
-        ).join(User).all() if job_ids else []
-        
-        # Format data for template
-        candidates = []
-        for app in applications:
-            # Map application status to hiring pipeline stages
-            status_mapping = {
-                'applied': 'applied',
-                'screening': 'screening', 
-                'interview_scheduled': 'interview_scheduled',
-                'interviewed': 'interviewed',
-                'offer_received': 'offer_received',
-                'accepted': 'accepted',
-                'rejected': 'rejected',
-                'withdrawn': 'withdrawn'
-            }
-            
-            # Get ATS score from MongoDB tailored_resumes collection
-            ats_score = None
-            ats_score_display = "Not Available"
-            ats_score_class = "text-muted"
-            
+    return f"""
+    <html>
+    <head><title>Profile Debug</title></head>
+    <body style="font-family: monospace; padding: 20px; background: #f5f5f5;">
+        <h2 style="color: #333;">Profile Completion Debug</h2>
+        <pre style="background: white; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #ddd;">{json.dumps(debug_info, indent=2, default=str)}</pre>
+        <hr>
+        <a href="{url_for('main.applicant_dashboard')}" style="color: #007bff; text-decoration: none;">← Back to Dashboard</a> | 
+        <a href="{url_for('main.profile')}" style="color: #007bff; text-decoration: none;">Edit Profile</a>
+    </body>
+    </html>
+    """
+
+
+@bp.route('/debug/user-model')
+@login_required  
+def debug_user_model():
+    """Check what attributes the User model has"""
+    
+    user_attrs = []
+    for attr in dir(current_user):
+        if not attr.startswith('_') and not callable(getattr(current_user, attr)):
             try:
-                from flask import current_app
-                if hasattr(current_app, 'mongo_db') and current_app.mongo_db:
-                    tailored_resume = current_app.mongo_db.tailored_resumes.find_one({
-                        "user_id": str(app.user_id),
-                        "job_id": str(app.job_posting_id)
-                    })
-                    
-                    if tailored_resume and tailored_resume.get('ats_score'):
-                        ats_score = float(tailored_resume.get('ats_score', 0))
-                        ats_score_display = f"{ats_score:.0f}%"
-                        
-                        # Color coding based on score
-                        if ats_score >= 80:
-                            ats_score_class = "text-success fw-bold"  # Green for excellent
-                        elif ats_score >= 60:
-                            ats_score_class = "text-warning fw-bold"  # Yellow for good
-                        else:
-                            ats_score_class = "text-danger fw-bold"   # Red for poor
+                value = getattr(current_user, attr)
+                user_attrs.append(f"{attr}: {value} ({type(value).__name__})")
             except Exception as e:
-                print(f"Error fetching ATS score: {e}")
-            
-            candidates.append({
-                'application_id': app.id,
-                'name': f"{app.user.first_name or ''} {app.user.last_name or ''}".strip() or app.user.email,
-                'job': app.job_title,
-                'status': status_mapping.get(app.status, app.status),
-                'applied_date': app.created_at.strftime('%b %d, %Y') if app.created_at else 'N/A',
-                'ats_score': ats_score,
-                'ats_score_display': ats_score_display,
-                'ats_score_class': ats_score_class
-            })
-    else:
-        # For applicants, show empty or redirect
-        candidates = []
+                user_attrs.append(f"{attr}: ERROR - {str(e)}")
     
-    return render_template('talent_journey.html', candidates=candidates)
+    return f"""
+    <html>
+    <head><title>User Model Debug</title></head>
+    <body style="font-family: monospace; padding: 20px; background: #f5f5f5;">
+        <h2 style="color: #333;">User Model Attributes</h2>
+        <pre style="background: white; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #ddd;">{'<br>'.join(sorted(user_attrs))}</pre>
+        <hr>
+        <a href="{url_for('main.applicant_dashboard')}" style="color: #007bff; text-decoration: none;">← Back to Dashboard</a>
+    </body>
+    </html>
+    """
 
 
-@bp.route('/api/update-application-status', methods=['POST'])
-@login_required
-def update_application_status():
-    """API endpoint to update application status"""
-    try:
-        data = request.get_json()
-        application_id = data.get('application_id')
-        new_status = data.get('status')
-        
-        if not application_id or not new_status:
-            return jsonify({'success': False, 'error': 'Missing application_id or status'})
-        
-        # Get the application
-        application = Application.query.get(application_id)
-        if not application:
-            return jsonify({'success': False, 'error': 'Application not found'})
-        
-        # Check if current user is the recruiter for this job
-        if not current_user.is_recruiter() or application.job_posting.recruiter_id != current_user.id:
-            return jsonify({'success': False, 'error': 'Unauthorized'})
-        
-        # Update the status
-        application.status = new_status
+@bp.route('/test-login')
+def test_login():
+    """Quick test login for demo purposes"""
+    from flask_login import login_user
+    
+    # Find or create a test user
+    test_user = User.query.filter_by(email='test@example.com').first()
+    if not test_user:
+        test_user = User(
+            email='test@example.com',
+            password='testpassword',
+            first_name='Test',
+            last_name='User',
+            user_type='applicant'
+        )
+        test_user.set_password('testpassword')
+        db.session.add(test_user)
         db.session.commit()
-        
-        return jsonify({'success': True, 'message': 'Status updated successfully'})
-        
-    except Exception as e:
-        current_app.logger.error(f"Error updating application status: {str(e)}")
-        return jsonify({'success': False, 'error': 'Internal server error'})
-
-
-@bp.route('/download-resume/<int:application_id>')
-@login_required
-def download_resume(application_id):
-    """Download resume for a specific application"""
-    try:
-        # Get the application
-        application = Application.query.get_or_404(application_id)
-        
-        # Check if current user is the recruiter for this job
-        if not current_user.is_recruiter() or application.job_posting.recruiter_id != current_user.id:
-            flash('Unauthorized access to resume', 'error')
-            return redirect(url_for('main.talent_journey'))
-        
-        # First try to find the tailored resume in MongoDB
-        try:
-            if hasattr(current_app, 'mongo_db') and current_app.mongo_db:
-                tailored_resume = current_app.mongo_db.tailored_resumes.find_one({
-                    "user_id": str(application.user_id),
-                    "job_id": str(application.job_posting_id)
-                })
-                
-                if tailored_resume and tailored_resume.get('resume_text'):
-                    # Generate PDF from tailored resume text
-                    return generate_resume_pdf(
-                        tailored_resume['resume_text'], 
-                        f"{application.user.first_name}_{application.user.last_name}_tailored_resume.pdf"
-                    )
-        except Exception as e:
-            current_app.logger.error(f"Error accessing tailored resume: {e}")
-        
-        # Fallback to user's primary resume file
-        primary_resume = Resume.query.filter_by(
-            user_id=application.user_id,
-            is_primary=True,
-            is_active=True
-        ).first()
-        
-        if primary_resume and primary_resume.file_path:
-            # Check if file exists
-            if os.path.exists(primary_resume.file_path):
-                return send_file(
-                    primary_resume.file_path,
-                    as_attachment=True,
-                    download_name=primary_resume.filename or f"{application.user.first_name}_{application.user.last_name}_resume.pdf"
-                )
-        
-        # If no resume found, return error
-        flash('Resume not found for this application', 'error')
-        return redirect(url_for('main.talent_journey'))
-        
-    except Exception as e:
-        current_app.logger.error(f"Error downloading resume: {str(e)}")
-        flash('Error downloading resume', 'error')
-        return redirect(url_for('main.talent_journey'))
-
-
-def generate_resume_pdf(resume_text, filename):
-    """Generate a PDF from resume text content"""
-    try:
-        # Create a BytesIO buffer
-        buffer = io.BytesIO()
-        
-        # Create PDF document
-        doc = SimpleDocTemplate(buffer, pagesize=letter)
-        styles = getSampleStyleSheet()
-        story = []
-        
-        # Add title
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=16,
-            textColor=colors.darkblue,
-            alignment=TA_CENTER,
-            spaceAfter=20
-        )
-        story.append(Paragraph("Resume", title_style))
-        story.append(Spacer(1, 12))
-        
-        # Add resume content
-        content_style = ParagraphStyle(
-            'Content',
-            parent=styles['Normal'],
-            fontSize=11,
-            leading=14,
-            textColor=colors.black
-        )
-        
-        # Split resume text into paragraphs and add to story
-        paragraphs = resume_text.split('\n\n')
-        for para in paragraphs:
-            if para.strip():
-                # Clean and format the paragraph
-                cleaned_para = para.strip().replace('\n', '<br/>')
-                story.append(Paragraph(cleaned_para, content_style))
-                story.append(Spacer(1, 6))
-        
-        # Build PDF
-        doc.build(story)
-        
-        # Prepare response
-        buffer.seek(0)
-        return send_file(
-            buffer,
-            as_attachment=True,
-            download_name=filename,
-            mimetype='application/pdf'
-        )
-        
-    except Exception as e:
-        current_app.logger.error(f"Error generating PDF: {str(e)}")
-        raise e
+    
+    # Enable the user and verify them
+    test_user.is_active = True
+    test_user.is_verified = True
+    db.session.commit()
+    
+    # Login the user
+    login_success = login_user(test_user, remember=True)
+    
+    if login_success:
+        flash('Test user logged in successfully!', 'success')
+        return redirect(url_for('main.profile'))
+    else:
+        return f"Login failed for user {test_user.email}"

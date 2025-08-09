@@ -1,0 +1,533 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - JobMate{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Profile Overview -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <!-- Profile Picture with Upload -->
+                    <div class="position-relative d-inline-block mb-3">
+                        <img src="{{ url_for('static', filename=user.profile_picture or 'img/default-avatar.png') }}" 
+                             alt="Profile Picture" 
+                             class="rounded-circle profile-picture" 
+                             style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #e9ecef;"
+                             onerror="this.src='{{ url_for('static', filename='img/default-avatar.png') }}'">
+                        
+                        <!-- Upload Button Overlay -->
+                        <button class="btn btn-primary btn-sm position-absolute bottom-0 end-0 rounded-circle" 
+                                style="width: 35px; height: 35px; padding: 0;"
+                                data-bs-toggle="modal" data-bs-target="#profilePictureModal"
+                                title="Update Profile Picture">
+                            <i class="bi bi-camera"></i>
+                        </button>
+                    </div>
+                    
+                    <h5>{{ user.first_name or 'First' }} {{ user.last_name or 'Last' }}</h5>
+                    <p class="text-muted">{{ user.email }}</p>
+                    
+                    {% if user.city %}
+                    <p class="text-muted">
+                        <i class="bi bi-geo-alt me-1"></i>{{ user.city }}
+                    </p>
+                    {% endif %}
+                    
+                    <!-- Social Media Links -->
+                    <div class="d-flex justify-content-center gap-2 mb-3">
+                        {% if user.linkedin_url %}
+                        <a href="{{ user.linkedin_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-linkedin"></i>
+                        </a>
+                        {% endif %}
+                        {% if user.github_url %}
+                        <a href="{{ user.github_url }}" target="_blank" class="btn btn-outline-dark btn-sm">
+                            <i class="bi bi-github"></i>
+                        </a>
+                        {% endif %}
+                        {% if user.portfolio_url %}
+                        <a href="{{ user.portfolio_url }}" target="_blank" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-globe"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                    
+                    {% if user.bio and user.bio.strip() %}
+                    <p class="card-text small">{{ user.bio[:150] }}{% if user.bio|length > 150 %}...{% endif %}</p>
+                    {% else %}
+                    <p class="card-text text-muted small">Add a professional bio to tell employers about yourself</p>
+                    {% endif %}
+                    
+                    <!-- Experience Level -->
+                    {% if user.experience_level and user.experience_level != 'not_specified' %}
+                    <span class="badge bg-primary">{{ user.experience_level.replace('_', ' ').title() }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Profile Completion Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-check-circle me-2"></i>Profile Completion
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-3" style="height: 25px;">
+                        {% if stats.profile_completion.percentage >= 80 %}
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ stats.profile_completion.percentage }}%">
+                            <strong>{{ stats.profile_completion.percentage }}% Complete</strong>
+                        </div>
+                        {% elif stats.profile_completion.percentage >= 50 %}
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ stats.profile_completion.percentage }}%">
+                            <strong>{{ stats.profile_completion.percentage }}% Complete</strong>
+                        </div>
+                        {% elif stats.profile_completion.percentage >= 25 %}
+                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ stats.profile_completion.percentage }}%">
+                            <strong>{{ stats.profile_completion.percentage }}% Complete</strong>
+                        </div>
+                        {% else %}
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: {{ stats.profile_completion.percentage }}%">
+                            <strong>{{ stats.profile_completion.percentage }}% Complete</strong>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row text-center mb-3">
+                        <div class="col-6">
+                            <div class="text-success">
+                                <i class="bi bi-check-circle-fill"></i>
+                                <strong>{{ stats.profile_completion.completed_fields }}</strong>
+                                <br><small class="text-muted">Completed</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-warning">
+                                <i class="bi bi-exclamation-circle-fill"></i>
+                                <strong>{{ stats.profile_completion.missing_fields|length }}</strong>
+                                <br><small class="text-muted">Missing</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if stats.profile_completion.filled_fields %}
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-2">
+                            <i class="bi bi-check-circle text-success me-1"></i>Completed fields:
+                        </small>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% for field in stats.profile_completion.filled_fields %}
+                            <span class="badge bg-success text-white small">
+                                <i class="bi bi-check me-1"></i>{{ field }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if stats.profile_completion.missing_fields %}
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-2">
+                            <i class="bi bi-exclamation-circle text-warning me-1"></i>Missing fields:
+                        </small>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% for field in stats.profile_completion.missing_fields %}
+                            <span class="badge bg-warning text-dark small">
+                                <i class="bi bi-dash me-1"></i>{{ field }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if stats.profile_completion.percentage < 100 %}
+                    <div class="alert alert-info small mb-0">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        <strong>Tip:</strong> Complete your profile to get better job recommendations and increase your visibility to employers!
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success small mb-0">
+                        <i class="bi bi-trophy me-2"></i>
+                        <strong>Excellent!</strong> Your profile is complete and ready to attract top employers!
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-graph-up me-2"></i>Quick Stats
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-12 mb-2">
+                            <h4 class="text-primary mb-0">{{ stats.total_applications }}</h4>
+                            <small class="text-muted">Total Applications</small>
+                        </div>
+                    </div>
+                    
+                    {% if stats.recent_applications %}
+                    <hr>
+                    <h6 class="small text-muted mb-2">Recent Applications:</h6>
+                    {% for app in stats.recent_applications %}
+                    <div class="small mb-1">
+                        <strong>{{ app.job_title }}</strong> 
+                        <br><span class="text-muted">{{ app.company }} - {{ app.applied_date.strftime('%m/%d') }}</span>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Enhanced Profile Form -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-gear me-2"></i>Enhanced Profile Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <!-- Basic Profile Update (uses existing route) -->
+                    <form method="POST" action="{{ url_for('main.update_profile') }}">
+                        {{ form.csrf_token }}
+                        <h6 class="text-muted mb-3">Basic Information</h6>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">First Name *</label>
+                                {{ form.first_name(class="form-control", value=user.first_name or '', required=True) }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Last Name *</label>
+                                {{ form.last_name(class="form-control", value=user.last_name or '', required=True) }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-control" value="{{ user.email }}" readonly>
+                            <small class="text-muted">Contact support to change your email address</small>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Phone Number</label>
+                                {{ form.phone(class="form-control", value=user.phone or '', placeholder="+1 (555) 123-4567") }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">City</label>
+                                {{ form.city(class="form-control", value=user.city or '', placeholder="Toronto") }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Experience Level</label>
+                            {{ form.experience_level(class="form-select", value=user.experience_level or '') }}
+                        </div>
+                                <option value="senior" {{ 'selected' if user.experience_level == 'senior' }}>Senior (7+ years)</option>
+                                <option value="lead" {{ 'selected' if user.experience_level == 'lead' }}>Lead/Principal</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Professional Bio</label>
+                            {{ form.bio(class="form-control", rows=4, value=user.bio or '', placeholder="Tell us about yourself, your experience, and career goals...") }}
+                            <small class="text-muted">This helps employers understand your background and interests.</small>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Skills</label>
+                            {{ form.skills(class="form-control", rows=3, value=user.skills or '', placeholder="List your technical skills, tools, and technologies...") }}
+                            <small class="text-muted">Separate skills with commas or use any format you prefer.</small>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-2"></i>Update Profile
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <hr>
+                    
+                    <!-- Social Links Form -->
+                    <form method="POST" action="{{ url_for('main.update_social_links') }}">
+                        {{ social_form.csrf_token }}
+                        <h6 class="text-muted mb-3">Social Links</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">LinkedIn Profile</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-linkedin"></i></span>
+                                {{ social_form.linkedin_url(class="form-control", value=user.linkedin_url or '', placeholder="https://linkedin.com/in/yourprofile") }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">GitHub Profile</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-github"></i></span>
+                                {{ social_form.github_url(class="form-control", value=user.github_url or '', placeholder="https://github.com/yourusername") }} 
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Portfolio/Website</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-globe"></i></span>
+                                {{ social_form.portfolio_url(class="form-control", value=user.portfolio_url or '', placeholder="https://yourportfolio.com") }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="bi bi-link me-2"></i>Update Social Links
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a href="{{ url_for('main.profile') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Back to Basic Profile
+                            </a>
+                            <a href="{{ url_for('main.applicant_dashboard') }}" class="btn btn-secondary ms-2">
+                                <i class="bi bi-house me-2"></i>Dashboard
+                            </a>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-warning" 
+                                    data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                                <i class="bi bi-key me-2"></i>Change Password
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Picture Upload Modal -->
+<div class="modal fade" id="profilePictureModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Profile Picture</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Profile picture feature requires additional database setup. This is a demo of the interface.
+                </div>
+                
+                <form id="profilePictureForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Choose new profile picture</label>
+                        <input type="file" class="form-control" name="profile_picture" 
+                               accept="image/*" required>
+                        <small class="text-muted">Max size: 5MB. Formats: PNG, JPG, JPEG, GIF</small>
+                    </div>
+                    
+                    <div class="text-center">
+                        <img id="imagePreview" src="#" alt="Preview" 
+                             style="max-width: 200px; max-height: 200px; display: none;" 
+                             class="rounded">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger" onclick="deleteProfilePicture()">
+                    <i class="bi bi-trash me-2"></i>Delete Picture
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="uploadProfilePicture()">
+                    <i class="bi bi-upload me-2"></i>Upload
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Change Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('main.change_password') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" class="form-control" name="current_password" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <input type="password" class="form-control" name="new_password" 
+                               minlength="6" required>
+                        <small class="text-muted">Must be at least 6 characters long</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" name="confirm_password" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-key me-2"></i>Change Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+// Profile picture preview
+document.querySelector('input[name="profile_picture"]')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('imagePreview');
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+function uploadProfilePicture() {
+    const form = document.getElementById('profilePictureForm');
+    const formData = new FormData(form);
+    
+    const uploadBtn = event.target;
+    const originalText = uploadBtn.innerHTML;
+    uploadBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Uploading...';
+    uploadBtn.disabled = true;
+    
+    fetch('/profile/upload-picture', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update profile picture in the page if element exists
+            const profilePic = document.querySelector('.profile-picture');
+            if (profilePic) {
+                profilePic.src = data.picture_url;
+            }
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('profilePictureModal'));
+            modal?.hide();
+            
+            showNotification(data.message, 'success');
+        } else {
+            showNotification(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error uploading profile picture', 'error');
+    })
+    .finally(() => {
+        uploadBtn.innerHTML = originalText;
+        uploadBtn.disabled = false;
+    });
+}
+
+function deleteProfilePicture() {
+    if (confirm('Are you sure you want to delete your profile picture?')) {
+        fetch('/profile/delete-picture', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update profile picture to default if element exists
+                const profilePic = document.querySelector('.profile-picture');
+                if (profilePic) {
+                    profilePic.src = data.picture_url;
+                }
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('profilePictureModal'));
+                modal?.hide();
+                
+                showNotification(data.message, 'success');
+            } else {
+                showNotification(data.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error deleting profile picture', 'error');
+        });
+    }
+}
+
+function showNotification(message, type) {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll('.notification-toast');
+    existingNotifications.forEach(n => n.remove());
+    
+    // Create notification
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const iconClass = type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle';
+    
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertClass} alert-dismissible fade show notification-toast`;
+    notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <i class="bi ${iconClass} me-2"></i>${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-dismiss after 4 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            const bsAlert = new bootstrap.Alert(notification);
+            bsAlert.close();
+        }
+    }, 4000);
+}
+</script>
+{% endblock %}

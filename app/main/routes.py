@@ -10,6 +10,7 @@ from app import db
 from app.models.user import User
 from app.models.application import Application
 from app.models.job_posting import JobPosting
+from app.utils import split_answer_and_code
 from datetime import datetime, timedelta
 from bson import ObjectId
 import smtplib
@@ -62,6 +63,28 @@ def save_best_tailored_resume(mongo_db, user_id, job_id, ats_score, resume_text,
 
 def get_best_tailored_resumes(mongo_db, user_id):
     return list(mongo_db.tailored_resumes.find({"user_id": user_id}))
+
+
+def build_questions_data(generated_items):
+    """
+    Transforma la salida (generated_items) en la lista de dicts que la plantilla espera.
+    generated_items: iterable de objetos/dicts desde el LLM o base de datos.
+    """
+    questions_data = []
+    for item in generated_items:
+        # Ajusta según la estructura real de `item`
+        raw_expected = item.get("expected", "") or item.get("answer", "")
+        answer_text, snippet, lang = split_answer_and_code(raw_expected)
+
+        q = {
+            "text": item.get("text", "") or item.get("question", ""),
+            "relevance": item.get("relevance", "") or item.get("explanation", ""),
+            "expected": answer_text,
+            "code_snippet": snippet,
+            "code_lang": (lang or "python")
+        }
+        questions_data.append(q)
+    return questions_data
 
 
 @bp.route('/')
@@ -2079,12 +2102,27 @@ def generate_database_questions_route(job_id):
             return redirect(url_for('main.tailor_database_questions', job_id=job_id))
             
         # Generate questions with parameters
-        questions = generate_database_questions(
+        raw_questions_data = generate_database_questions(
             job_id=job_id, 
             job_data=job, 
             n=num_questions,
             question_type=question_type
         )
+        
+        # Process questions data using utility function for better parsing
+        questions_data = build_questions_data(raw_questions_data) if raw_questions_data else []
+        
+        # Create question statistics for display
+        question_stats = None
+        if questions_data and isinstance(questions_data, list):
+            code_snippets = sum(1 for q in questions_data if q.get('code_snippet'))
+            total_words = sum(len(str(q.get('text', '') + q.get('expected', '') + q.get('relevance', '')).split()) for q in questions_data)
+            question_stats = {
+                'question_count': len(questions_data),
+                'code_snippets': code_snippets,
+                'word_count': total_words,
+                'estimated_reading_time': max(1, total_words // 200)  # ~200 words per minute
+            }
         
         # Check if this is for iframe usage
         is_iframe = request.args.get('iframe') == 'true'
@@ -2093,9 +2131,10 @@ def generate_database_questions_route(job_id):
         return render_template(template_name, 
                              job=job, 
                              job_id=job_id, 
-                             questions=questions,
-                             num_questions=num_questions,
-                             question_type=question_type)
+                             questions=questions_data,
+                             num_questions=len(questions_data) if questions_data else 0,
+                             question_type=question_type,
+                             question_stats=question_stats)
         
     except Exception as e:
         current_app.logger.error(f'Error generating questions: {str(e)}')

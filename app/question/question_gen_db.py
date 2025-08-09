@@ -118,12 +118,107 @@ def generate_database_questions(job_id, job_data=None, level="intermediate",
         question_count = len(re.findall(r'\d+\.\s*INTERVIEW QUESTION:', response.text))
         print(f"🔍 DEBUG: Solicitadas {n} preguntas, encontradas {question_count} en respuesta de IA")
         
-        # Convert raw text to elegant HTML cards using simple formatter
-        formatted_questions = _format_questions_preserve_all(response.text)
-        return formatted_questions
+        # Parse AI response into structured data
+        questions_data = _parse_questions_to_dict(response.text)
+        return questions_data
         
     except Exception as e:
-        return f"❌ Error generating questions: {str(e)}"
+        return [{"text": f"❌ Error generating questions: {str(e)}", "relevance": "", "expected": "", "code_snippet": None, "code_lang": "python"}]
+
+
+def _parse_questions_to_dict(raw_text):
+    """
+    Parse AI response into a list of dictionaries for template rendering
+    
+    Args:
+        raw_text (str): Raw text response from AI
+        
+    Returns:
+        list: List of dictionaries with question data
+    """
+    if not raw_text:
+        return []
+    
+    import re
+    
+    # Split by numbered questions
+    text_to_process = "\n" + raw_text.strip()
+    parts = re.split(r'\n\s*(\d+)\.\s*INTERVIEW QUESTION:', text_to_process)
+    
+    questions_data = []
+    
+    if len(parts) >= 3:
+        # Process each question (skip first empty part)
+        for i in range(1, len(parts), 2):
+            if i + 1 < len(parts):
+                question_num = parts[i]
+                content = parts[i + 1].strip()
+                
+                # Parse the content to extract different sections
+                question_dict = _extract_question_sections(content)
+                questions_data.append(question_dict)
+    else:
+        # Fallback: treat entire text as single question
+        questions_data.append({
+            "text": raw_text,
+            "relevance": "",
+            "expected": "",
+            "code_snippet": None,
+            "code_lang": "python"
+        })
+    
+    return questions_data
+
+
+def _extract_question_sections(content):
+    """
+    Extract different sections from a question's content
+    
+    Args:
+        content (str): The content of a single question
+        
+    Returns:
+        dict: Dictionary with structured question data
+    """
+    import re
+    
+    # Initialize result dictionary
+    result = {
+        "text": "",
+        "relevance": "",
+        "expected": "",
+        "code_snippet": None,
+        "code_lang": "python"
+    }
+    
+    # Split content by section headers
+    sections = re.split(r'\n\s*\d+\.\s*(SUGGESTED IDEAL ANSWER|CODE SNIPPET|EVALUATION AND JUSTIFICATION):', content)
+    
+    # First section is the question text (after "INTERVIEW QUESTION:")
+    if sections:
+        result["text"] = sections[0].strip()
+    
+    # Process remaining sections
+    for i in range(1, len(sections), 2):
+        if i + 1 < len(sections):
+            section_type = sections[i].strip()
+            section_content = sections[i + 1].strip()
+            
+            if section_type == "SUGGESTED IDEAL ANSWER":
+                result["expected"] = section_content
+            elif section_type == "EVALUATION AND JUSTIFICATION":
+                result["relevance"] = section_content
+            elif section_type == "CODE SNIPPET":
+                # Extract code from markdown blocks
+                code_match = re.search(r'```(\w+)?\n(.*?)\n```', section_content, re.DOTALL)
+                if code_match:
+                    result["code_lang"] = code_match.group(1) or "python"
+                    result["code_snippet"] = code_match.group(2).strip()
+                else:
+                    # Fallback: treat entire content as code
+                    result["code_snippet"] = section_content
+    
+    return result
 
 
 def _format_questions_preserve_all(raw_text):

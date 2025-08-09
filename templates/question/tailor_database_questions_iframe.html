@@ -135,8 +135,40 @@
         
         <!-- Questions Container -->
         <div class="questions-display">
-            <!-- Display formatted questions as elegant HTML cards -->
-            {{ questions|safe }}
+          {% for q in questions %}
+          <div class="question-card mb-4">
+              <div class="section-question">
+                  <strong>Question:</strong>
+                  <div class="mt-2 question-text">{{ q.text | safe }}</div>
+              </div>
+
+              <!-- Relevance & Importance -->
+              {% if q.relevance %}
+              <div class="section-relevance">
+                  <strong>Relevance &amp; Importance:</strong>
+                  <div class="mt-2">{{ q.relevance | safe }}</div>
+              </div>
+              {% endif %}
+
+              <!-- Expected answer -->
+              {% if q.expected %}
+              <div class="section-expected">
+                  <strong>Expected Answer:</strong>
+                  <div class="mt-2">{{ q.expected | safe }}</div>
+              </div>
+              {% endif %}
+
+              <!-- Code Snippet (if applicable) -->
+              {% if q.code_snippet %}
+              <div class="section-code">
+                  <strong>Code Snippet (if applicable):</strong>
+                  <div class="code-snippet code-block-container">
+                      <pre class="line-numbers"><code class="language-{{ q.code_lang | default('python') }}">{{ q.code_snippet | e }}</code></pre>
+                  </div>
+              </div>
+              {% endif %}
+          </div>
+          {% endfor %}
         </div>
         
         <!-- Action Buttons -->

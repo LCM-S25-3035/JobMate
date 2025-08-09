@@ -192,3 +192,66 @@
         padding: 15px;
     }
 }
+
+/* --- UI additions for question card sections --- */
+
+/* Section: Relevance & Importance (amarillo) */
+.section-relevance {
+    background-color: #fff7e6; /* suave */
+    border-left: 5px solid #ffc107;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin: 12px 0;
+    color: #333;
+}
+
+/* Section: Expected Answer (verde) */
+.section-expected {
+    background-color: #e9f7ef;
+    border-left: 5px solid #28a745;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin: 12px 0;
+    color: #1b3a2a;
+}
+
+/* Code snippet wrapper — compatible con Prism.js / line-numbers */
+.code-snippet {
+    margin-top: 12px;
+    border-radius: 8px;
+    overflow: auto;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+}
+
+/* Opcional: pequeño ajuste responsive */
+@media (max-width: 768px) {
+    .section-relevance, .section-expected {
+        padding: 10px;
+    }
+    .code-snippet pre { font-size: 12px; }
+}
+
+/* Section: Question (azul claro) */
+.section-question {
+    background-color: #e7f3ff;
+    border-left: 5px solid #0d6efd; /* azul bootstrap */
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin: 12px 0;
+    color: #052c65;
+}
+
+/* Code snippet container separado */
+.section-code {
+    background-color: #f8f9fa; /* gris muy claro */
+    border-left: 5px solid #6c757d; /* gris */
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin: 12px 0;
+}
+
+.section-code strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #343a40;
+}

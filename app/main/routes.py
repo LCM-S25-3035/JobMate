@@ -2017,3 +2017,166 @@ def test_login():
         return redirect(url_for('main.profile'))
     else:
         return f"Login failed for user {test_user.email}"
+
+
+# --- Interview Questions Integration ---
+@bp.route('/tailor/<job_id>/database-questions')
+@login_required
+def tailor_database_questions(job_id):
+    """Generate interview questions for specific job"""
+    try:
+        # Get MongoDB database from current app
+        mongo_db = current_app.mongo_db
+        
+        if mongo_db is None:
+            flash('Database connection not available', 'error')
+            return redirect(url_for('main.home'))
+        
+        # Find the job
+        jobs_collection = mongo_db.jobs
+        job = jobs_collection.find_one({"_id": ObjectId(job_id)})
+        
+        if job is None:
+            flash('Job not found', 'error')
+            return redirect(url_for('main.home'))
+        
+        # Check if this is for iframe usage
+        is_iframe = request.args.get('iframe') == 'true'
+        template_name = 'question/tailor_database_questions_iframe.html' if is_iframe else 'question/tailor_database_questions.html'
+            
+        return render_template(template_name, job=job, job_id=job_id)
+    except Exception as e:
+        current_app.logger.error(f'Error loading questions page: {str(e)}')
+        flash(f'Error loading questions page: {str(e)}', 'error')
+        return redirect(url_for('main.tailor_resume', job_id=job_id))
+
+
+@bp.route('/tailor/<job_id>/generate-database-questions', methods=['POST'])
+@login_required
+def generate_database_questions_route(job_id):
+    """Generate questions endpoint"""
+    try:
+        # Import the question generation functionality
+        from app.question.question_gen_db import generate_database_questions
+        
+        # Get form data
+        num_questions = int(request.form.get('num_questions', 5))
+        question_type = request.form.get('question_type', 'mixed')
+        
+        # Get MongoDB database from current app
+        mongo_db = current_app.mongo_db
+        
+        if mongo_db is None:
+            flash('Database connection not available', 'error')
+            return redirect(url_for('main.tailor_database_questions', job_id=job_id))
+        
+        # Find the job
+        jobs_collection = mongo_db.jobs
+        job = jobs_collection.find_one({"_id": ObjectId(job_id)})
+        
+        if job is None:
+            flash('Job not found', 'error')
+            return redirect(url_for('main.tailor_database_questions', job_id=job_id))
+            
+        # Generate questions with parameters
+        questions = generate_database_questions(
+            job_id=job_id, 
+            job_data=job, 
+            n=num_questions,
+            question_type=question_type
+        )
+        
+        # Check if this is for iframe usage
+        is_iframe = request.args.get('iframe') == 'true'
+        template_name = 'question/tailor_database_questions_iframe.html' if is_iframe else 'question/tailor_database_questions.html'
+        
+        return render_template(template_name, 
+                             job=job, 
+                             job_id=job_id, 
+                             questions=questions,
+                             num_questions=num_questions,
+                             question_type=question_type)
+        
+    except Exception as e:
+        current_app.logger.error(f'Error generating questions: {str(e)}')
+        flash(f'Error generating questions: {str(e)}', 'error')
+        return redirect(url_for('main.tailor_database_questions', job_id=job_id))
+
+
+# --- Interview Questions Main Routes ---
+@bp.route('/interview-questions')
+@login_required
+def interview_questions_home():
+    """Main Interview Questions page"""
+    return render_template('question/index.html')
+
+
+@bp.route('/interview-questions/job-skills')
+@login_required  
+def interview_questions_skills():
+    """Interview Questions based on job skills"""
+    return render_template('question/skills_questions.html')
+
+
+@bp.route('/interview-questions/job-description')
+@login_required
+def interview_questions_description():
+    """Interview Questions based on job description"""
+    return render_template('question/job_description_questions.html')
+
+
+@bp.route('/interview-questions/from-database')
+@login_required
+def interview_questions_database():
+    """Interview Questions from database"""
+    return render_template('question/questions_from_db.html')
+
+
+@bp.route('/api/generate-questions-skills', methods=['POST'])
+@login_required
+def generate_questions_from_skills():
+    """Generate questions based on skills"""
+    try:
+        from app.question.question_gen import generate_questions_from_skills as gen_skills
+        
+        data = request.get_json()
+        skills = data.get('skills', '')
+        level = data.get('level', 'intermediate')
+        question_type = data.get('question_type', 'technical')
+        language = data.get('language', 'English')
+        num_questions = data.get('num_questions', 5)
+        
+        if not skills:
+            return jsonify({'error': 'Skills are required', 'success': False}), 400
+            
+        questions = gen_skills(skills, level, question_type, language, num_questions)
+        return jsonify({'questions': questions, 'success': True})
+        
+    except Exception as e:
+        current_app.logger.error(f'Error generating skills questions: {str(e)}')
+        return jsonify({'error': str(e), 'success': False}), 500
+
+
+@bp.route('/api/generate-questions-description', methods=['POST'])
+@login_required
+def generate_questions_from_description():
+    """Generate questions based on job description"""
+    try:
+        from app.question.question_gen2 import generate_questions_from_description as gen_desc
+        
+        data = request.get_json()
+        job_description = data.get('job_description', '')
+        level = data.get('level', 'intermediate')
+        question_type = data.get('question_type', 'technical')
+        language = data.get('language', 'English')
+        num_questions = data.get('num_questions', 5)
+        
+        if not job_description:
+            return jsonify({'error': 'Job description is required', 'success': False}), 400
+            
+        questions = gen_desc(job_description, level, question_type, language, num_questions)
+        return jsonify({'questions': questions, 'success': True})
+        
+    except Exception as e:
+        current_app.logger.error(f'Error generating description questions: {str(e)}')
+        return jsonify({'error': str(e), 'success': False}), 500

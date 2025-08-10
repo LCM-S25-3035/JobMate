@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Skills-Based Questions - JobMate{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/questions.css') }}?v=3">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
+<style>
+.section-scoring {
+    background-color: #f8f9fa;
+    border-left: 4px solid #6c757d;
+    padding: 15px;
+    border-radius: 5px;
+}
+.scoring-column {
+    padding: 10px;
+    margin-bottom: 10px;
+}
+.scoring-column .badge {
+    display: block;
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    font-size: 0.9em;
+}
+</style>
+{% endblock %}
+
+{# Set is_recruiter flag based on mode parameter or user role #}
+{% set is_recruiter = (mode == 'recruiter') %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-code me-2"></i>Skills-Based Generator</h4>
+                </div>
+                <div class="card-body">
+                    <nav class="questions-nav mb-4">
+                        <ul class="nav nav-pills">
+                            {% if not is_recruiter %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('main.interview_questions_home') }}"><i class="fas fa-home me-1"></i>Overview</a></li>
+                            <li class="nav-item"><a class="nav-link active" href="{{ url_for('main.interview_questions_skills') }}"><i class="fas fa-code me-1"></i>Skills</a></li>
+                            {% else %}
+                            <li class="nav-item"><a class="nav-link active" href="{{ url_for('recruiter.recruiter_interview') }}"><i class="fas fa-code me-1"></i>Interview Questions</a></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+
+                    <form method="POST" action="{{ url_for('main.generate_questions_from_skills') }}" class="questions-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        {% if is_recruiter %}
+                        <input type="hidden" name="mode" value="recruiter" />
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="job_position" class="form-label fw-bold"><i class="fas fa-briefcase text-primary me-2"></i>Job Position</label>
+                            <input type="text" class="form-control form-control-lg" id="job_position" name="job_position" placeholder="e.g., Senior Python Developer" value="{{ form_data.job_position if form_data else '' }}">
+                            <div class="form-text">Target position (optional)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="skills" class="form-label fw-bold"><i class="fas fa-tools text-primary me-2"></i>Skills</label>
+                            <input type="text" class="form-control form-control-lg" id="skills" name="skills" placeholder="Python, Docker, Leadership" value="{{ form_data.skills if form_data else '' }}" required>
+                            <div class="form-text">Comma-separated technical & soft skills</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="level" class="form-label fw-bold"><i class="fas fa-chart-line text-success me-2"></i>Candidate Level</label>
+                            <select class="form-select form-select-lg" id="level" name="level" required>
+                                {% set lvl = form_data.level if form_data and form_data.level else '' %}
+                                <option value="">Select level</option>
+                                <option value="beginner" {{ 'selected' if lvl=='beginner' else '' }}>Beginner</option>
+                                <option value="intermediate" {{ 'selected' if lvl=='intermediate' else '' }}>Intermediate</option>
+                                <option value="advanced" {{ 'selected' if lvl=='advanced' else '' }}>Advanced</option>
+                                <option value="expert" {{ 'selected' if lvl=='expert' else '' }}>Expert</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="question_type" class="form-label fw-bold"><i class="fas fa-question-circle text-warning me-2"></i>Type of Questions</label>
+                            {% set qt = form_data.question_type if form_data and form_data.question_type else '' %}
+                            <select class="form-select form-select-lg" id="question_type" name="question_type" required>
+                                <option value="">Choose type</option>
+                                <option value="technical" {{ 'selected' if qt=='technical' else '' }}>Technical</option>
+                                <option value="behavioral" {{ 'selected' if qt=='behavioral' else '' }}>Behavioral</option>
+                                <option value="mixed" {{ 'selected' if qt=='mixed' else '' }}>Mixed</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="count" class="form-label fw-bold"><i class="fas fa-list-ol text-info me-2"></i>Number of Questions: <span id="countValue">{{ form_data.count if form_data and form_data.count else '10' }}</span></label>
+                            <input type="range" class="form-range" id="count" name="count" min="5" max="20" value="{{ form_data.count if form_data and form_data.count else '10' }}" oninput="document.getElementById('countValue').textContent = this.value">
+                            <div class="d-flex justify-content-between"><small class="text-muted">5</small><small class="text-muted">20</small></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="language" class="form-label fw-bold"><i class="fas fa-language text-success me-2"></i>Language</label>
+                            {% set lang = form_data.language if form_data and form_data.language else 'English' %}
+                            <select class="form-select form-select-lg" id="language" name="language">
+                                <option value="English" {{ 'selected' if lang=='English' else '' }}>English</option>
+                                <option value="Spanish" {{ 'selected' if lang=='Spanish' else '' }}>Spanish</option>
+                                <option value="French" {{ 'selected' if lang=='French' else '' }}>French</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100 mb-3"><i class="fas fa-magic me-2"></i>Generate Questions</button>
+                        {% if questions %}
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-outline-primary" onclick="printQuestions()"><i class="fas fa-print me-2"></i>Print Questions</button>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-light"><h6 class="mb-0"><i class="fas fa-lightbulb text-warning me-2"></i>Tips</h6></div>
+                <div class="card-body small text-muted">
+                    <ul class="mb-0 list-unstyled">
+                        {% if not is_recruiter %}
+                        <li class="mb-1"><i class="fas fa-check text-success me-2"></i>Provide focused, relevant skills</li>
+                        <li class="mb-1"><i class="fas fa-check text-success me-2"></i>Select realistic experience level</li>
+                        <li class="mb-1"><i class="fas fa-check text-success me-2"></i>Pick the question style you need</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Adjust count for coverage</li>
+                        {% else %}
+                        <li class="mb-1"><i class="fas fa-check text-success me-2"></i>Match skills to job requirements</li>
+                        <li class="mb-1"><i class="fas fa-check text-success me-2"></i>Set appropriate candidate level</li>
+                        <li class="mb-1"><i class="fas fa-check text-success me-2"></i>Choose question type for interview stage</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Generate enough for comprehensive assessment</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            {% if questions %}
+            {% set refresh_url = url_for('recruiter.recruiter_interview') if is_recruiter else url_for('main.interview_questions_skills') %}
+            {% include 'question/partials/_generated_questions_block.html' with context %}
+            {% else %}
+            <div class="card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center justify-content-center text-center">
+                    <div>
+                        <i class="fas fa-code text-muted mb-4" style="font-size:4rem;"></i>
+                        <h4 class="text-muted mb-3">Generate Skill-Based Questions</h4>
+                        {% if not is_recruiter %}
+                        <p class="text-muted mb-4">Enter skills and preferences to create tailored practice questions.</p>
+                        {% else %}
+                        <p class="text-muted mb-4">Enter skills and preferences to create interview questions for candidates.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/questions.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Force Prism initialization
+    if (typeof Prism !== 'undefined') {
+        console.log('Initializing Prism.js for syntax highlighting...');
+        Prism.highlightAll();
+        
+        // Also try to highlight manually in case the above doesn't work
+        setTimeout(function() {
+            const codeBlocks = document.querySelectorAll('pre code[class*="language-"]');
+            console.log('Found', codeBlocks.length, 'code blocks to highlight');
+            codeBlocks.forEach(function(block) {
+                Prism.highlightElement(block);
+            });
+        }, 100);
+    } else {
+        console.error('Prism.js not loaded!');
+    }
+});
+</script>
+{% endblock %}

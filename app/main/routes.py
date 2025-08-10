@@ -10,6 +10,7 @@ from app import db
 from app.models.user import User
 from app.models.application import Application
 from app.models.job_posting import JobPosting
+from app.utils import split_answer_and_code
 from datetime import datetime, timedelta
 from bson import ObjectId
 import smtplib
@@ -62,6 +63,28 @@ def save_best_tailored_resume(mongo_db, user_id, job_id, ats_score, resume_text,
 
 def get_best_tailored_resumes(mongo_db, user_id):
     return list(mongo_db.tailored_resumes.find({"user_id": user_id}))
+
+
+def build_questions_data(generated_items):
+    """
+    Transforma la salida (generated_items) en la lista de dicts que la plantilla espera.
+    generated_items: iterable de objetos/dicts desde el LLM o base de datos.
+    """
+    questions_data = []
+    for item in generated_items:
+        # Ajusta según la estructura real de `item`
+        raw_expected = item.get("expected", "") or item.get("answer", "")
+        answer_text, snippet, lang = split_answer_and_code(raw_expected)
+
+        q = {
+            "text": item.get("text", "") or item.get("question", ""),
+            "relevance": item.get("relevance", "") or item.get("explanation", ""),
+            "expected": answer_text,
+            "code_snippet": snippet,
+            "code_lang": (lang or "python")
+        }
+        questions_data.append(q)
+    return questions_data
 
 
 @bp.route('/')
@@ -1653,3 +1676,348 @@ def update_application_status():
     except Exception as e:
         current_app.logger.error(f"Error updating application status: {str(e)}")
         return jsonify({'success': False, 'error': 'Internal server error'})
+
+
+@bp.route('/test-login')
+def test_login():
+    """Test login functionality"""
+    
+    # Find an existing user (first one) or create a test user
+    test_user = User.query.filter_by(email='recruiter@demo.com').first()
+    
+    if not test_user:
+        # Create a test recruiter user
+        test_user = User(
+            email='recruiter@demo.com',
+            password='testpass123',
+            first_name='Test',
+            last_name='Recruiter',
+            user_type='recruiter'
+        )
+        db.session.add(test_user)
+        db.session.commit()
+    
+    # Enable the user and verify them
+    test_user.is_active = True
+    test_user.is_verified = True
+    db.session.commit()
+    
+    # Login the user
+    login_success = login_user(test_user, remember=True)
+    
+    if login_success:
+        flash('Test user logged in successfully!', 'success')
+        return redirect(url_for('main.profile'))
+    else:
+        return f"Login failed for user {test_user.email}"
+
+
+# --- Interview Questions Integration ---
+@bp.route('/tailor/<job_id>/database-questions')
+@login_required
+def tailor_database_questions(job_id):
+    """Generate interview questions for specific job"""
+    try:
+        # Get MongoDB database from current app
+        mongo_db = current_app.mongo_db
+        
+        if mongo_db is None:
+            flash('Database connection not available', 'error')
+            return redirect(url_for('main.home'))
+        
+        # Find the job
+        jobs_collection = mongo_db.jobs
+        job = jobs_collection.find_one({"_id": ObjectId(job_id)})
+        
+        if job is None:
+            flash('Job not found', 'error')
+            return redirect(url_for('main.home'))
+        
+        # Check if this is for iframe usage
+        is_iframe = request.args.get('iframe') == 'true'
+        template_name = 'question/tailor_database_questions_iframe.html' if is_iframe else 'question/tailor_database_questions.html'
+            
+        return render_template(template_name, job=job, job_id=job_id)
+    except Exception as e:
+        current_app.logger.error(f'Error loading questions page: {str(e)}')
+        flash(f'Error loading questions page: {str(e)}', 'error')
+        return redirect(url_for('main.tailor_resume', job_id=job_id))
+
+
+@bp.route('/tailor/<job_id>/generate-database-questions', methods=['POST'])
+@login_required
+def generate_database_questions_route(job_id):
+    """Generate questions endpoint"""
+    try:
+        # Import the question generation functionality
+        from app.question.question_gen_db import generate_database_questions
+        
+        # Get form data
+        num_questions = int(request.form.get('num_questions', 5))
+        question_type = request.form.get('question_type', 'mixed')
+        
+        # Get MongoDB database from current app
+        mongo_db = current_app.mongo_db
+        
+        if mongo_db is None:
+            flash('Database connection not available', 'error')
+            return redirect(url_for('main.tailor_database_questions', job_id=job_id))
+        
+        # Find the job
+        jobs_collection = mongo_db.jobs
+        job = jobs_collection.find_one({"_id": ObjectId(job_id)})
+        
+        if job is None:
+            flash('Job not found', 'error')
+            return redirect(url_for('main.tailor_database_questions', job_id=job_id))
+            
+        # Generate questions with parameters
+        raw_questions_data = generate_database_questions(
+            job_id=job_id, 
+            job_data=job, 
+            n=num_questions,
+            question_type=question_type
+        )
+        
+        # Process questions data using utility function for better parsing
+        questions_data = build_questions_data(raw_questions_data) if raw_questions_data else []
+        
+        # Create question statistics for display
+        question_stats = None
+        if questions_data and isinstance(questions_data, list):
+            code_snippets = sum(1 for q in questions_data if q.get('code_snippet'))
+            total_words = sum(len(str(q.get('text', '') + q.get('expected', '') + q.get('relevance', '')).split()) for q in questions_data)
+            question_stats = {
+                'question_count': len(questions_data),
+                'code_snippets': code_snippets,
+                'word_count': total_words,
+                'estimated_reading_time': max(1, total_words // 200)  # ~200 words per minute
+            }
+        
+        # Check if this is for iframe usage
+        is_iframe = request.args.get('iframe') == 'true'
+        template_name = 'question/tailor_database_questions_iframe.html' if is_iframe else 'question/tailor_database_questions.html'
+        
+        return render_template(template_name, 
+                             job=job, 
+                             job_id=job_id, 
+                             questions=questions_data,
+                             num_questions=len(questions_data) if questions_data else 0,
+                             question_type=question_type,
+                             question_stats=question_stats)
+        
+    except Exception as e:
+        current_app.logger.error(f'Error generating questions: {str(e)}')
+        flash(f'Error generating questions: {str(e)}', 'error')
+        return redirect(url_for('main.tailor_database_questions', job_id=job_id))
+
+
+# --- Interview Questions Main Routes ---
+@bp.route('/interview-questions')
+@login_required
+def interview_questions_home():
+    """Main Interview Questions page"""
+    return render_template('question/index.html')
+
+
+@bp.route('/interview-questions/job-skills')
+# @login_required  # TEMPORARY: Removed for testing
+def interview_questions_skills():
+    """Interview Questions based on job skills"""
+    return render_template('question/skills_questions.html')
+
+
+@bp.route('/interview-questions/job-description')
+@login_required
+def interview_questions_description():
+    """Interview Questions based on job description"""
+    return render_template('question/job_description_questions.html')
+
+
+@bp.route('/interview-questions/from-database')
+@login_required
+def interview_questions_database():
+    """Interview Questions from database"""
+    return render_template('question/questions_from_db.html')
+
+
+@bp.route('/api/generate-questions-skills', methods=['POST'])
+# @login_required  # TEMPORARY: Removed for testing
+def generate_questions_from_skills():
+    """Generate questions based on skills"""
+    try:
+        from app.question.question_gen import generate_questions_from_skills as gen_skills
+        
+        # Handle both JSON and form data
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form.to_dict()
+            
+        skills = data.get('skills', '')
+        level = data.get('level', 'intermediate')
+        question_type = data.get('question_type', 'technical')
+        language = data.get('language', 'English')
+        num_questions = int(data.get('num_questions', data.get('count', 5)))
+        mode = data.get('mode', '')  # Check if this is recruiter mode
+        
+        # Debug logging
+        current_app.logger.info(f"DEBUG: Received parameters - skills: {skills}, level: {level}, question_type: {question_type}, language: {language}, num_questions: {num_questions}")
+        
+        if not skills:
+            if request.is_json:
+                return jsonify({'error': 'Skills are required', 'success': False}), 400
+            else:
+                flash('Skills are required', 'error')
+                # Redirect based on mode
+                if mode == 'recruiter':
+                    return redirect(url_for('recruiter.recruiter_interview'))
+                else:
+                    return redirect(url_for('main.interview_questions_skills'))
+                
+        # Generate questions and get structured data
+        raw_questions_data = gen_skills(skills, level, question_type, language, num_questions)
+
+        # Already returns list[dict]; build_questions_data expects uniform keys; keep as-is if structured
+        if raw_questions_data and isinstance(raw_questions_data, list) and raw_questions_data[0] and 'text' in raw_questions_data[0]:
+            questions_data = raw_questions_data
+        else:
+            questions_data = build_questions_data(raw_questions_data) if raw_questions_data else []
+
+        # Create question statistics for display
+        question_stats = None
+        if questions_data and isinstance(questions_data, list):
+            code_snippets = sum(1 for q in questions_data if q.get('code_snippet'))
+            total_words = sum(len(str(q.get('text', '') + q.get('expected', '') + q.get('relevance', '')).split()) for q in questions_data)
+            question_stats = {
+                'question_count': len(questions_data),
+                'code_snippets': code_snippets,
+                'word_count': total_words,
+                'estimated_reading_time': max(1, total_words // 200)  # ~200 words per minute
+            }
+
+        actual_count = len(questions_data)
+        placeholder_count = sum(1 for q in questions_data if q.get('text','').lower().startswith('placeholder'))
+        # Normalizar tipo (conservar original si viene capitalizado del form en otras vistas)
+        qt_display = question_type
+        if isinstance(qt_display, str):
+            qt_display = qt_display.strip()
+        if request.is_json:
+            return jsonify({
+                'questions': questions_data,
+                'requested_num_questions': num_questions,
+                'returned_num_questions': actual_count,
+                'placeholder_count': placeholder_count,
+                'question_type': qt_display,
+                'success': True
+            })
+        else:
+            return render_template('question/skills_questions.html', 
+                                   questions=questions_data, 
+                                   form_data={**data, 'num_questions': actual_count, 'question_type': qt_display},
+                                   num_questions=actual_count,
+                                   requested_num_questions=num_questions,
+                                   returned_num_questions=actual_count,
+                                   placeholder_count=placeholder_count,
+                                   question_type=qt_display,
+                                   question_stats=question_stats,
+                                   mode=mode)  # Pass mode to template
+        
+    except Exception as e:
+        current_app.logger.error(f'Error generating skills questions: {str(e)}')
+        if request.is_json:
+            return jsonify({'error': str(e), 'success': False}), 500
+        else:
+            flash(f'Error generating questions: {str(e)}', 'error')
+            # Redirect based on mode
+            mode = request.form.get('mode', '') if request.form else ''
+            if mode == 'recruiter':
+                return redirect(url_for('recruiter.recruiter_interview'))
+            else:
+                return redirect(url_for('main.interview_questions_skills'))
+
+
+@bp.route('/api/generate-questions-description', methods=['POST'])
+@login_required
+def generate_questions_from_description():
+    """Generate questions based on job description"""
+    try:
+        from app.question.question_gen2 import question_generator_for_ui as gen_desc
+        
+        # Handle both JSON and form data
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form.to_dict()
+            
+        job_description = data.get('job_description', '')
+        role = data.get('job_position', 'Developer')  # Form uses job_position
+        level = data.get('level', 'intermediate')
+        previous_experience = data.get('previous_experience', f'{level} level professional')
+        question_type = data.get('question_type', 'technical')
+        language = data.get('language', 'English')
+        num_questions = int(data.get('num_questions', data.get('count', 5)))
+        
+        if not job_description:
+            if request.is_json:
+                return jsonify({'error': 'Job description is required', 'success': False}), 400
+            else:
+                flash('Job description is required', 'error')
+                return redirect(url_for('main.interview_questions_description'))
+                
+        # Generate questions and get structured data
+        raw_questions_data = gen_desc(job_description, role, level, previous_experience, question_type, language, num_questions)
+
+        # Already returns list[dict]; build_questions_data expects uniform keys; keep as-is if structured
+        if raw_questions_data and isinstance(raw_questions_data, list) and 'text' in raw_questions_data[0]:
+            questions_data = raw_questions_data
+        else:
+            questions_data = build_questions_data(raw_questions_data) if raw_questions_data else []
+        
+        # Create question statistics for display
+        question_stats = None
+        if questions_data and isinstance(questions_data, list):
+            code_snippets = sum(1 for q in questions_data if q.get('code_snippet'))
+            total_words = sum(len(str(q.get('text', '') + q.get('expected', '') + q.get('relevance', '')).split()) for q in questions_data)
+            question_stats = {
+                'question_count': len(questions_data),
+                'code_snippets': code_snippets,
+                'word_count': total_words,
+                'estimated_reading_time': max(1, total_words // 200)  # ~200 words per minute
+            }
+        # Counts & placeholder meta (mirrors skills route)
+        actual_count = len(questions_data)
+        placeholder_count = sum(1 for q in questions_data if q.get('text','').lower().startswith('placeholder'))
+
+        # Normalize display of question type
+        qt_display = question_type
+        if isinstance(qt_display, str):
+            qt_display = qt_display.strip()
+
+        if request.is_json:
+            return jsonify({
+                'questions': questions_data,
+                'requested_num_questions': num_questions,
+                'returned_num_questions': actual_count,
+                'placeholder_count': placeholder_count,
+                'question_type': qt_display,
+                'success': True
+            })
+        else:
+            return render_template('question/job_description_questions.html', 
+                                   questions=questions_data, 
+                                   form_data={**data, 'num_questions': actual_count, 'question_type': qt_display},
+                                   num_questions=actual_count,
+                                   requested_num_questions=num_questions,
+                                   returned_num_questions=actual_count,
+                                   placeholder_count=placeholder_count,
+                                   question_type=qt_display,
+                                   question_stats=question_stats)
+        
+    except Exception as e:
+        current_app.logger.error(f'Error generating description questions: {str(e)}')
+        if request.is_json:
+            return jsonify({'error': str(e), 'success': False}), 500
+        else:
+            flash(f'Error generating questions: {str(e)}', 'error')
+            return redirect(url_for('main.interview_questions_description'))

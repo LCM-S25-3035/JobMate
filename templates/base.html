@@ -399,6 +399,16 @@
                             </a>
                         </li>
                         {% if current_user.is_applicant() %}
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-theme" href="{{ url_for('jobs.jobs_list') }}">
+                                <i class="bi bi-briefcase me-1"></i>Jobs
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-theme" href="{{ url_for('main.interview_questions_home') }}">
+                                <i class="bi bi-question-circle me-1"></i>Interview Questions
+                            </a>
+                        </li>
         
                         <li class="nav-item">
                             <a class="nav-link nav-link-theme" href="#" onclick="alert('Applications module coming soon!')">
@@ -424,6 +434,11 @@
                         <li class="nav-item">
                             <a class="nav-link nav-link-theme" href="{{ url_for('main.talent_journey') }}">
                                 <i class="bi bi-people me-1"></i>Talent Journey
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-theme" href="{{ url_for('recruiter.recruiter_interview') }}">
+                                <i class="bi bi-question-circle me-1"></i>Interview Questions
                             </a>
                         </li>
                         {% endif %}

@@ -54,7 +54,6 @@
                                 <th>Status</th>
                                 <th>ATS Score</th>
                                 <th>Applied Date</th>
-                                <th>Resume</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -88,13 +87,6 @@
                                     </span>
                                 </td>
                                 <td>{{ candidate.applied_date }}</td>
-                                <td>
-                                    <a href="{{ url_for('main.download_resume', application_id=candidate.application_id) }}" 
-                                       class="btn btn-sm btn-outline-primary" 
-                                       title="Download Resume">
-                                        <i class="bi bi-download me-1"></i>Download
-                                    </a>
-                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -377,7 +369,7 @@ function filterCandidatesByStatus(status) {
             const noResultsRow = document.createElement('tr');
             noResultsRow.id = 'no-filter-results';
             noResultsRow.innerHTML = `
-                <td colspan="6" class="text-center py-4 text-muted">
+                <td colspan="5" class="text-center py-4 text-muted">
                     <i class="bi bi-funnel fs-3"></i>
                     <div class="mt-2">No candidates found with this status</div>
                     <small>Click "Total Candidates" to show all</small>

@@ -1,8 +1,4 @@
-"""
-Utility functions for JobMate application
-"""
-
-# This file makes the utils directory a Python package
+# app/utils.py
 import re
 from typing import Tuple, Optional
 

@@ -144,6 +144,10 @@ def create_app(config_class=None):
     from app.main import bp as main_bp
     app.register_blueprint(main_bp)
     
+    # Question Generator module
+    from app.question import question_bp
+    app.register_blueprint(question_bp, url_prefix='/question')
+    
     # Register debug routes in development environment
     if app.config.get('FLASK_ENV', 'development') != 'production' and not app.config.get('PRODUCTION', False):
         from app.debug_routes import register_debug_routes
@@ -247,3 +251,11 @@ def cleanup_mongo():
     global mongo_client
     if mongo_client:
         mongo_client.close()
+
+def get_mongo_db():
+    """
+    Get MongoDB database instance
+    Returns the MongoDB database from the current app context
+    """
+    from flask import current_app
+    return current_app.mongo_db

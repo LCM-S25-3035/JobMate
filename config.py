@@ -61,6 +61,11 @@ class Config:
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     GEMINI_MODEL = os.environ.get('GEMINI_MODEL') or 'gemini-1.5-flash'
     
+    # Interview Questions Integration Configuration
+    MONGO_URI = os.environ.get('MONGO_URI') or MONGODB_URI
+    SUPABASE_URL = os.environ.get('SUPABASE_URL')
+    SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
+    
     
     # Security Configuration
     WTF_CSRF_ENABLED = True

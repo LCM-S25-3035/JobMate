@@ -499,3 +499,19 @@ def delete_job(job_id):
             'success': False,
             'message': 'Error deleting job posting'
         }), 500
+
+
+@bp.route("/interview")
+@login_required
+def recruiter_interview():
+    """Interview Questions Generator for Recruiters"""
+    if not current_user.is_recruiter():
+        flash('Access denied. Recruiter access required.', 'error')
+        return redirect(url_for('main.dashboard'))
+    
+    # Render the template with recruiter mode
+    return render_template(
+        "question/skills_questions.html",  # reuse existing template
+        questions=None,  # No questions initially
+        mode="recruiter"  # tells the template to hide applicant-only UI
+    )

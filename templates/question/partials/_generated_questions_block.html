@@ -1,0 +1,150 @@
+{# Reusable block for displaying generated interview questions with stats and actions #}
+{% set _returned = num_questions if num_questions is defined else (questions|length if questions is defined else 0) %}
+{% set _requested = requested_num_questions if requested_num_questions is defined else (_returned) %}
+{% set _placeholders = [] %}
+{% if questions is defined %}
+  {% for q in questions %}
+    {% if 'Placeholder' in q.text %}
+      {% set _ = _placeholders.append(q) %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+<div class="mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+            <h5 class="mb-1">
+                Generated Questions ({{ _returned }})
+                {% if _requested != _returned %}
+                    <span class="badge bg-warning text-dark ms-1" title="Model returned fewer; completed automatically">{{ _requested }} requested</span>
+                {% endif %}
+                {% if _placeholders and _placeholders|length > 0 %}
+                    <span class="badge bg-secondary ms-1" title="Auto-filled placeholders to reach target">{{ _placeholders|length }} placeholder{{ 's' if _placeholders|length>1 else '' }}</span>
+                {% endif %}
+            </h5>
+            <p class="text-muted mb-1 small">
+                {% if question_type %}{{ question_type|title }}{% elif form_data and form_data.question_type %}{{ form_data.question_type|title }}{% endif %} questions
+                {% if form_data %}
+                    {% if form_data.job_position %}for <strong>{{ form_data.job_position }}</strong>{% elif form_data.skills %}for <strong>{{ form_data.skills }}</strong>{% endif %}
+                {% endif %}
+            </p>
+            {% if _placeholders and _placeholders|length > 0 %}
+            <div class="alert alert-info py-1 px-2 mb-0 small" style="max-width:420px;">
+                Some questions were auto-completed because the model returned fewer than requested.
+            </div>
+            {% endif %}
+        </div>
+        <div class="btn-group ms-auto">
+            <a href="{{ refresh_url }}" class="btn btn-outline-primary"><i class="fas fa-sync me-1"></i>New</a>
+            <button class="btn btn-outline-success" onclick="printQuestions()"><i class="fas fa-print me-1"></i>Print</button>
+        </div>
+    </div>
+</div>
+
+{% if question_stats %}
+<div class="question-stats mb-4">
+  <div class="row">
+      <div class="col-3 text-center">
+          <div class="stat-item">
+              <span class="stat-number">{{ question_stats.question_count }}</span>
+              <span class="stat-label">Questions</span>
+          </div>
+      </div>
+      <div class="col-3 text-center">
+          <div class="stat-item">
+              <span class="stat-number">{{ question_stats.code_snippets }}</span>
+              <span class="stat-label">Code Examples</span>
+          </div>
+      </div>
+      <div class="col-3 text-center">
+          <div class="stat-item">
+              <span class="stat-number">{{ question_stats.estimated_reading_time }}</span>
+              <span class="stat-label">Min Read</span>
+          </div>
+      </div>
+      <div class="col-3 text-center">
+          <div class="stat-item">
+              <span class="stat-number">{{ question_stats.word_count }}</span>
+              <span class="stat-label">Words</span>
+          </div>
+      </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="questions-display">
+    {% for q in questions %}
+    <div class="question-card mb-4 {% if 'Placeholder' in q.text %}placeholder-question border-dashed{% endif %}">
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="section-question flex-grow-1 pe-3">
+                <strong>Question:</strong>
+                <div class="mt-2 question-text">{{ q.text | safe }}</div>
+            </div>
+            {% if 'Placeholder' in q.text %}
+                <span class="badge bg-secondary align-self-start" title="Auto-generated placeholder">Placeholder</span>
+            {% endif %}
+        </div>
+
+        {% if q.relevance %}
+        <div class="section-relevance mt-3">
+            <strong>Relevance &amp; Importance:</strong>
+            <div class="mt-2">{{ q.relevance | safe }}</div>
+        </div>
+        {% endif %}
+
+        {% if q.expected %}
+        <div class="section-expected mt-3">
+            <strong>Sample Key Points:</strong>
+            <div class="mt-2">{{ q.expected | safe }}</div>
+        </div>
+        {% endif %}
+
+        {% if is_recruiter %}
+        <div class="section-scoring mt-3">
+            <strong>Scoring Guide (1-5 Scale):</strong>
+            <div class="mt-2">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="scoring-column">
+                            <div class="badge bg-danger mb-2">Poor (1-2)</div>
+                            <small class="text-muted">Vague examples, no measurable results, lacks specific skills demonstration</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="scoring-column">
+                            <div class="badge bg-warning mb-2">Average (3)</div>
+                            <small class="text-muted">Some examples provided, basic skills shown, limited impact mentioned</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="scoring-column">
+                            <div class="badge bg-success mb-2">Excellent (4-5)</div>
+                            <small class="text-muted">Clear examples with impact, demonstrates strong skills, measurable outcomes</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if q.code_snippet %}
+        <div class="section-code mt-3">
+            <strong>Code Snippet:</strong>
+            <div class="code-snippet code-block-container">
+                <pre class="line-numbers"><code class="language-{{ q.code_lang | default('python') }}">{{ q.code_snippet | e }}</code></pre>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<div class="mt-4 pt-3 border-top text-center">
+  <p class="text-muted mb-3">
+      <i class="fas fa-lightbulb me-1"></i>
+      Use these questions to prepare effectively
+  </p>
+    <div class="btn-group" role="group">
+        <a href="{{ refresh_url }}" class="btn btn-outline-primary"><i class="fas fa-refresh me-1"></i>Generate More</a>
+        <button class="btn btn-outline-success" onclick="printQuestions()"><i class="fas fa-print me-1"></i>Print All</button>
+    </div>
+</div>

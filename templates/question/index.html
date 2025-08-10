@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Interview Questions Generator - JobMate{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/questions.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="text-center mb-5">
+                <h1 class="display-4 text-primary mb-3">
+                    <i class="fas fa-brain me-3"></i>Interview Questions Generator
+                </h1>
+                <p class="lead text-muted">Generate personalized interview questions using AI</p>
+            </div>
+
+            <!-- Navigation Pills -->
+            <nav class="questions-nav">
+                <ul class="nav nav-pills justify-content-center">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('main.interview_questions_home') }}">
+                            <i class="fas fa-home me-2"></i>Overview
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.interview_questions_skills') }}">
+                            <i class="fas fa-code me-2"></i>Skills-Based
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.interview_questions_description') }}">
+                            <i class="fas fa-briefcase me-2"></i>Job Description
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="row g-4 justify-content-center">
+                <!-- Skills-based Questions -->
+                <div class="col-lg-6">
+                    <div class="card generator-card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="generator-icon bg-primary bg-gradient text-white">
+                                <i class="fas fa-code"></i>
+                            </div>
+                            <h4 class="card-title text-primary mb-3">Skills-Based Questions</h4>
+                            <p class="card-text text-muted mb-4">
+                                Generate technical and soft skill questions based on specific competencies and experience levels.
+                            </p>
+                            <ul class="list-unstyled text-start mb-4">
+                                <li><i class="fas fa-check text-success me-2"></i>Programming Languages</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Technical Skills</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Experience Levels</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Soft Skills</li>
+                            </ul>
+                            <a href="{{ url_for('main.interview_questions_skills') }}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-arrow-right me-2"></i>Generate Now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Job Description Questions -->
+                <div class="col-lg-6">
+                    <div class="card generator-card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="generator-icon bg-success bg-gradient text-white">
+                                <i class="fas fa-briefcase"></i>
+                            </div>
+                            <h4 class="card-title text-success mb-3">Job Description Questions</h4>
+                            <p class="card-text text-muted mb-4">
+                                Create targeted questions based on specific job descriptions and role requirements.
+                            </p>
+                            <ul class="list-unstyled text-start mb-4">
+                                <li><i class="fas fa-check text-success me-2"></i>Role-Specific Questions</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Company Context</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Requirements Analysis</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Custom Scenarios</li>
+                            </ul>
+                            <a href="{{ url_for('main.interview_questions_description') }}" class="btn btn-success btn-lg">
+                                <i class="fas fa-arrow-right me-2"></i>Generate Now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="card bg-light border-0">
+                        <div class="card-body py-5">
+                            <h3 class="text-center mb-5">
+                                <i class="fas fa-star text-warning me-2"></i>Key Features
+                            </h3>
+                            <div class="row g-4">
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <i class="fas fa-robot text-primary fs-1 mb-3"></i>
+                                        <h5>AI-Powered</h5>
+                                        <p class="text-muted">Powered by Google Gemini AI for intelligent question generation</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <i class="fas fa-download text-success fs-1 mb-3"></i>
+                                        <h5>PDF Export</h5>
+                                        <p class="text-muted">Export your questions to professional PDF format</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <i class="fas fa-palette text-info fs-1 mb-3"></i>
+                                        <h5>Syntax Highlighting</h5>
+                                        <p class="text-muted">Beautiful code formatting for technical questions</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <i class="fas fa-search text-warning fs-1 mb-3"></i>
+                                        <h5>Smart Search</h5>
+                                        <p class="text-muted">Find and filter questions with intelligent search</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/questions.js') }}"></script>
+{% endblock %}

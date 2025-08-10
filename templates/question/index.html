@@ -31,7 +31,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.interview_questions_job_description') }}">
+                        <a class="nav-link" href="{{ url_for('main.interview_questions_description') }}">
                             <i class="fas fa-briefcase me-2"></i>Job Description
                         </a>
                     </li>
@@ -43,8 +43,8 @@
                 <div class="col-lg-6">
                     <div class="card generator-card h-100 shadow-sm">
                         <div class="card-body text-center">
-                            <div class="generator-icon bg-primary bg-gradient text-white mb-3">
-                                <i class="fas fa-code fs-1"></i>
+                            <div class="generator-icon bg-primary bg-gradient text-white">
+                                <i class="fas fa-code"></i>
                             </div>
                             <h4 class="card-title text-primary mb-3">Skills-Based Questions</h4>
                             <p class="card-text text-muted mb-4">
@@ -67,8 +67,8 @@
                 <div class="col-lg-6">
                     <div class="card generator-card h-100 shadow-sm">
                         <div class="card-body text-center">
-                            <div class="generator-icon bg-success bg-gradient text-white mb-3">
-                                <i class="fas fa-briefcase fs-1"></i>
+                            <div class="generator-icon bg-success bg-gradient text-white">
+                                <i class="fas fa-briefcase"></i>
                             </div>
                             <h4 class="card-title text-success mb-3">Job Description Questions</h4>
                             <p class="card-text text-muted mb-4">
@@ -80,7 +80,7 @@
                                 <li><i class="fas fa-check text-success me-2"></i>Requirements Analysis</li>
                                 <li><i class="fas fa-check text-success me-2"></i>Custom Scenarios</li>
                             </ul>
-                            <a href="{{ url_for('main.interview_questions_job_description') }}" class="btn btn-success btn-lg">
+                            <a href="{{ url_for('main.interview_questions_description') }}" class="btn btn-success btn-lg">
                                 <i class="fas fa-arrow-right me-2"></i>Generate Now
                             </a>
                         </div>
@@ -107,47 +107,25 @@
                                 <div class="col-md-3">
                                     <div class="text-center">
                                         <i class="fas fa-download text-success fs-1 mb-3"></i>
-                                        <h5>Database Integration</h5>
-                                        <p class="text-muted">Access questions tailored to specific job postings</p>
+                                        <h5>PDF Export</h5>
+                                        <p class="text-muted">Export your questions to professional PDF format</p>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="text-center">
                                         <i class="fas fa-palette text-info fs-1 mb-3"></i>
-                                        <h5>Multiple Types</h5>
-                                        <p class="text-muted">Technical, behavioral, and mixed question formats</p>
+                                        <h5>Syntax Highlighting</h5>
+                                        <p class="text-muted">Beautiful code formatting for technical questions</p>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="text-center">
                                         <i class="fas fa-search text-warning fs-1 mb-3"></i>
-                                        <h5>Customizable</h5>
-                                        <p class="text-muted">Choose number of questions and difficulty levels</p>
+                                        <h5>Smart Search</h5>
+                                        <p class="text-muted">Find and filter questions with intelligent search</p>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Quick Access Section -->
-            <div class="row mt-5">
-                <div class="col-12">
-                    <div class="card border-primary">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">
-                                <i class="fas fa-bolt me-2"></i>Quick Access - Interview Questions
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="card-text">
-                                Want questions for a specific job? Go to any job listing and use the "Interview Questions" feature 
-                                in the Tailor Resume section for personalized interview questions.
-                            </p>
-                            <a href="{{ url_for('jobs.jobs_list') }}" class="btn btn-outline-primary">
-                                <i class="fas fa-search me-2"></i>Browse Jobs
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -158,19 +136,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-// Simple styling for generator cards
-document.addEventListener('DOMContentLoaded', function() {
-    const cards = document.querySelectorAll('.generator-card');
-    cards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-5px)';
-            this.style.transition = 'transform 0.3s ease';
-        });
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-        });
-    });
-});
-</script>
+<script src="{{ url_for('static', filename='js/questions.js') }}"></script>
 {% endblock %}

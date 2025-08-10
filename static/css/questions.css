@@ -255,3 +255,121 @@
     margin-bottom: 8px;
     color: #343a40;
 }
+
+/* Placeholder question visual cue */
+.question-card.placeholder-question.border-dashed {
+    border: 1px dashed #b0b0b0 !important;
+    background: #fcfcfc;
+}
+
+.question-card.placeholder-question.border-dashed .section-question {
+    background-color: #f2f6fa; /* slightly muted for placeholders */
+}
+
+/* -------------------------
+   Section styles for question cards
+   ------------------------- */
+
+/* Card wrapper */
+.question-card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 1px 6px rgba(16,24,40,0.04);
+  border: 1px solid rgba(16,24,40,0.04);
+}
+
+/* Placeholder visual */
+.placeholder-question {
+  border-style: dashed;
+  border-color: #ced4da;
+  background: linear-gradient(180deg, rgba(248,249,250,0.6), rgba(248,249,250,0.4));
+}
+
+/* SECTION: Question (azul claro) */
+.section-question {
+  background-color: #e7f3ff;
+  border-left: 5px solid #0d6efd; /* azul bootstrap */
+  padding: 12px 16px;
+  border-radius: 6px;
+  color: #052c65;
+}
+.section-question strong { color: #0d6efd; font-size: 0.95rem; }
+
+/* SECTION: Relevance & Importance (amarillo) */
+.section-relevance {
+  background-color: #fff7e6;
+  border-left: 5px solid #ffc107;
+  padding: 12px 16px;
+  border-radius: 6px;
+  color: #4b3b00;
+}
+.section-relevance strong { color: #a35d00; }
+
+/* SECTION: Expected Answer (verde) */
+.section-expected {
+  background-color: #e9f7ef;
+  border-left: 5px solid #28a745;
+  padding: 12px 16px;
+  border-radius: 6px;
+  color: #073b22;
+}
+.section-expected strong { color: #19692c; }
+
+/* SECTION: Code container (gris/neutral) */
+.section-code {
+  background-color: #f8f9fa;
+  border-left: 5px solid #6c757d;
+  padding: 12px 16px;
+  border-radius: 6px;
+  color: #343a40;
+}
+.section-code strong { display:block; margin-bottom:8px; color:#343a40; }
+
+/* Code snippet wrapper — complementa .code-block-container si existe */
+.code-snippet {
+  margin-top: 8px;
+  border-radius: 6px;
+  overflow: auto;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.03);
+}
+
+/* Asegura legibilidad del texto de pregunta */
+.question-text {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* Small responsiveness */
+@media (max-width: 768px) {
+  .section-question,
+  .section-relevance,
+  .section-expected,
+  .section-code { padding: 10px; }
+  .question-card { padding: 12px; }
+}
+
+/* Enhanced section styling with background colors */
+.questions-display .section-question {
+    background-color: #d0e7ff !important; /* Azul claro */
+    padding: 10px !important;
+    border-radius: 5px !important;
+}
+
+.questions-display .section-relevance {
+    background-color: #ffe5b4 !important; /* Naranja claro */
+    padding: 10px !important;
+    border-radius: 5px !important;
+}
+
+.questions-display .section-expected {
+    background-color: #d4f8d4 !important; /* Verde claro */
+    padding: 10px !important;
+    border-radius: 5px !important;
+}
+
+.questions-display .section-code {
+    background-color: #f4f4f4 !important;
+    padding: 10px !important;
+    border-radius: 5px !important;
+}

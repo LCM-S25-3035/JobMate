@@ -3,7 +3,10 @@
 {% block title %}Interview Questions - {{ job.title }} - JobMate{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/questions.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/questions.css') }}?v=3">
+<!-- Prism.js CSS for syntax highlighting -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 {% endblock %}
 
@@ -182,4 +185,28 @@
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/questions.js') }}"></script>
+<!-- Prism.js for syntax highlighting -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Force Prism initialization
+    if (typeof Prism !== 'undefined') {
+        console.log('Initializing Prism.js for syntax highlighting...');
+        Prism.highlightAll();
+        
+        // Also try to highlight manually in case the above doesn't work
+        setTimeout(function() {
+            const codeBlocks = document.querySelectorAll('pre code[class*="language-"]');
+            console.log('Found', codeBlocks.length, 'code blocks to highlight');
+            codeBlocks.forEach(function(block) {
+                Prism.highlightElement(block);
+            });
+        }, 100);
+    } else {
+        console.error('Prism.js not loaded!');
+    }
+});
+</script>
 {% endblock %}

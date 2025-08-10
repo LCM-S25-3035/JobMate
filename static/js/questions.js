@@ -108,26 +108,17 @@ function printQuestions() {
                 <head>
                     <title>Interview Questions</title>
                     <style>
-                        body { font-family: Arial, sans-serif; margin: 20px; }
-                        .question-item { margin-bottom: 30px; page-break-inside: avoid; }
-                        .card-header { background: #007bff; color: white; padding: 10px; font-weight: bold; }
-                        .card-body { padding: 15px; border: 1px solid #ddd; }
-                        .question-text, .answer-text, .evaluation-text { 
-                            padding: 10px; 
-                            background: #f8f9fa; 
-                            border-left: 4px solid #007bff; 
-                            margin: 10px 0;
-                        }
-                        .code-container { 
-                            background: #f8f9fa; 
-                            padding: 10px; 
-                            border: 1px solid #ddd; 
-                            font-family: monospace;
-                        }
-                        h6 { color: #495057; font-weight: bold; margin-top: 15px; }
+                        body { font-family: Arial, sans-serif; margin: 20px; color: #111; }
+                        h1 { font-size: 22px; margin-bottom: 12px; }
+                        .question-card { margin-bottom: 18px; padding: 12px; border-radius: 8px; border: 1px solid #e9ecef; background: #fff; }
+                        .section-question { background-color: #e7f3ff; border-left: 5px solid #0d6efd; padding: 10px; border-radius: 6px; color: #052c65; }
+                        .section-relevance { background-color: #fff7e6; border-left: 5px solid #ffc107; padding: 10px; border-radius: 6px; color: #4b3b00; margin-top:8px; }
+                        .section-expected { background-color: #e9f7ef; border-left: 5px solid #28a745; padding: 10px; border-radius: 6px; color: #073b22; margin-top:8px; }
+                        .section-code { background-color: #f8f9fa; border-left: 5px solid #6c757d; padding: 10px; border-radius: 6px; color: #343a40; margin-top:8px; }
+                        pre { background: #1e1e1e; color: #d4d4d4; padding: 10px; border-radius: 6px; overflow:auto; }
                         @media print {
-                            .copy-btn { display: none; }
-                            .question-item { page-break-inside: avoid; }
+                            body { margin: 8mm; }
+                            pre { page-break-inside: avoid; }
                         }
                     </style>
                 </head>
@@ -140,35 +131,5 @@ function printQuestions() {
         printWindow.print();
     }
 }
-        button.style.right = '10px';
-    });
-
-    // Print functionality
-    window.printQuestions = function() {
-        const questionsContent = document.querySelector('.questions-display');
-        if (questionsContent) {
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <html>
-                    <head>
-                        <title>Interview Questions</title>
-                        <style>
-                            body { font-family: Arial, sans-serif; margin: 20px; }
-                            h1, h2, h3 { color: #333; }
-                            pre { background: #f5f5f5; padding: 15px; border-radius: 5px; }
-                            .copy-btn { display: none; }
-                        </style>
-                    </head>
-                    <body>
-                        <h1>Interview Questions</h1>
-                        ${questionsContent.innerHTML}
-                    </body>
-                </html>
-            `);
-            printWindow.document.close();
-            printWindow.print();
-        }
-    };
-});
 
 console.log('Questions.js loaded successfully');

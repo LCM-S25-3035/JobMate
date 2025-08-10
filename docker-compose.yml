@@ -39,6 +39,10 @@ services:
       - POSTGRES_DB=jobmate_db
       - POSTGRES_USER=jobmate_user
       - POSTGRES_PASSWORD=jobmate_password
+      - POSTGRES_SUPERUSER=postgres
+      - POSTGRES_SUPERUSER_PASSWORD=postgres_admin_password
+      # Enable superuser to create database and grant privileges
+      - POSTGRES_INITDB_ARGS="--auth-host=md5 --auth-local=md5"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro

@@ -356,6 +356,10 @@ class GlassdoorBot:
         assuming 'Easy Apply only' filter is active.
         """
         try:
+            import random
+            wait_time = random.uniform(2.5, 4.5)
+            print(f"Waiting {wait_time:.2f} seconds before searching for Easy Apply job listings...")
+            time.sleep(wait_time)
             print("Getting filtered job listings...")
             job_cards = self.driver.find_elements(
                 By.XPATH, "//li[@data-test='jobListing']"

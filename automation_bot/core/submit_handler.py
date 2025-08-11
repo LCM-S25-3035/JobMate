@@ -38,7 +38,11 @@ class ApplicationSubmitter:
             print("Clicked 'Continue' button after selecting resume.")
 
         except Exception as e:
-            print(f"Error on resume page: {e}")
+            from selenium.common.exceptions import NoSuchWindowException, WebDriverException
+            if isinstance(e, (NoSuchWindowException, WebDriverException)):
+                print("[Info] Window closed or not found during resume page actions.")
+            else:
+                print(f"Error on resume page: {e}")
 
     def submit_application_review(self):
         """
@@ -92,7 +96,11 @@ class ApplicationSubmitter:
             self._switch_back_to_main_tab()
 
         except Exception as e:
-            print(f"Error during application submission: {e}")
+            from selenium.common.exceptions import NoSuchWindowException, WebDriverException
+            if isinstance(e, (NoSuchWindowException, WebDriverException)):
+                print("[Info] Window closed or not found during application submission.")
+            else:
+                print(f"Error during application submission: {e}")
 
     def simulate_human_behavior(self):
         """
@@ -138,7 +146,11 @@ class ApplicationSubmitter:
             print("No visible reCAPTCHA found.")
             return False
         except Exception as e:
-            print(f"Error during reCAPTCHA check: {e}")
+            from selenium.common.exceptions import NoSuchWindowException, WebDriverException
+            if isinstance(e, (NoSuchWindowException, WebDriverException)):
+                print("[Info] Window closed or not found during reCAPTCHA check.")
+            else:
+                print(f"Error during reCAPTCHA check: {e}")
             return False
 
     def _close_post_apply_tab_if_needed(self):

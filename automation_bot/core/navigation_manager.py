@@ -52,7 +52,11 @@ class NavigationManager:
             time.sleep(2)
 
         except Exception as e:
-            print(f"Error switching back to main tab: {e}")
+            from selenium.common.exceptions import NoSuchWindowException, WebDriverException
+            if isinstance(e, (NoSuchWindowException, WebDriverException)):
+                print("[Info] Window closed or not found while switching tabs.")
+            else:
+                print(f"Error switching back to main tab: {e}")
 
     def _handle_resume_upload_or_continue(self):
         """Handles resume page or clicks Continue if present."""
@@ -76,20 +80,42 @@ class NavigationManager:
             self.handle_resume_selection()
         else:
             print("Not a resume page - looking for generic Continue button")
-            try:
-                print("Looking for 'Continue' button (waiting up to 5s)...")
-                continue_button = WebDriverWait(self.driver, 5).until(
-                    EC.presence_of_element_located((By.XPATH, "//button[contains(., 'Continue')]"))
-                )
-                if continue_button.get_attribute("disabled"):
-                    print("Continue button is disabled. Enabling...")
-                    self.driver.execute_script("arguments[0].removeAttribute('disabled');", continue_button)
-                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", continue_button)
-                self.driver.execute_script("arguments[0].click();", continue_button)
-                print("Clicked 'Continue' button.")
-                time.sleep(2)
-            except Exception:
-                print("No 'Continue' button detected.")
+            # Wait randomly before clicking to allow page to finish loading
+            import random
+            wait_time = random.uniform(0.5, 2.5)
+            print(f"Waiting {wait_time:.2f} seconds before searching for Continue button...")
+            time.sleep(wait_time)
+            # Try multiple selectors for Continue button (robust)
+            continue_selectors = [
+                "//button[contains(text(), 'Continue')]",  # Direct text match
+                "//button[@type='submit']",  # Submit button
+                "//button[.//span[text()='Continue']]",  # Span with Continue text
+                "//button[@data-testid='ia-continueButton']",  # Indeed specific testid
+                "//button[contains(@class, 'continue')]",  # Class-based
+                "//input[@type='submit' and @value='Continue']",  # Input submit
+                "//button[contains(@aria-label, 'Continue')]",  # Aria label
+                "//form//button[@type='submit']"  # Form submit button
+            ]
+            clicked = False
+            for selector in continue_selectors:
+                try:
+                    buttons = self.driver.find_elements(By.XPATH, selector)
+                    print(f"Trying selector: {selector} - Found {len(buttons)} button(s)")
+                    for btn in buttons:
+                        print(f"Button text: '{btn.text}', displayed: {btn.is_displayed()}, enabled: {btn.is_enabled()}")
+                        if btn.is_displayed() and btn.is_enabled():
+                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
+                            self.driver.execute_script("arguments[0].click();", btn)
+                            print("Clicked 'Continue' button with selector:", selector)
+                            clicked = True
+                            time.sleep(2)
+                            break
+                    if clicked:
+                        break
+                except Exception as e:
+                    print(f"Error with selector {selector}: {e}")
+            if not clicked:
+                print("No 'Continue' button detected with any selector.")
                 print("Please manually click the Continue button in your browser.")
                 input("Press Enter here once you have clicked Continue...")
 
@@ -213,7 +239,11 @@ class NavigationManager:
                 time.sleep(2)  # Let page load
 
             except Exception as e:
-                print(f"Error handling resume page: {e}")
+                from selenium.common.exceptions import NoSuchWindowException, WebDriverException
+                if isinstance(e, (NoSuchWindowException, WebDriverException)):
+                    print("[Info] Window closed or not found during resume selection.")
+                else:
+                    print(f"Error handling resume page: {e}")
                 input("Please manually select your resume and click Continue in the browser, then press Enter to continue...")
 
         else:
@@ -236,7 +266,11 @@ class NavigationManager:
             self.driver.execute_script("arguments[0].click();", continue_button)
             print("Clicked 'Continue' button.")
         except Exception as e:
-            print(f"Error clicking 'Continue' button: {e}")
+            from selenium.common.exceptions import NoSuchWindowException, WebDriverException
+            if isinstance(e, (NoSuchWindowException, WebDriverException)):
+                print("[Info] Window closed or not found while clicking Continue.")
+            else:
+                print(f"Error clicking 'Continue' button: {e}")
 
     def _auto_continue_until_review(self, max_steps=2):
         """

@@ -79,11 +79,10 @@ class FormFiller:
             # Attempt clicking Continue
             print("Attempting to click Continue...")
             time.sleep(random.uniform(0.3, 0.8))
-            
             # Simple continue button click instead of auto-continue-until-review
             try:
                 continue_button = WebDriverWait(self.driver, 10).until(
-                    EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Continue')]"))
+                    EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Continue')]") )
                 )
                 self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", continue_button)
                 self.driver.execute_script("arguments[0].click();", continue_button)
@@ -92,34 +91,45 @@ class FormFiller:
             except Exception as e:
                 print(f"Error clicking Continue button: {e}")
 
-            # Check if we're actually on review page before submitting
-            current_url = self.driver.current_url
-            if "smartapply.indeed.com/beta/indeedapply/form/review" in current_url:
-                print("Detected review page. Submitting application...")
-                self.submitter.submit_application_review()
-                
-                # Switch back to original tab or reload job listings if needed
-                if len(self.driver.window_handles) > 1:
-                    self.navigation._switch_back_to_main_tab()
-                    print("Switched back to original job listings tab.")
-                    print("Waiting 5 seconds to verify tab stays open...")
-                    time.sleep(5)
-                    print("Current window handles:", self.driver.window_handles)
-                else:
-                    print("Original job listings tab was closed. Reloading job listings page...")
-                    listings_url = os.getenv("GLASSDOOR_URL") or os.getenv("INDEED_URL")
-                    if listings_url:
-                        self.driver.get(listings_url)
-                        time.sleep(3)
-                        print("Job listings page reloaded.")
+            # Wait for review page to load (up to 3 minutes)
+            print("Waiting for review page to load (up to 3 minutes)...")
+            import datetime
+            start_time = datetime.datetime.now()
+            max_wait_seconds = 180
+            review_url = "smartapply.indeed.com/beta/indeedapply/form/review"
+            questions_url = "smartapply.indeed.com/beta/indeedapply/form/questions-module/questions"
+            while (datetime.datetime.now() - start_time).total_seconds() < max_wait_seconds:
+                current_url = self.driver.current_url
+                if review_url in current_url:
+                    print("Detected review page. Submitting application...")
+                    self.submitter.submit_application_review()
+                    # Switch back to original tab or reload job listings if needed
+                    if len(self.driver.window_handles) > 1:
+                        self.navigation._switch_back_to_main_tab()
+                        print("Switched back to original job listings tab.")
+                        print("Waiting 5 seconds to verify tab stays open...")
+                        time.sleep(5)
+                        print("Current window handles:", self.driver.window_handles)
                     else:
-                        print("No fallback URL provided. Cannot reload listings page.")
-            elif "smartapply.indeed.com/beta/indeedapply/form/questions-module/questions" in current_url:
-                print(f"Landed on questions page: {current_url}")
-                print("Calling handle_dynamic_questions() to process questions...")
-                self.handle_dynamic_questions()
-            else:
-                print(f"Not on review or questions page. Current URL: {current_url}")
+                        print("Original job listings tab was closed. Reloading job listings page...")
+                        listings_url = os.getenv("GLASSDOOR_URL") or os.getenv("INDEED_URL")
+                        if listings_url:
+                            self.driver.get(listings_url)
+                            time.sleep(3)
+                            print("Job listings page reloaded.")
+                        else:
+                            print("No fallback URL provided. Cannot reload listings page.")
+                    return
+                elif questions_url in current_url:
+                    print(f"Landed on questions page: {current_url}")
+                    print("Calling handle_dynamic_questions() to process questions...")
+                    self.handle_dynamic_questions()
+                    return
+                else:
+                    print(f"Current URL: {current_url} (not review or questions page). Waiting...")
+                    time.sleep(3)
+            print("Timeout: Review page did not load within 3 minutes. Exiting.")
+            return
 
         except Exception as e:
             print(f"Error while filling inputs or clicking continue: {e}")
@@ -128,116 +138,140 @@ class FormFiller:
         """
         Handles dynamic questions pages by intelligently filling inputs based on
         question content and clicking Continue until the review page is reached.
+        Prevents endless loops by checking if the URL changes after clicking Continue.
+        Mimics human behavior with random scrolling, pauses, and focus changes.
         """
-        while True:
+        import random
+        max_attempts = 2  # Only try to answer and continue twice before giving up
+        attempts = 0
+        while attempts < max_attempts:
             current_url = self.driver.current_url
             if "smartapply.indeed.com/beta/indeedapply/form/questions-module/questions" in current_url:
                 print(f"Detected questions page: {current_url}")
 
+                # Mimic human: random scroll up/down before answering
+                scroll_amount = random.randint(-200, 400)
+                self.driver.execute_script(f"window.scrollBy(0, {scroll_amount});")
+                time.sleep(random.uniform(0.3, 1.2))
+
                 # Find all question containers with their labels and inputs
                 question_containers = self.driver.find_elements(By.CSS_SELECTOR, ".ia-Questions-item, [id^='q_']")
-                
-                if not question_containers:
+                unanswered_questions = 0
+                if question_containers:
+                    for idx, container in enumerate(question_containers, 1):
+                        try:
+                            # Mimic human: scroll to question, random pause
+                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", container)
+                            time.sleep(random.uniform(0.2, 0.7))
+                            if random.random() < 0.2:
+                                # Occasionally click on the question label
+                                try:
+                                    label_elem = container.find_element(By.CSS_SELECTOR, "label, .ia-Questions-label")
+                                    label_elem.click()
+                                except Exception:
+                                    pass
+                            label_elem = container.find_element(By.CSS_SELECTOR, "label, .ia-Questions-label")
+                            question_text = label_elem.text.strip()
+                            # Try to find input or radio
+                            input_elems = container.find_elements(By.CSS_SELECTOR, "input, textarea")
+                            radio_buttons = [el for el in input_elems if el.get_attribute("type") == "radio"]
+                            if radio_buttons:
+                                answered = self._handle_radio_question(container, question_text, radio_buttons, idx)
+                                if not answered:
+                                    unanswered_questions += 1
+                            else:
+                                # Text input/textarea
+                                input_elem = input_elems[0] if input_elems else None
+                                if input_elem and not input_elem.get_attribute("value"):
+                                    answer = self._get_smart_answer(question_text)
+                                    if answer:
+                                        print(f"Answering question {idx}: {question_text[:50]}... -> {answer}")
+                                        input_elem.clear()
+                                        # Mimic human: type slowly
+                                        for char in answer:
+                                            input_elem.send_keys(char)
+                                            time.sleep(random.uniform(0.08, 0.22))
+                                        if random.random() < 0.15:
+                                            # Occasionally click outside input
+                                            self.driver.execute_script("window.scrollBy(0, 50);")
+                                            time.sleep(random.uniform(0.1, 0.3))
+                                    else:
+                                        print(f"No answer found for question {idx}: {question_text[:50]}...")
+                                        unanswered_questions += 1
+                                    # Mimic human: random pause after each question
+                                    time.sleep(random.uniform(0.2, 0.7))
+                        except Exception as e:
+                            from selenium.common.exceptions import NoSuchWindowException, WebDriverException
+                            if isinstance(e, (NoSuchWindowException, WebDriverException)):
+                                print(f"[Info] Window closed or not found while processing question {idx}, skipping error details.")
+                            else:
+                                print(f"Error processing question container {idx}: {e}")
+                            continue
+                else:
                     # Fallback to basic input finding
                     question_inputs = self.driver.find_elements(By.XPATH, "//input[@type='text'] | //textarea")
-                    self._fill_basic_inputs(question_inputs)
-                else:
-                    # Smart question answering
-                    success = self._fill_intelligent_questions(question_containers)
-                    if not success:
-                        # Questions couldn't be answered, tab was closed
-                        return False
+                    for q_index, input_elem in enumerate(question_inputs, 1):
+                        try:
+                            # Mimic human: scroll to input, random pause
+                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", input_elem)
+                            time.sleep(random.uniform(0.2, 0.7))
+                            placeholder = input_elem.get_attribute("placeholder") or ""
+                            name = input_elem.get_attribute("name") or ""
+                            if input_elem.get_attribute("value"):
+                                continue
+                            answer = os.getenv(name.upper()) or self._get_smart_answer(placeholder + " " + name)
+                            if answer:
+                                print(f"Answering question {q_index} ({name or placeholder}): {answer}")
+                                input_elem.clear()
+                                for char in answer:
+                                    input_elem.send_keys(char)
+                                    time.sleep(random.uniform(0.08, 0.22))
+                                if random.random() < 0.15:
+                                    self.driver.execute_script("window.scrollBy(0, 50);")
+                                    time.sleep(random.uniform(0.1, 0.3))
+                            else:
+                                print(f"No answer found for question {q_index} ({name or placeholder})")
+                                unanswered_questions += 1
+                            time.sleep(random.uniform(0.2, 0.7))
+                        except Exception as e:
+                            print(f"Error filling input {q_index}: {e}")
+                            continue
 
-                # Find and click Continue button
+                # Mimic human: random scroll before clicking Continue
+                scroll_amount = random.randint(-100, 200)
+                self.driver.execute_script(f"window.scrollBy(0, {scroll_amount});")
+                time.sleep(random.uniform(0.3, 1.0))
+
+                # After attempting to answer, try to click Continue
+                prev_url = self.driver.current_url
                 self._click_continue_button()
-                
-                # Wait for next page
-                time.sleep(2)
-            else:
-                print("No more questions pages detected. Proceeding to review page.")
-                break
-        
-        return True  # Successfully processed all questions
-
-    def _fill_intelligent_questions(self, question_containers):
-        """
-        Intelligently fills questions based on their content
-        """
-        print(f"Found {len(question_containers)} question containers")
-        
-        unanswered_questions = 0
-        
-        for idx, container in enumerate(question_containers, 1):
-            try:
-                # Extract question text from label
-                label_elem = container.find_element(By.CSS_SELECTOR, "label, [data-testid*='label']")
-                question_text = label_elem.text.strip().lower()
-                
-                # Check for radio buttons first
-                radio_buttons = container.find_elements(By.CSS_SELECTOR, "input[type='radio']")
-                if radio_buttons:
-                    # Handle radio button questions
-                    if self._handle_radio_question(container, question_text, radio_buttons, idx):
-                        continue
-                    else:
-                        print(f"Question {idx}: '{question_text[:50]}...' -> No smart answer found for radio buttons")
-                        unanswered_questions += 1
-                        continue
-                
-                # Find input field in this container (text/textarea)
-                try:
-                    input_elem = container.find_element(By.CSS_SELECTOR, "input[type='text'], textarea, input:not([type='hidden']):not([type='radio'])")
-                except:
-                    # No text input found, skip this question
-                    print(f"Question {idx}: No text input or radio buttons found")
-                    continue
-                
-                # Skip if already filled
-                if input_elem.get_attribute("value"):
-                    print(f"Question {idx} already filled, skipping")
-                    continue
-                
-                # Determine answer based on question content
-                answer = self._get_smart_answer(question_text)
-                
-                if answer:
-                    print(f"Question {idx}: '{question_text[:50]}...' -> Answer: '{answer}'")
-                    
-                    # Scroll into view and fill
-                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", input_elem)
-                    time.sleep(0.2)
-                    
-                    input_elem.clear()
-                    input_elem.send_keys(answer)
-                    time.sleep(0.3)
-                    
-                    # Trigger change event
-                    self.driver.execute_script("arguments[0].dispatchEvent(new Event('change', {bubbles: true}));", input_elem)
-                    self.driver.execute_script("arguments[0].dispatchEvent(new Event('input', {bubbles: true}));", input_elem)
+                # Wait for URL to change (max 10s)
+                url_changed = False
+                for _ in range(20):  # 20 x 0.5s = 10s
+                    time.sleep(0.5)
+                    if self.driver.current_url != prev_url:
+                        url_changed = True
+                        break
+                if url_changed:
+                    # Page advanced, break loop
+                    print("Questions page advanced after clicking Continue.")
+                    return True
                 else:
-                    print(f"Question {idx}: '{question_text[:50]}...' -> No smart answer found")
-                    unanswered_questions += 1
-                    
-            except Exception as e:
-                print(f"Error processing question container {idx}: {e}")
-                continue
-        
-        # If there are unanswered questions, skip this job
-        if unanswered_questions > 0:
-            print(f"No answer found for {unanswered_questions} question(s). Skipping auto apply, and closing the tab.")
-            time.sleep(random.uniform(0.5, 1.5))  # Wait shorter random seconds
-            
-            # Close the current tab
-            self.driver.close()
-            
-            # Switch back to the main tab if there are multiple tabs
-            if len(self.driver.window_handles) > 0:
-                self.driver.switch_to.window(self.driver.window_handles[0])
-                print("Switched back to main job listings tab.")
-            
-            return False  # Indicate that the job was skipped
-        
-        return True  # All questions answered successfully
+                    print(f"Mandatory fields found. No answers for {unanswered_questions} question(s). Closing current job tab.")
+                    # Mimic human: wait a random short time before closing tab
+                    time.sleep(random.uniform(0.5, 1.5))
+                    self.driver.close()
+                    # Switch back to main tab if available
+                    if len(self.driver.window_handles) > 0:
+                        self.driver.switch_to.window(self.driver.window_handles[0])
+                    return False
+            else:
+                # Not on questions page, break loop
+                print(f"Not on questions page anymore: {current_url}")
+                return True
+            attempts += 1
+        print("Max attempts reached for questions page. Exiting questions handler.")
+        return False
 
     def _handle_radio_question(self, container, question_text, radio_buttons, question_idx):
         """
@@ -285,25 +319,50 @@ class FormFiller:
         return False  # No matching radio button found
 
     def _get_smart_answer(self, question_text):
+
         """
         Returns appropriate answer based on question content
         """
         question_lower = question_text.lower()
-        
+
+        # First name
+        if any(keyword in question_lower for keyword in ["first name", "firstname", "given name"]):
+            return self.config.get("firstName", "")
+
+        # Last name
+        if any(keyword in question_lower for keyword in ["last name", "lastname", "surname", "family name"]):
+            return self.config.get("lastName", "")
+
+        # Phone number
+        if any(keyword in question_lower for keyword in ["phone", "phone number", "mobile", "cell"]):
+            return self.config.get("phoneNumber", "")
+
+        # Email address
+        if any(keyword in question_lower for keyword in ["email", "e-mail", "email address"]):
+            return self.config.get("email", "")
+
         # Load answers from config
         config_answers = self.config.get("question_answers", {})
         
         # LinkedIn profile questions
         if any(keyword in question_lower for keyword in ["linkedin", "profile"]):
             return config_answers.get("linkedin_profile", "https://www.linkedin.com/in/chaw-thinn")
-        
+
         # Salary expectations
         if any(keyword in question_lower for keyword in ["salary", "compensation", "pay", "wage"]):
             return config_answers.get("salary_expectations", "$65,000 - $75,000 CAD")
-        
+
         # Years of experience - specific roles
         if "data analyst" in question_lower and "year" in question_lower:
             return config_answers.get("years_experience_data_analyst", "2")
+
+        # Years of BI Development experience
+        if ("bi development" in question_lower or "business intelligence" in question_lower) and "year" in question_lower:
+            return config_answers.get("years_experience_bi_development", "3")
+
+        # French & English language question
+        if ("french" in question_lower and "english" in question_lower) or ("francais" in question_lower and "anglais" in question_lower):
+            return config_answers.get("language_french_english", "English only")
         
         if "software" in question_lower and "year" in question_lower:
             return config_answers.get("years_experience_software", "3")
@@ -345,17 +404,33 @@ class FormFiller:
         if any(keyword in question_lower for keyword in ["sponsorship", "sponsor", "visa sponsorship"]):
             return config_answers.get("require_sponsorship", "Yes")
         
-        # Address questions
+        # Address and city questions
         if any(keyword in question_lower for keyword in ["address", "location", "where do you live", "current address"]):
+            # Prefer current_city if question asks for city, else use address
+            if "city" in question_lower:
+                return config_answers.get("current_city", "Mississauga")
             return config_answers.get("address", "Toronto")
         
+
+        # Gender
+        if any(keyword in question_lower for keyword in ["gender", "sex"]):
+            return config_answers.get("gender", "Female")
+
+        # Ethnicity
+        if any(keyword in question_lower for keyword in ["ethnicity", "race", "origin"]):
+            return config_answers.get("ethnicity", "South East Asian")
+
+        # Disability
+        if any(keyword in question_lower for keyword in ["disability", "disabled", "impairment"]):
+            return config_answers.get("disability", "No")
+
         # Education
         if any(keyword in question_lower for keyword in ["degree", "education", "graduate"]):
             return config_answers.get("degree_completed", "Yes")
-        
+
         if "graduation" in question_lower:
             return config_answers.get("graduation_date", "May 2023")
-        
+
         if "gpa" in question_lower:
             return config_answers.get("gpa", "3.7")
         
@@ -364,7 +439,7 @@ class FormFiller:
             if any(keyword in question_lower for keyword in ["eligible", "authorized", "able", "willing"]):
                 return "Yes"
         
-        # 🆕 FUZZY MATCHING FALLBACK (only if exact matching failed)
+        # FUZZY MATCHING FALLBACK (only if exact matching failed)
         if FUZZY_AVAILABLE:
             return self._fuzzy_fallback_answer(question_lower, config_answers)
         
@@ -384,7 +459,15 @@ class FormFiller:
             ("current address", ["address"]),
             ("portfolio website", ["portfolio_website"]),
             ("degree completed", ["degree_completed"]),
-            ("graduation date", ["graduation_date"])
+            ("graduation date", ["graduation_date"]),
+            ("gender", ["gender"]),
+            ("ethnicity", ["ethnicity"]),
+            ("disability", ["disability"]),
+            ("current city", ["current_city"]),
+            ("postal code", ["postal_code"]),
+            ("willing to travel", ["willing_to_travel"]),
+            ("driver license", ["driver_license"]),
+            ("available weekends", ["available_weekends"])
         ]
         
         for pattern, config_keys in fuzzy_patterns:

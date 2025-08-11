@@ -75,6 +75,9 @@ class Application(db.Model):
     ai_suggestions = db.Column(db.JSON, nullable=True)
     keywords_matched = db.Column(db.JSON, nullable=True)
     
+    # Cross-database references - temporarily removed due to missing database column
+    # mongo_application_id = db.Column(db.String(50), nullable=True)  # Reference to MongoDB application
+    
     # Tracking
     application_number = db.Column(db.String(50), nullable=True)  # Company's reference number
     notes = db.Column(db.Text, nullable=True)

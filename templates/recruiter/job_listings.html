@@ -287,28 +287,20 @@
                                     {% endif %}
                                     
                                     <div class="job-stats">
-                                        <div class="job-stat">
-                                            <i class="bi bi-geo-alt"></i>
+                                        <div class="job-stat text-dark">
+                                            <i class="bi bi-geo-alt text-dark"></i>
                                             {{ job.location }}
                                         </div>
-                                        <div class="job-stat">
-                                            <i class="bi bi-people"></i>
-                                            {{ job.application_count or 0 }} applications
-                                        </div>
-                                        <div class="job-stat">
-                                            <i class="bi bi-calendar3"></i>
+                                        <div class="job-stat text-dark">
+                                            <i class="bi bi-calendar3 text-dark"></i>
                                             {{ job.created_at.strftime('%B %d, %Y') if job.created_at else 'Recently' }}
                                         </div>
                                         {% if job.salary_min and job.salary_max %}
-                                        <div class="job-stat">
-                                            <i class="bi bi-currency-dollar"></i>
+                                        <div class="job-stat text-dark">
+                                            <i class="bi bi-currency-dollar text-dark"></i>
                                             ${{ "{:,}".format(job.salary_min) }} - ${{ "{:,}".format(job.salary_max) }}
                                         </div>
                                         {% endif %}
-                                        <div class="job-stat">
-                                            <i class="bi bi-eye"></i>
-                                            {{ job.view_count or 0 }} views
-                                        </div>
                                     </div>
                                 </div>
                                 

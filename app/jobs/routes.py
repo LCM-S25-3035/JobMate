@@ -444,7 +444,7 @@ def get_mongo_db():
 @bp.route('/')
 @bp.route('/list')
 def jobs_list():
-    """Display jobs list with faceting/filtering capabilities"""
+    """Display jobs list with faceting/filtering capabilities - combines MongoDB and PostgreSQL jobs"""
     # Get filter parameters from request
     location = request.args.get('location', '')
     job_type = request.args.get('job_type', '')
@@ -462,141 +462,172 @@ def jobs_list():
     
     mongo_db = get_mongo_db()
     
-    if mongo_db is None:
-        # Fallback to PostgreSQL jobs if MongoDB is not available
-        flash('MongoDB not available. Showing PostgreSQL jobs.', 'warning')
-        return redirect(url_for('match.recommended_jobs'))
+    # Initialize variables
+    jobs_list = []
+    total_jobs = 0
+    total_pages = 0
+    enhanced_facets = {'salary_stats': {}}
+    active_filters = []
+    facets = {
+        'locations': [],
+        'job_types': [],
+        'job_levels': [],
+        'companies': [],
+        'salary_range': {},
+        'salary_stats': {}
+    }
     
-    # Build MongoDB query using enhanced builder
-    query = build_enhanced_query(
-        search_query=search_query,
-        location=location,
-        job_type=job_type,
-        job_level=job_level,
-        company=company,
-        salary_min=salary_min,
-        salary_max=salary_max
-    )
     try:
-        # Debug logging
-        current_app.logger.info(f"🔍 Search Query: '{search_query}' | MongoDB Query: {query}")
+        # STEP 1: Get PostgreSQL Jobs (Recruiter-posted jobs)
+        from app.models.job_posting import JobPosting
+        from sqlalchemy import or_, and_
         
-        # Get jobs with enhanced sorting for relevance
+        # Build PostgreSQL query for active recruiter jobs
+        pg_query = JobPosting.query.filter_by(status='active')
+        
+        # Apply filters to PostgreSQL query
+        if location:
+            pg_query = pg_query.filter(JobPosting.location.ilike(f'%{location}%'))
+        if company:
+            pg_query = pg_query.filter(JobPosting.company_name.ilike(f'%{company}%'))
         if search_query:
-            # For search queries, sort by relevance:
-            # 1. Title matches first (exact company matches)
-            # 2. Company matches second
-            # 3. Most recent posts
-            pipeline = [
-                {'$match': query},
-                {'$addFields': {
-                    'title_score': {
-                        '$cond': {
-                            'if': {'$regexMatch': {'input': '$title', 'regex': search_query, 'options': 'i'}},
-                            'then': 10,
-                            'else': 0
-                        }
-                    },
-                    'company_score': {
-                        '$cond': {
-                            'if': {'$regexMatch': {'input': '$company', 'regex': search_query, 'options': 'i'}},
-                            'then': 5,
-                            'else': 0
-                        }
-                    },
-                    'relevance_score': {
-                        '$add': [
-                            {'$cond': {
-                                'if': {'$regexMatch': {'input': '$title', 'regex': search_query, 'options': 'i'}},
-                                'then': 10,
-                                'else': 0
-                            }},
-                            {'$cond': {
-                                'if': {'$regexMatch': {'input': '$company', 'regex': search_query, 'options': 'i'}},
-                                'then': 5,
-                                'else': 0
-                            }},
-                            {'$cond': {
-                                'if': {'$regexMatch': {'input': '$description', 'regex': search_query, 'options': 'i'}},
-                                'then': 2,
-                                'else': 0
-                            }}
-                        ]
-                    }
-                }},
-                {'$sort': {'relevance_score': -1, 'date_posted': -1}},
-                {'$skip': skip},
-                {'$limit': per_page}
-            ]
+            search_filter = f'%{search_query}%'
+            pg_query = pg_query.filter(
+                or_(
+                    JobPosting.title.ilike(search_filter),
+                    JobPosting.company_name.ilike(search_filter),
+                    JobPosting.description.ilike(search_filter)
+                )
+            )
+        if salary_min:
+            pg_query = pg_query.filter(JobPosting.salary_max >= salary_min)
+        if salary_max:
+            pg_query = pg_query.filter(JobPosting.salary_min <= salary_max)
             
-            jobs_cursor = mongo_db.jobs.aggregate(pipeline)
-            jobs_list = list(jobs_cursor)
-            
-            # Remove the scoring fields from results
-            for job in jobs_list:
-                job.pop('title_score', None)
-                job.pop('company_score', None)
-                job.pop('relevance_score', None)
-        else:
-            # For browsing without search, sort by date
-            jobs_cursor = mongo_db.jobs.find(query).skip(skip).limit(per_page).sort('date_posted', -1)
-            jobs_list = list(jobs_cursor)
+        # Map experience level to employment type if needed
+        if job_type:
+            pg_query = pg_query.filter(JobPosting.employment_type.ilike(f'%{job_type.replace("time", "_time")}%'))
+        if job_level:
+            pg_query = pg_query.filter(JobPosting.experience_level.ilike(f'%{job_level}%'))
         
-        # Get total count for pagination
-        total_jobs = mongo_db.jobs.count_documents(query)
+        # Get PostgreSQL jobs
+        pg_jobs = pg_query.order_by(JobPosting.created_at.desc()).all()
+        
+        # Convert PostgreSQL jobs to consistent format
+        recruiter_jobs = []
+        for job in pg_jobs:
+            recruiter_jobs.append({
+                '_id': f'recruiter_{job.id}',  # Unique identifier
+                'source': 'recruiter',  # Mark as recruiter job
+                'title': job.title,
+                'company': job.company_name,
+                'company_name': job.company_name,  # Alternative field
+                'location': job.location,
+                'description': job.description,
+                'requirements': job.requirements,
+                'job_type': job.employment_type,
+                'experience_level': job.experience_level,
+                'job_level': job.experience_level,  # Alternative field
+                'salary_min': job.salary_min,
+                'salary_max': job.salary_max,
+                'min_amount': job.salary_min,  # Alternative field for consistency
+                'max_amount': job.salary_max,  # Alternative field for consistency
+                'date_posted': job.created_at,
+                'remote_type': job.remote_type,
+                'is_recruiter_job': True,  # Flag to identify recruiter jobs
+                'recruiter_id': job.recruiter_id,
+                'job_posting_id': job.id  # Original PostgreSQL ID
+            })
+        
+        # STEP 2: Get MongoDB Jobs (if available)
+        mongodb_jobs = []
+        mongo_query = {}
+        if mongo_db is not None:
+            # Build MongoDB query using existing enhanced builder
+            mongo_query = build_enhanced_query(
+                search_query=search_query,
+                location=location,
+                job_type=job_type,
+                job_level=job_level,
+                company=company,
+                salary_min=salary_min,
+                salary_max=salary_max
+            )
+            
+            # Get MongoDB jobs
+            mongo_cursor = mongo_db.jobs.find(mongo_query).sort('date_posted', -1)
+            mongodb_jobs = list(mongo_cursor)
+            
+            # Mark MongoDB jobs
+            for job in mongodb_jobs:
+                job['source'] = 'external'
+                job['is_recruiter_job'] = False
+                job['_id'] = str(job['_id'])  # Convert ObjectId to string
+        
+        # STEP 3: Combine and sort all jobs
+        all_jobs = recruiter_jobs + mongodb_jobs
+        
+        # Sort combined results by date (most recent first) - handle different date formats
+        def get_sort_date(job):
+            date_posted = job.get('date_posted', job.get('_id', ''))
+            if isinstance(date_posted, str):
+                # Convert string dates to a comparable format (use _id as fallback)
+                return date_posted
+            else:
+                # datetime objects convert to string for consistent comparison
+                return date_posted.isoformat() if date_posted else ''
+        
+        all_jobs.sort(key=get_sort_date, reverse=True)
+        
+        # STEP 4: Apply pagination to combined results
+        total_jobs = len(all_jobs)
         total_pages = (total_jobs + per_page - 1) // per_page
         
+        # Get jobs for current page
+        start_idx = skip
+        end_idx = skip + per_page
+        jobs_list = all_jobs[start_idx:end_idx]
+        
         # Debug logging
-        current_app.logger.info(f"📊 Found {total_jobs} jobs matching search")
+        current_app.logger.info(f"📊 Found {len(recruiter_jobs)} recruiter jobs + {len(mongodb_jobs)} external jobs = {total_jobs} total")
         if jobs_list:
-            current_app.logger.info(f"🎯 First result: {jobs_list[0].get('title', 'No title')} at {jobs_list[0].get('company', 'No company')}")
+            current_app.logger.info(f"🎯 First result: {jobs_list[0].get('title', 'No title')} at {jobs_list[0].get('company', 'No company')} (Source: {jobs_list[0].get('source', 'unknown')})")
         
-        # Initialize enhanced faceting service
-        facet_service = JobFacetService(mongo_db)
-        
-        # Get current filters for faceting context
-        current_filters = {
-            'location': location,
-            'job_type': job_type,
-            'job_level': job_level,
-            'company': company,
-            'search': search_query,
-            'salary_min': salary_min,
-            'salary_max': salary_max
-        }
-        
-        # Remove empty filters
-        current_filters = {k: v for k, v in current_filters.items() if v}
-        
-        # Get enhanced facets
-        enhanced_facets = facet_service.get_enhanced_facets(
-            base_query=query,
-            current_filters=current_filters
-        )
-        
-        # Get active filters summary
-        active_filters = facet_service.get_active_filters_summary(current_filters)
-        
-        # Get traditional facets for backward compatibility (with independent filtering)
-        facets = get_job_facets(mongo_db, query, current_filters)
+        # STEP 5: Generate facets (use MongoDB faceting if available, otherwise simplified)
+        if mongo_db is not None:
+            # Initialize enhanced faceting service
+            facet_service = JobFacetService(mongo_db)
+            
+            # Get current filters for faceting context
+            current_filters = {
+                'location': location,
+                'job_type': job_type,
+                'job_level': job_level,
+                'company': company,
+                'search': search_query,
+                'salary_min': salary_min,
+                'salary_max': salary_max
+            }
+            
+            # Remove empty filters
+            current_filters = {k: v for k, v in current_filters.items() if v}
+            
+            # Get enhanced facets (from MongoDB only for now)
+            enhanced_facets = facet_service.get_enhanced_facets(
+                base_query=mongo_query,
+                current_filters=current_filters
+            )
+            
+            # Get active filters summary
+            active_filters = facet_service.get_active_filters_summary(current_filters)
+            
+            # Get traditional facets for backward compatibility
+            facets = get_job_facets(mongo_db, mongo_query, current_filters)
         
     except Exception as e:
         current_app.logger.error(f"Error in jobs_list: {str(e)}")
         flash('Error loading jobs. Please try again.', 'error')
-        jobs_list = []
-        total_jobs = 0
-        total_pages = 0
-        enhanced_facets = {'salary_stats': {}}
-        active_filters = []
-        facets = {
-            'locations': [],
-            'job_types': [],
-            'job_levels': [],
-            'companies': [],
-            'salary_range': {},
-            'salary_stats': {}
-        }
-    
+        
     return render_template('jobs/list.html', 
                          jobs=jobs_list,
                          facets=facets,
@@ -1254,7 +1285,7 @@ def jobs_facets_api():
 @bp.route('/save/<job_id>', methods=['POST'])
 @login_required
 def save_job(job_id):
-    """Save/unsave a job for later"""
+    """Save/unsave a job for later - supports both MongoDB and PostgreSQL jobs"""
     if not current_user.is_applicant():
         return jsonify({'success': False, 'message': 'Only applicants can save jobs'}), 403
     
@@ -1264,9 +1295,22 @@ def save_job(job_id):
         return jsonify({'success': False, 'message': 'Service unavailable'}), 500
     
     try:
-        # Check if job exists
-        job = mongo_db.jobs.find_one({"_id": ObjectId(job_id)})
-        if not job:
+        # Check if job exists (handle both job types)
+        job = None
+        job_exists = False
+        
+        if job_id.startswith('recruiter_'):
+            # This is a PostgreSQL recruiter job
+            from app.models.job_posting import JobPosting
+            pg_job_id = job_id.replace('recruiter_', '')
+            pg_job = JobPosting.query.filter_by(id=pg_job_id, status='active').first()
+            job_exists = bool(pg_job)
+        else:
+            # This is a MongoDB external job
+            job = mongo_db.jobs.find_one({"_id": ObjectId(job_id)})
+            job_exists = bool(job)
+        
+        if not job_exists:
             return jsonify({'success': False, 'message': 'Job not found'}), 404
         
         # Check if already saved
@@ -3092,14 +3136,48 @@ except Exception as e:
 @bp.route('/tailor-resume/<job_id>', methods=['POST'])
 @login_required
 def tailor_resume_for_job_strict(job_id):
-    """Tailor user's resume for a specific job with strict format, ATS optimization, and no hallucination"""
+    """Tailor user's resume for a specific job with strict format, ATS optimization, and no hallucination - supports both MongoDB and PostgreSQL jobs"""
     try:
         mongo_db = get_mongo_db()
-        if mongo_db is None:
-            return jsonify({'success': False, 'error': 'Database unavailable'}), 500
+        job = None
         
-        # Get the job
-        job = mongo_db.jobs.find_one({'_id': ObjectId(job_id)})
+        # Handle both recruiter jobs (PostgreSQL) and external jobs (MongoDB)
+        try:
+            if job_id.startswith('recruiter_'):
+                # This is a PostgreSQL recruiter job
+                from app.models.job_posting import JobPosting
+                pg_job_id = job_id.replace('recruiter_', '')
+                pg_job = JobPosting.query.filter_by(id=pg_job_id, status='active').first()
+                
+                if pg_job:
+                    # Convert PostgreSQL job to consistent format
+                    job = {
+                        '_id': job_id,
+                        'title': pg_job.title,
+                        'company': pg_job.company_name,
+                        'company_name': pg_job.company_name,
+                        'location': pg_job.location,
+                        'description': pg_job.description,
+                        'requirements': pg_job.requirements,
+                        'job_type': pg_job.employment_type,
+                        'experience_level': pg_job.experience_level,
+                        'salary_min': pg_job.salary_min,
+                        'salary_max': pg_job.salary_max,
+                        'remote_type': pg_job.remote_type,
+                        'is_recruiter_job': True,
+                        'job_posting_id': pg_job.id
+                    }
+            else:
+                # This is a MongoDB external job
+                if mongo_db is not None:
+                    job = mongo_db.jobs.find_one({'_id': ObjectId(job_id)})
+                    if job:
+                        job['is_recruiter_job'] = False
+                        
+        except Exception as e:
+            current_app.logger.error(f"Error fetching job {job_id}: {str(e)}")
+            job = None
+        
         if not job:
             return jsonify({'success': False, 'error': 'Job not found'}), 404
         
@@ -3166,38 +3244,83 @@ def tailor_resume_for_job_strict(job_id):
 @bp.route('/apply/<job_id>', methods=['POST'])
 @login_required
 def apply_to_job(job_id):
-    """Apply to a job with tailored resume"""
+    """Apply to a job with tailored resume - supports both MongoDB and PostgreSQL jobs"""
     try:
         mongo_db = get_mongo_db()
-        if mongo_db is None:
-            return jsonify({'success': False, 'error': 'Database unavailable'}), 500
+        job = None
         
-        # Get the job
-        job = mongo_db.jobs.find_one({'_id': ObjectId(job_id)})
+        # Handle both recruiter jobs (PostgreSQL) and external jobs (MongoDB)
+        try:
+            if job_id.startswith('recruiter_'):
+                # This is a PostgreSQL recruiter job
+                from app.models.job_posting import JobPosting
+                pg_job_id = job_id.replace('recruiter_', '')
+                pg_job = JobPosting.query.filter_by(id=pg_job_id, status='active').first()
+                
+                if pg_job:
+                    # Convert PostgreSQL job to consistent format
+                    job = {
+                        '_id': job_id,
+                        'title': pg_job.title,
+                        'company': pg_job.company_name,
+                        'company_name': pg_job.company_name,
+                        'location': pg_job.location,
+                        'description': pg_job.description,
+                        'requirements': pg_job.requirements,
+                        'job_type': pg_job.employment_type,
+                        'experience_level': pg_job.experience_level,
+                        'salary_min': pg_job.salary_min,
+                        'salary_max': pg_job.salary_max,
+                        'remote_type': pg_job.remote_type,
+                        'is_recruiter_job': True,
+                        'recruiter_id': pg_job.recruiter_id,
+                        'job_posting_id': pg_job.id
+                    }
+            else:
+                # This is a MongoDB external job
+                if mongo_db is not None:
+                    job = mongo_db.jobs.find_one({'_id': ObjectId(job_id)})
+                    if job:
+                        job['is_recruiter_job'] = False
+                        
+        except Exception as e:
+            current_app.logger.error(f"Error fetching job {job_id}: {str(e)}")
+            job = None
+        
         if not job:
             return jsonify({'success': False, 'error': 'Job not found'}), 404
         
+        # Get request data
+        request_data = request.get_json() or {}
+        ats_score = request_data.get('ats_score')
+        cover_letter = request_data.get('cover_letter', '')
+        include_tailored_resume = request_data.get('include_tailored_resume', True)
+        
         # Check if user already applied
-        existing_application = mongo_db.job_applications.find_one({
-            "user_id": str(current_user.id),
-            "job_id": job_id
-        })
+        existing_application = None
+        if mongo_db is not None:
+            existing_application = mongo_db.job_applications.find_one({
+                "user_id": str(current_user.id),
+                "job_id": job_id
+            })
         
         if existing_application:
             return jsonify({'success': False, 'error': 'You have already applied to this job'}), 400
         
-        # Check if user has a tailored resume for this job
-        tailored_resume = mongo_db.tailored_resumes.find_one({
-            "user_id": str(current_user.id),
-            "job_id": job_id
-        })
-        
-        if not tailored_resume:
-            return jsonify({
-                'success': False, 
-                'error': 'Please tailor your resume first before applying',
-                'needs_tailoring': True
-            }), 400
+        # Check if user has a tailored resume for this job (if required)
+        tailored_resume = None
+        if include_tailored_resume and mongo_db is not None:
+            tailored_resume = mongo_db.tailored_resumes.find_one({
+                "user_id": str(current_user.id),
+                "job_id": job_id
+            })
+            
+            if not tailored_resume:
+                return jsonify({
+                    'success': False, 
+                    'error': 'Please tailor your resume first before applying',
+                    'needs_tailoring': True
+                }), 400
         
         # Create job application record
         from datetime import datetime
@@ -3208,15 +3331,88 @@ def apply_to_job(job_id):
             'company': job.get('company', ''),
             'applied_at': datetime.utcnow(),
             'status': 'applied',
-            'method': 'platform',
-            'tailored_resume_id': str(tailored_resume['_id']) if tailored_resume else None
+            'method': 'recruiter_platform' if job.get('is_recruiter_job') else 'external_platform',
+            'tailored_resume_id': str(tailored_resume['_id']) if tailored_resume else None,
+            'ats_score': ats_score,
+            'cover_letter': cover_letter,
+            'recruiter_id': job.get('recruiter_id') if job.get('is_recruiter_job') else None
         }
         
-        mongo_db.job_applications.insert_one(application_data)
+        # Save application to MongoDB
+        application_result = None
+        if mongo_db is not None:
+            application_result = mongo_db.job_applications.insert_one(application_data)
+        
+        # For recruiter jobs, also create an entry in PostgreSQL for recruiter tracking
+        pg_application_id = None
+        if job.get('is_recruiter_job'):
+            try:
+                from app.models.application import Application
+                from app import db
+                
+                # Add required fields that were missing
+                pg_application = Application(
+                    user_id=current_user.id,
+                    job_posting_id=job.get('job_posting_id'),
+                    company_name=job.get('company_name', ''),
+                    job_title=job.get('title', ''),
+                    status='applied',
+                    applied_at=datetime.utcnow(),
+                    match_score=ats_score,  # Fixed: use match_score instead of ats_score
+                    cover_letter=cover_letter,
+                    mongo_application_id=str(application_result.inserted_id) if application_result else None
+                )
+                
+                db.session.add(pg_application)
+                db.session.commit()
+                pg_application_id = pg_application.id
+                
+                current_app.logger.info(f"✅ SUCCESS: Created PostgreSQL application {pg_application_id} for recruiter job {job_id} (job_posting_id: {job.get('job_posting_id')})")
+                print(f"✅ DEBUG: Application created - ID: {pg_application_id}, Job: {job.get('title')}, Company: {job.get('company_name')}")
+                
+            except Exception as e:
+                current_app.logger.error(f"❌ ERROR: Failed to create PostgreSQL application: {str(e)}")
+                print(f"❌ DEBUG: PostgreSQL application creation failed: {str(e)}")
+                # Continue anyway, MongoDB record exists
+        
+        # Save to Talent Journey if ATS score provided
+        if ats_score and mongo_db is not None:
+            try:
+                talent_journey_entry = {
+                    'user_id': str(current_user.id),
+                    'event_type': 'job_application',
+                    'event_date': datetime.utcnow(),
+                    'job_id': job_id,
+                    'job_title': job.get('title', ''),
+                    'company': job.get('company', ''),
+                    'ats_score': ats_score,
+                    'application_method': 'recruiter_platform' if job.get('is_recruiter_job') else 'external_platform',
+                    'application_id': str(application_result.inserted_id) if application_result else None,
+                    'pg_application_id': pg_application_id,
+                    'details': {
+                        'has_tailored_resume': bool(tailored_resume),
+                        'has_cover_letter': bool(cover_letter),
+                        'job_type': job.get('job_type'),
+                        'location': job.get('location'),
+                        'salary_range': f"{job.get('salary_min', 0)}-{job.get('salary_max', 0)}" if job.get('salary_min') or job.get('salary_max') else None
+                    }
+                }
+                
+                mongo_db.talent_journey.insert_one(talent_journey_entry)
+                current_app.logger.info(f"Added talent journey entry for application {job_id}")
+                
+            except Exception as e:
+                current_app.logger.error(f"Error saving to talent journey: {str(e)}")
+                # Continue anyway, application was successful
+        
+        application_id = str(application_result.inserted_id) if application_result else pg_application_id
         
         return jsonify({
             'success': True,
-            'message': f'Successfully applied to {job.get("title")} at {job.get("company")}!'
+            'message': f'Successfully applied to {job.get("title")} at {job.get("company")}!',
+            'application_id': application_id,
+            'ats_score': ats_score,
+            'recruiter_job': job.get('is_recruiter_job', False)
         })
         
     except Exception as e:
@@ -3337,9 +3533,24 @@ def download_tailored_resume_strict(job_id):
             return redirect(url_for('jobs.job_detail', job_id=job_id))
         
         # Get job details for filename
-        job = mongo_db.jobs.find_one({'_id': ObjectId(job_id)})
-        job_title = job.get('title', 'Job').replace('/', '-') if job else 'Job'
-        company = job.get('company', 'Company').replace('/', '-') if job else 'Company'
+        job = None
+        job_title = 'Job'
+        company = 'Company'
+        
+        if job_id.startswith('recruiter_'):
+            # This is a PostgreSQL recruiter job
+            from app.models.job_posting import JobPosting
+            pg_job_id = job_id.replace('recruiter_', '')
+            pg_job = JobPosting.query.filter_by(id=pg_job_id, status='active').first()
+            if pg_job:
+                job_title = pg_job.title.replace('/', '-')
+                company = pg_job.company_name.replace('/', '-')
+        else:
+            # This is a MongoDB external job
+            job = mongo_db.jobs.find_one({'_id': ObjectId(job_id)})
+            if job:
+                job_title = job.get('title', 'Job').replace('/', '-')
+                company = job.get('company', 'Company').replace('/', '-')
         
         # Get the optimized content - check multiple possible keys
         resume_content = (tailored_resume.get('tailored_content') or 
@@ -3425,34 +3636,65 @@ def download_tailored_resume_strict(job_id):
 @bp.route('/jobs/<job_id>/save', methods=['POST'])
 @login_required
 def save_job_endpoint(job_id):
-    """Save job to user's saved jobs"""
+    """Save job to user's saved jobs - supports both MongoDB and PostgreSQL jobs"""
     try:
         # Get MongoDB database handle
         mongo_db = get_mongo_db()
         if mongo_db is None:
             return jsonify({'success': False, 'error': 'Database unavailable'}), 500
         
-        # Check if job exists
-        job = mongo_db.jobs.find_one({'_id': ObjectId(job_id)})
-        if not job:
+        # Check if job exists (handle both job types)
+        job = None
+        job_exists = False
+        
+        if job_id.startswith('recruiter_'):
+            # This is a PostgreSQL recruiter job
+            from app.models.job_posting import JobPosting
+            pg_job_id = job_id.replace('recruiter_', '')
+            pg_job = JobPosting.query.filter_by(id=pg_job_id, status='active').first()
+            job_exists = bool(pg_job)
+        else:
+            # This is a MongoDB external job
+            job = mongo_db.jobs.find_one({'_id': ObjectId(job_id)})
+            job_exists = bool(job)
+        
+        if not job_exists:
             return jsonify({'success': False, 'error': 'Job not found'}), 404
         
         # Check if already saved
         existing_save = mongo_db.saved_jobs.find_one({
             'user_id': str(current_user.id),
-            'job_id': ObjectId(job_id)
+            'job_id': job_id  # Use job_id as string for consistency
         })
         
         if existing_save:
             return jsonify({'success': False, 'error': 'Job already saved'}), 400
         
+        # Get job title and company for storage
+        job_title = ''
+        company = ''
+        
+        if job_id.startswith('recruiter_'):
+            # For PostgreSQL jobs, we already fetched the job above
+            from app.models.job_posting import JobPosting
+            pg_job_id = job_id.replace('recruiter_', '')
+            pg_job = JobPosting.query.filter_by(id=pg_job_id, status='active').first()
+            if pg_job:
+                job_title = pg_job.title
+                company = pg_job.company_name
+        else:
+            # For MongoDB jobs
+            if job:
+                job_title = job.get('title', '')
+                company = job.get('company', '')
+        
         # Save the job
         from datetime import datetime
         saved_job = {
             'user_id': str(current_user.id),
-            'job_id': ObjectId(job_id),
-            'job_title': job.get('title', ''),
-            'company': job.get('company', ''),
+            'job_id': job_id,  # Store as string for consistency
+            'job_title': job_title,
+            'company': company,
             'saved_date': datetime.utcnow(),
             'created_at': datetime.utcnow()
         }
@@ -3463,7 +3705,7 @@ def save_job_endpoint(job_id):
             current_app.logger.info(f"Job {job_id} saved by user {current_user.id}")
             return jsonify({
                 'success': True,
-                'message': f'Job "{job.get("title", "")}" saved successfully!',
+                'message': f'Job "{job_title}" saved successfully!',
                 'saved_id': str(result.inserted_id)
             })
         else:
@@ -3477,16 +3719,16 @@ def save_job_endpoint(job_id):
 @bp.route('/jobs/<job_id>/unsave', methods=['POST'])
 @login_required
 def unsave_job_endpoint(job_id):
-    """Remove job from user's saved jobs"""
+    """Remove job from user's saved jobs - supports both MongoDB and PostgreSQL jobs"""
     try:
         mongo_db = get_mongo_db()
         if mongo_db is None:
             return jsonify({'success': False, 'error': 'Database unavailable'}), 500
         
-        # Remove the saved job
+        # Remove the saved job (job_id is stored as string for both types)
         result = mongo_db.saved_jobs.delete_one({
             'user_id': str(current_user.id),
-            'job_id': ObjectId(job_id)
+            'job_id': job_id  # Use job_id directly as string
         })
         
         if result.deleted_count > 0:
@@ -3505,23 +3747,104 @@ def unsave_job_endpoint(job_id):
 # IMPORTANT: job_detail route must be at the END of the file to avoid catching debug routes
 @bp.route('/<job_id>')
 def job_detail(job_id):
-    """View detailed job posting with enhanced description handling"""
+    """View detailed job posting with enhanced description handling - supports both MongoDB and PostgreSQL jobs"""
     mongo_db = get_mongo_db()
+    job = None
+    similar_jobs = []
     
-    if mongo_db is None:
-        flash('Job not found.', 'error')
-        return redirect(url_for('jobs.jobs_list'))
-    
+    # STEP 1: Determine job source and fetch job
     try:
-        job = mongo_db.jobs.find_one({"_id": ObjectId(job_id)})
-    except:
+        if job_id.startswith('recruiter_'):
+            # This is a PostgreSQL recruiter job
+            from app.models.job_posting import JobPosting
+            pg_job_id = job_id.replace('recruiter_', '')
+            pg_job = JobPosting.query.filter_by(id=pg_job_id, status='active').first()
+            
+            if pg_job:
+                # Convert PostgreSQL job to consistent format
+                job = {
+                    '_id': job_id,
+                    'source': 'recruiter',
+                    'title': pg_job.title,
+                    'company': pg_job.company_name,
+                    'company_name': pg_job.company_name,
+                    'location': pg_job.location,
+                    'description': pg_job.description,
+                    'requirements': pg_job.requirements,
+                    'job_type': pg_job.employment_type,
+                    'experience_level': pg_job.experience_level,
+                    'job_level': pg_job.experience_level,
+                    'salary_min': pg_job.salary_min,
+                    'salary_max': pg_job.salary_max,
+                    'min_amount': pg_job.salary_min,
+                    'max_amount': pg_job.salary_max,
+                    'date_posted': pg_job.created_at,
+                    'remote_type': pg_job.remote_type,
+                    'is_recruiter_job': True,
+                    'recruiter_id': pg_job.recruiter_id,
+                    'job_posting_id': pg_job.id,
+                    'manual_description': pg_job.description  # Mark as manual since recruiter wrote it
+                }
+                
+                # Get similar recruiter jobs
+                similar_pg_jobs = JobPosting.query.filter(
+                    JobPosting.company_name == pg_job.company_name,
+                    JobPosting.id != pg_job.id,
+                    JobPosting.status == 'active'
+                ).limit(3).all()
+                
+                for similar_job in similar_pg_jobs:
+                    similar_jobs.append({
+                        '_id': f'recruiter_{similar_job.id}',
+                        'title': similar_job.title,
+                        'company': similar_job.company_name,
+                        'location': similar_job.location,
+                        'job_type': similar_job.employment_type,
+                        'date_posted': similar_job.created_at,
+                        'source': 'recruiter'
+                    })
+        else:
+            # This is a MongoDB external job
+            if mongo_db is not None:
+                job = mongo_db.jobs.find_one({"_id": ObjectId(job_id)})
+                if job:
+                    job['source'] = 'external'
+                    job['is_recruiter_job'] = False
+                    job['_id'] = str(job['_id'])  # Convert ObjectId to string
+                    
+                    # Get similar MongoDB jobs
+                    if job.get('company'):
+                        similar_jobs_cursor = mongo_db.jobs.find({
+                            "company": job['company'],
+                            "_id": {"$ne": ObjectId(job_id)}
+                        }).limit(3)
+                        
+                        for similar_job in similar_jobs_cursor:
+                            similar_job['_id'] = str(similar_job['_id'])
+                            similar_job['source'] = 'external'
+                            similar_jobs.append(similar_job)
+                    
+                    # If no company matches, try location-based similar jobs
+                    if not similar_jobs and job.get('location'):
+                        similar_jobs_cursor = mongo_db.jobs.find({
+                            "location": {"$regex": job['location'].split(',')[0], "$options": "i"},
+                            "_id": {"$ne": ObjectId(job_id)}
+                        }).limit(3)
+                        
+                        for similar_job in similar_jobs_cursor:
+                            similar_job['_id'] = str(similar_job['_id'])
+                            similar_job['source'] = 'external'
+                            similar_jobs.append(similar_job)
+    except Exception as e:
+        current_app.logger.error(f"Error fetching job {job_id}: {str(e)}")
         job = None
     
+    # STEP 2: Handle job not found
     if not job:
         flash('Job not found.', 'error')
         return redirect(url_for('jobs.jobs_list'))
     
-    # Enhanced description handling with priority for manual descriptions
+    # STEP 3: Enhanced description handling with priority for manual descriptions
     description_fields = [
         'manual_description',  # NEW: Prioritize user-added descriptions
         'description', 'job_description', 'summary', 'details', 
@@ -3613,26 +3936,12 @@ Please use the application link or contact the company directly for more details
     
     # CRITICAL FIX: Only count manual descriptions as "has_description"
     # This ensures jobs with only constructed/default descriptions show "Add Description" banner
+    # For recruiter jobs, their description IS the manual description
     has_description = bool(
-        job.get('manual_description') and 
-        len(job.get('manual_description', '').strip()) > 50
+        (job.get('manual_description') and len(job.get('manual_description', '').strip()) > 50) or
+        (job.get('is_recruiter_job') and job.get('description'))
     )
-    has_manual_description = bool(job.get('manual_description'))
-    
-    # Enhanced similar jobs logic
-    similar_jobs = []
-    if job.get('company'):
-        similar_jobs = list(mongo_db.jobs.find({
-            "company": job['company'],
-            "_id": {"$ne": ObjectId(job_id)}
-        }).limit(3))
-    
-    # If no company matches, try location-based similar jobs
-    if not similar_jobs and job.get('location'):
-        similar_jobs = list(mongo_db.jobs.find({
-            "location": {"$regex": job['location'].split(',')[0], "$options": "i"},
-            "_id": {"$ne": ObjectId(job_id)}
-        }).limit(3))
+    has_manual_description = bool(job.get('manual_description') or job.get('is_recruiter_job'))
     
     # Check if user has applied to this job (if logged in)
     has_applied = False
@@ -3648,26 +3957,27 @@ Please use the application link or contact the company directly for more details
                               active_resume.parsed_content.strip())
         
         # Check for actual job application (not just tailored resume)
-        existing_application = mongo_db.job_applications.find_one({
-            "user_id": str(current_user.id),
-            "job_id": job_id,
-            "status": {"$in": ["applied", "pending", "interview", "hired", "rejected"]}
-        })
-        has_applied = bool(existing_application)
-        
-        # Check if user has a tailored resume for this job
-        tailored_resume = mongo_db.tailored_resumes.find_one({
-            "user_id": str(current_user.id),
-            "job_id": job_id
-        })
-        has_tailored_resume = bool(tailored_resume)
-        
-        # Check if job is saved
-        saved_job = mongo_db.saved_jobs.find_one({
-            "user_id": str(current_user.id),
-            "job_id": job_id
-        })
-        is_saved = bool(saved_job)
+        if mongo_db is not None:
+            existing_application = mongo_db.job_applications.find_one({
+                "user_id": str(current_user.id),
+                "job_id": job_id,
+                "status": {"$in": ["applied", "pending", "interview", "hired", "rejected"]}
+            })
+            has_applied = bool(existing_application)
+            
+            # Check if user has a tailored resume for this job
+            tailored_resume = mongo_db.tailored_resumes.find_one({
+                "user_id": str(current_user.id),
+                "job_id": job_id
+            })
+            has_tailored_resume = bool(tailored_resume)
+            
+            # Check if job is saved
+            saved_job = mongo_db.saved_jobs.find_one({
+                "user_id": str(current_user.id),
+                "job_id": job_id
+            })
+            is_saved = bool(saved_job)
     
     return render_template('jobs/detail.html', 
                          job=job,

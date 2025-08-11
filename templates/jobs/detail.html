@@ -44,13 +44,13 @@
                     <div class="row mt-3">
                         <div class="col-md-6">
                             {% if job.location %}
-                            <p class="mb-1"><i class="bi bi-geo-alt text-primary"></i> {{ job.location }}</p>
+                            <p class="mb-1 text-dark"><i class="bi bi-geo-alt text-primary"></i> {{ job.location }}</p>
                             {% endif %}
                             {% if job.job_type %}
-                            <p class="mb-1"><i class="bi bi-briefcase text-primary"></i> {{ job.job_type }}</p>
+                            <p class="mb-1 text-dark"><i class="bi bi-briefcase text-primary"></i> {{ job.job_type }}</p>
                             {% endif %}
                             {% if job.job_level %}
-                            <p class="mb-1"><i class="bi bi-trophy text-primary"></i> {{ job.job_level }}</p>
+                            <p class="mb-1 text-dark"><i class="bi bi-trophy text-primary"></i> {{ job.job_level }}</p>
                             {% endif %}
                         </div>
                         <div class="col-md-6 text-end">
@@ -79,17 +79,17 @@
                                 {% set skills_list = job.skills.split(',') %}
                                 {% for skill in skills_list %}
                                     {% if skill.strip() %}
-                                        <span class="badge bg-primary">{{ skill.strip() }}</span>
+                                        <span class="badge bg-secondary text-dark">{{ skill.strip() }}</span>
                                     {% endif %}
                                 {% endfor %}
                             {% elif job.skills is iterable %}
                                 {% for skill in job.skills %}
                                     {% if skill.strip() %}
-                                        <span class="badge bg-primary">{{ skill.strip() }}</span>
+                                        <span class="badge bg-secondary text-dark">{{ skill.strip() }}</span>
                                     {% endif %}
                                 {% endfor %}
                             {% else %}
-                                <span class="badge bg-primary">{{ job.skills }}</span>
+                                <span class="badge bg-secondary text-dark">{{ job.skills }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -231,19 +231,27 @@
                         <i class="bi bi-list-check me-2"></i>Requirements
                     </h5>
                     <div class="job-requirements">
-                        {% set req_lines = job.requirements.split('\n') %}
-                        {% for line in req_lines %}
-                            {% if line.strip() %}
-                                {% if line.strip().startswith('*') or line.strip().startswith('-') %}
-                                    <div class="d-flex align-items-start mb-2">
-                                        <i class="bi bi-arrow-right-circle text-primary me-2 mt-1"></i>
-                                        <span>{{ line.strip()[1:].strip() }}</span>
-                                    </div>
-                                {% else %}
-                                    <p class="mb-2">{{ line.strip() }}</p>
-                                {% endif %}
+                        {% if job.requirements %}
+                            {% if job.requirements is string %}
+                                {% set req_lines = job.requirements.split('\n') %}
+                            {% else %}
+                                {% set req_lines = job.requirements %}
                             {% endif %}
-                        {% endfor %}
+                            {% for line in req_lines %}
+                                {% if line.strip() %}
+                                    {% if line.strip().startswith('*') or line.strip().startswith('-') %}
+                                        <div class="d-flex align-items-start mb-2">
+                                            <i class="bi bi-arrow-right-circle text-primary me-2 mt-1"></i>
+                                            <span>{{ line.strip()[1:].strip() }}</span>
+                                        </div>
+                                    {% else %}
+                                        <p class="mb-2">{{ line.strip() }}</p>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">No specific requirements listed.</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>

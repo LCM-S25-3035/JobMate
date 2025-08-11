@@ -244,15 +244,16 @@
                                             <i class="bi bi-eye"></i> View Details
                                         </a>
                                         {% if current_user.is_authenticated and current_user.user_type == 'applicant' %}
+                                        <button class="btn btn-outline-secondary btn-sm save-job-btn" 
+                                                data-job-id="{{ job._id }}" 
+                                                data-saved="{% if job._id|string in saved_jobs %}true{% else %}false{% endif %}">
+                                            <i class="bi {% if job._id|string in saved_jobs %}bi-bookmark-fill{% else %}bi-bookmark{% endif %}"></i>
+                                            <span class="save-text">{% if job._id|string in saved_jobs %}Saved{% else %}Save{% endif %}</span>
+                                        </button>
                                         <a href="{{ url_for('main.tailor_resume', job_id=job._id) }}" class="btn btn-primary btn-sm" 
                                            title="AI-powered resume optimization and application">
                                             <i class="bi bi-magic"></i> Tailor Resume & Apply
                                         </a>
-                                        <button class="btn btn-outline-primary btn-sm" 
-                                                onclick="saveJob('{{ job._id }}', this)"
-                                                title="Save job for later">
-                                            <i class="bi bi-bookmark"></i> Save
-                                        </button>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -571,6 +572,67 @@ document.addEventListener('DOMContentLoaded', function() {
                     tooltip.remove();
                     document.removeEventListener('click', closeTooltip);
                 }
+            });
+        });
+    });
+    
+    // Save/Unsave job functionality
+    document.querySelectorAll('.save-job-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const jobId = this.getAttribute('data-job-id');
+            const isSaved = this.getAttribute('data-saved') === 'true';
+            const icon = this.querySelector('i');
+            const text = this.querySelector('.save-text');
+            
+            // Optimistically update UI
+            if (isSaved) {
+                icon.className = 'bi bi-bookmark';
+                text.textContent = 'Save';
+                this.setAttribute('data-saved', 'false');
+            } else {
+                icon.className = 'bi bi-bookmark-fill';
+                text.textContent = 'Saved';
+                this.setAttribute('data-saved', 'true');
+            }
+            
+            // Make API call
+            fetch(`/jobs/${jobId}/save`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.content || ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    // Revert UI changes if API call failed
+                    if (isSaved) {
+                        icon.className = 'bi bi-bookmark-fill';
+                        text.textContent = 'Saved';
+                        this.setAttribute('data-saved', 'true');
+                    } else {
+                        icon.className = 'bi bi-bookmark';
+                        text.textContent = 'Save';
+                        this.setAttribute('data-saved', 'false');
+                    }
+                    alert('Error saving job. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Revert UI changes if API call failed
+                if (isSaved) {
+                    icon.className = 'bi bi-bookmark-fill';
+                    text.textContent = 'Saved';
+                    this.setAttribute('data-saved', 'true');
+                } else {
+                    icon.className = 'bi bi-bookmark';
+                    text.textContent = 'Save';
+                    this.setAttribute('data-saved', 'false');
+                }
+                alert('Error saving job. Please try again.');
             });
         });
     });

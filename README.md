@@ -281,10 +281,10 @@ This project is solely for personal or educational purposes only
 
 ## Acknowledgements
 
-This project was developed in faithful completion of:
-**Big Data Capstone Project**
-**Lambton College, Mississauga**
-**Course:** 2025S-T3_BDM 3035_01  
+This project was developed in faithful completion of:<br>
+**Big Data Capstone Project**<br>
+Lambton College, Mississauga<br>
+**Course:** 2025S-T3_BDM 3035_01  <br>
 **Professor:** Bhavik Gandhi
 
 

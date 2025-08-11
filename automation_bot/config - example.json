@@ -1,0 +1,49 @@
+{
+    "email": "youremail@example.com",
+    "password": "yourpassword",
+    "keyword": "data analyst",
+    "location": "Remote",
+    "driver_path": "./chromedriver-win64/chromedriver.exe",
+    "profile_path": "C:/temp/JobMateAutoApplyChrome",
+    "original_profile_path": "C:/Users/YOUR_USERNAME/AppData/Local/Google/Chrome/User Data/Default",
+    "use_temp_profile": true,
+    "glassdoor_url": "https://www.glassdoor.com/Job/jobs.htm",
+    "indeed_url": "https://secure.indeed.com/account/login",
+    "firstName": "John",
+    "lastName": "Doe",
+    "phoneNumber": "0000000000",
+    "city": "CityName",
+    "site": "glassdoor",
+    "max_jobs": 20,
+    "proxy": {
+        "enabled": true,
+        "host": "your.proxy.host",
+        "port": "proxy_port",
+        "username": "proxy_username",
+        "password": "proxy_password"
+    },
+    "window_positioning": {
+        "enabled": true,
+        "position": "left",
+        "width_percentage": 50
+    },
+    "question_answers": {
+        "linkedin_profile": "https://www.linkedin.com/in/your-profile",
+        "salary_expectations": "$XX,XXX - $XX,XXX",
+        "years_experience_data_analyst": "X",
+        "years_experience_software": "X",
+        "years_experience_developer": "X",
+        "years_experience_python": "X",
+        "years_experience_sql": "X",
+        "years_experience": "X",
+        "portfolio_website": "https://github.com/yourusername",
+        "cover_letter": "I am excited to apply for this position as it aligns perfectly with my background in data analysis and my passion for deriving insights from complex datasets.",
+        "availability": "Immediately",
+        "willing_to_relocate": "Yes",
+        "authorization_to_work": "Yes",
+        "degree_completed": "Yes",
+        "graduation_date": "Month YYYY",
+        "require_sponsorship": "Yes",
+        "address": "Your Address, City, PostalCode"
+    }
+}

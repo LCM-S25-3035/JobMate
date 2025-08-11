@@ -411,12 +411,12 @@
                         </li>
         
                         <li class="nav-item">
-                            <a class="nav-link nav-link-theme" href="#" onclick="alert('Applications module coming soon!')">
+                            <a class="nav-link nav-link-theme" href="{{ url_for('main.applications') }}">
                                 <i class="bi bi-send me-1"></i>Applications
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link nav-link-theme" href="{{ url_for('autoapply.dashboard') }}">
+                            <a class="nav-link nav-link-theme" href="#" onclick="showAutoApplyMessage(event)">
                                 <i class="bi bi-magic me-1"></i>Auto-Apply
                             </a>
                         </li>
@@ -685,6 +685,14 @@
                 }
             }
         });
+    </script>
+    
+    <script>
+        function showAutoApplyMessage(event) {
+            event.preventDefault();
+            alert('Auto-Apply (Prototype Complete, Pending Integration)\n\nThis feature is fully developed and ready for integration into the JobMate platform.');
+            return false;
+        }
     </script>
     
     <!-- Custom JS -->

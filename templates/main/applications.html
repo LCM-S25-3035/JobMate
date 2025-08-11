@@ -7,7 +7,17 @@
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>My Applications</h2>
+                <div>
+                    <h2>My Applications</h2>
+                    {% if total_count is defined %}
+                    <p class="text-muted mb-0">
+                        {{ total_count }} total applications
+                        {% if internal_count is defined and external_count is defined %}
+                        ({{ internal_count }} internal, {{ external_count }} external)
+                        {% endif %}
+                    </p>
+                    {% endif %}
+                </div>
                 <a href="{{ url_for('main.applicant_dashboard') }}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
                 </a>
@@ -24,6 +34,8 @@
                                         <th>Company</th>
                                         <th>Applied Date</th>
                                         <th>Status</th>
+                                        <th>ATS Score</th>
+                                        <th>Source</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -31,20 +43,56 @@
                                     {% for application in applications %}
                                     <tr>
                                         <td>
-                                            <h6 class="mb-0">{{ application.job_posting.title if application.job_posting else 'N/A' }}</h6>
+                                            <h6 class="mb-0">{{ application.job_title }}</h6>
                                         </td>
-                                        <td>{{ application.job_posting.company_name if application.job_posting else 'N/A' }}</td>
-                                        <td>{{ application.created_at.strftime('%B %d, %Y') if application.created_at else 'N/A' }}</td>
+                                        <td>{{ application.company_name }}</td>
                                         <td>
-                                            <span class="badge bg-{% if application.status == 'applied' %}primary{% elif application.status == 'interview' %}warning{% elif application.status == 'offer' %}success{% else %}secondary{% endif %}">
+                                            {% if application.applied_date %}
+                                                {{ application.applied_date.strftime('%B %d, %Y') }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{% if application.status == 'applied' %}secondary text-dark{% elif application.status == 'interview' %}warning text-dark{% elif application.status == 'offer' %}success{% else %}secondary text-dark{% endif %}">
                                                 {{ application.status.title() if application.status else 'Applied' }}
                                             </span>
                                         </td>
                                         <td>
-                                            {% if application.job_posting %}
-                                            <a href="{{ url_for('jobs.job_detail', job_id=application.job_posting.id) }}" class="btn btn-sm btn-outline-primary">
-                                                View Job
-                                            </a>
+                                            {% if application.ats_score and application.ats_score != 'N/A' and application.ats_score != None %}
+                                                {% if application.ats_score|string|length > 0 and application.ats_score|string != 'None' %}
+                                                    {% set score_str = application.ats_score|string %}
+                                                    {% if score_str.isdigit() %}
+                                                        {% set score = score_str|int %}
+                                                        <span class="badge bg-{% if score >= 80 %}success{% elif score >= 60 %}warning{% elif score > 0 %}secondary{% else %}light text-dark{% endif %}">
+                                                            {{ score }}%
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{% if application.application_type == 'recruiter' %}info text-dark{% else %}success{% endif %}">
+                                                {{ application.source if application.source else ('Internal' if application.application_type == 'recruiter' else 'External') }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if application.application_type == 'recruiter' and application.job_posting_id %}
+                                                <a href="{{ url_for('jobs.job_detail', job_id='recruiter_' + application.job_posting_id|string) }}" class="btn btn-sm btn-outline-secondary">
+                                                    View Job
+                                                </a>
+                                            {% elif application.application_type == 'external' and application.job_posting_id %}
+                                                <a href="{{ url_for('jobs.job_detail', job_id=application.job_posting_id) }}" class="btn btn-sm btn-outline-secondary">
+                                                    View Job
+                                                </a>
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
                                             {% endif %}
                                         </td>
                                     </tr>

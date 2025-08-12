@@ -1,5 +1,4 @@
 from app.jobs import bp
-
 import os
 import re
 import copy
@@ -12,6 +11,30 @@ from .facet_service import JobFacetService
 import re
 import copy
 
+from flask_wtf.csrf import generate_csrf
+
+@bp.route('/<job_id>/add-description', methods=['POST', 'GET'])
+@login_required
+def add_job_description(job_id):
+    mongo_db = get_mongo_db()
+    if mongo_db is None:
+        flash('MongoDB not available', 'danger')
+        return redirect(url_for('jobs.job_detail', job_id=job_id))
+
+    if request.method == 'POST':
+        manual_description = request.form.get('manual_description')
+        if manual_description:
+            # Save the manual description to the job document
+            mongo_db.jobs.update_one({'_id': ObjectId(job_id)}, {'$set': {'description': manual_description}})
+            flash('Job description saved!', 'success')
+            return redirect(url_for('main.tailor_resume', job_id=job_id))
+        flash('Please paste a job description.', 'danger')
+        return redirect(url_for('jobs.job_detail', job_id=job_id))
+    # For GET, render the job detail page with CSRF token
+    csrf_token = generate_csrf()
+    # You may need to fetch job data here for rendering
+    job = mongo_db.jobs.find_one({'_id': ObjectId(job_id)})
+    return render_template('jobs/detail.html', job=job, csrf_token=csrf_token)
 # Place debug_job_type_stats route here, after bp is defined
 @bp.route('/debug_job_type_stats')
 @login_required
@@ -4200,6 +4223,8 @@ Please use the application link or contact the company directly for more details
             })
             is_saved = bool(saved_job)
     
+    from flask_wtf.csrf import generate_csrf
+    csrf_token = generate_csrf()
     return render_template('jobs/detail.html', 
                          job=job,
                          similar_jobs=similar_jobs,
@@ -4208,7 +4233,8 @@ Please use the application link or contact the company directly for more details
                          has_tailored_resume=has_tailored_resume,
                          has_description=has_description,
                          has_manual_description=has_manual_description,
-                         user_has_resume=user_has_resume)
+                         user_has_resume=user_has_resume,
+                         csrf_token=csrf_token)
 
 
 @bp.route('/generate-description/<job_id>', methods=['POST'])

@@ -90,6 +90,44 @@
                     </div>
                     {% endif %}
                 </div>
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-text me-2"></i>Job Description
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% set description_content = job.description or job.job_description or job.summary or job.details or job.company_description %}
+                    {% if description_content and description_content|string != 'nan' and description_content|string != '' and description_content|string|length > 10 %}
+                        <div class="job-description-content">
+                            {{ description_content }}
+                        </div>
+                    {% else %}
+                        {% if job.description and job.description|string != 'nan' and job.description|string != '' %}
+                            <div class="job-description-content">
+                                {{ job.description }}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <strong>No job description available for this position.</strong>
+                                <br><br>
+                                This commonly happens with jobs sourced from LinkedIn or external job boards. 
+                                {% if job.company_url or job.job_url or job.apply_url or job.job_url_direct %}
+                                    Please visit the company website or original job posting for detailed information.
+                                {% else %}
+                                    Try searching for this position directly on the company's careers page.
+                                {% endif %}
+                                <!-- Manual Job Description Form -->
+                                <form method="POST" action="{{ url_for('jobs.add_job_description', job_id=job._id) }}" class="mt-3">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                                    <label for="manual_description" class="form-label">Paste job description here:</label>
+                                    <textarea name="manual_description" id="manual_description" rows="6" class="form-control" required></textarea>
+                                    <button type="submit" class="btn btn-primary mt-2">Save & Tailor Resume</button>
+                                </form>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
             </div>
 
             <!-- Job Description -->

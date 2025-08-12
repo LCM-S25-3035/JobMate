@@ -550,13 +550,16 @@ def applications():
             f"{len(mongo_applications)} external, {len(combined_applications)} total"
         )
         
+        from flask_wtf.csrf import generate_csrf
+        csrf_token = generate_csrf()
         return render_template(
             'main/applications.html',
             title='My Applications',
             applications=combined_applications,
             total_count=len(combined_applications),
             internal_count=len(pg_applications),
-            external_count=len(mongo_applications)
+            external_count=len(mongo_applications),
+            csrf_token=csrf_token
         )
         
     except Exception as e:

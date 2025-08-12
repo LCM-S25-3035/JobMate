@@ -264,6 +264,13 @@ function updateCandidateStatus(selectElement, applicationId) {
             
             // Update the data attribute for future changes
             selectElement.setAttribute('data-original-status', newStatus);
+            
+            // 🔧 FIX: Update the table row's data-status attribute for filtering
+            const tableRow = selectElement.closest('tr');
+            if (tableRow) {
+                tableRow.setAttribute('data-status', newStatus);
+                console.log(`Updated row data-status from "${oldStatus}" to "${newStatus}"`);
+            }
         } else {
             alert('Failed to update status: ' + (data.error || 'Unknown error'));
             // Revert to previous selection on error
@@ -345,19 +352,22 @@ function initStatusFiltering() {
 
 function filterCandidatesByStatus(status) {
     const rows = document.querySelectorAll('.candidate-row');
-    const noDataDiv = document.querySelector('.text-center.py-5');
     let visibleCount = 0;
     
-    rows.forEach(row => {
+    rows.forEach((row, index) => {
         const rowStatus = row.getAttribute('data-status');
+        const shouldShow = (status === 'all' || rowStatus === status);
         
-        if (status === 'all' || rowStatus === status) {
+        if (shouldShow) {
             row.style.display = '';
             visibleCount++;
         } else {
             row.style.display = 'none';
         }
     });
+    
+    // Update filter indicator
+    updateFilterIndicator(status, visibleCount);
     
     // Update filter indicator
     updateFilterIndicator(status, visibleCount);

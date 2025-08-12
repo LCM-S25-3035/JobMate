@@ -1925,6 +1925,9 @@ def talent_journey():
                         'ats_score_display': ats_score_display,
                         'ats_score_class': ats_score_class
                     })
+                    
+                    # DEBUG: Print what we're adding
+                    print(f"   Added candidate: {app.user.email} - Status: '{app.status}' - Job: {app.job_title}")
         except Exception as e:
             print(f"Error in talent_journey: {e}")
     

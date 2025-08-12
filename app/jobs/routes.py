@@ -3296,13 +3296,26 @@ def apply_to_job(job_id):
         cover_letter = request_data.get('cover_letter', '')
         include_tailored_resume = request_data.get('include_tailored_resume', True)
         
-        # Check if user already applied
+        # Check if user already applied - check correct database based on job type
         existing_application = None
-        if mongo_db is not None:
-            existing_application = mongo_db.job_applications.find_one({
-                "user_id": str(current_user.id),
-                "job_id": job_id
-            })
+        
+        if job_id.startswith('recruiter_') or job.get('is_recruiter_job'):
+            # For recruiter jobs, check PostgreSQL
+            try:
+                from app.models.application import Application
+                existing_application = Application.query.filter_by(
+                    user_id=current_user.id,
+                    job_posting_id=job.get('job_posting_id')
+                ).first()
+            except Exception as e:
+                current_app.logger.warning(f"Error checking PostgreSQL applications: {str(e)}")
+        else:
+            # For external jobs, check MongoDB
+            if mongo_db is not None:
+                existing_application = mongo_db.job_applications.find_one({
+                    "user_id": str(current_user.id),
+                    "job_id": job_id
+                })
         
         if existing_application:
             return jsonify({'success': False, 'error': 'You have already applied to this job'}), 400
@@ -3338,19 +3351,16 @@ def apply_to_job(job_id):
             'recruiter_id': job.get('recruiter_id') if job.get('is_recruiter_job') else None
         }
         
-        # Save application to MongoDB
+        # Create application in the appropriate database ONLY (not both)
         application_result = None
-        if mongo_db is not None:
-            application_result = mongo_db.job_applications.insert_one(application_data)
-        
-        # For recruiter jobs, also create an entry in PostgreSQL for recruiter tracking
         pg_application_id = None
+        
         if job.get('is_recruiter_job'):
+            # For recruiter jobs, create ONLY in PostgreSQL (for recruiter tracking)
             try:
                 from app.models.application import Application
                 from app import db
                 
-                # Add required fields that were missing
                 pg_application = Application(
                     user_id=current_user.id,
                     job_posting_id=job.get('job_posting_id'),
@@ -3358,22 +3368,25 @@ def apply_to_job(job_id):
                     job_title=job.get('title', ''),
                     status='applied',
                     applied_at=datetime.utcnow(),
-                    match_score=ats_score,  # Fixed: use match_score instead of ats_score
-                    cover_letter=cover_letter,
-                    mongo_application_id=str(application_result.inserted_id) if application_result else None
+                    match_score=ats_score,
+                    cover_letter=cover_letter
                 )
                 
                 db.session.add(pg_application)
                 db.session.commit()
                 pg_application_id = pg_application.id
                 
-                current_app.logger.info(f"✅ SUCCESS: Created PostgreSQL application {pg_application_id} for recruiter job {job_id} (job_posting_id: {job.get('job_posting_id')})")
+                current_app.logger.info(f"✅ SUCCESS: Created PostgreSQL application {pg_application_id} for recruiter job {job_id}")
                 print(f"✅ DEBUG: Application created - ID: {pg_application_id}, Job: {job.get('title')}, Company: {job.get('company_name')}")
                 
             except Exception as e:
                 current_app.logger.error(f"❌ ERROR: Failed to create PostgreSQL application: {str(e)}")
                 print(f"❌ DEBUG: PostgreSQL application creation failed: {str(e)}")
-                # Continue anyway, MongoDB record exists
+                return jsonify({'success': False, 'error': 'Failed to submit application. Please try again.'}), 500
+        else:
+            # For external jobs, create ONLY in MongoDB
+            if mongo_db is not None:
+                application_result = mongo_db.job_applications.insert_one(application_data)
         
         # Save to Talent Journey if ATS score provided
         if ats_score and mongo_db is not None:
@@ -3405,7 +3418,8 @@ def apply_to_job(job_id):
                 current_app.logger.error(f"Error saving to talent journey: {str(e)}")
                 # Continue anyway, application was successful
         
-        application_id = str(application_result.inserted_id) if application_result else pg_application_id
+        # Return success with appropriate application ID
+        application_id = str(application_result.inserted_id) if application_result else str(pg_application_id)
         
         return jsonify({
             'success': True,

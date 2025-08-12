@@ -141,9 +141,6 @@
                                 Try searching for this position directly on the company's careers page.
                             {% endif %}
                         </div>
-                        
-                                                <!-- Job Description -->
-                        {% if job.description or job.job_description or job.summary or job.details %}
                     {% endif %}
                 </div>
             </div>
@@ -156,8 +153,9 @@
                         <i class="bi bi-list-check me-2"></i>Requirements
                     </h5>
                     <div class="job-requirements">
-                        {% set req_lines = job.requirements|string|split('\n') %}
-                        {% for line in req_lines %}
+                        {% set req_text = job.requirements|string %}
+                        {% set req_text = req_text|replace('\r', '') %}
+                        {% for line in req_text.split('\n') %}
                             {% if line.strip() %}
                                 {% if line.strip().startswith('*') or line.strip().startswith('-') %}
                                     <div class="d-flex align-items-start mb-2">
@@ -180,7 +178,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Benefits</h5>
                     <div class="job-benefits">
-                        {{ job.benefits | nl2br_safe }}
+                        {{ job.benefits|string|replace('\n', '<br>')|safe }}
                     </div>
                 </div>
             </div>

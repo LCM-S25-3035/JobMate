@@ -137,7 +137,7 @@
               {% if job.salary_min and job.salary_max %}
               <div class="col-md-4 mb-2">
                 <small class="text-muted">Salary Range</small>
-                <div><i class="fas fa-money-bill-wave me-1"></i> ${{ job.salary_min|int|format_number }} - ${{ job.salary_max|int|format_number }}</div>
+                <div><i class="fas fa-money-bill-wave me-1"></i> ${{ job.salary_min|int }} - ${{ job.salary_max|int }}</div>
               </div>
               {% endif %}
             </div>
@@ -207,8 +207,8 @@
         <div class="card mb-3 shadow-sm" style="max-width: 400px;">
           <div class="card-body text-center">
             <span class="badge bg-primary mb-2" style="font-size:1.1rem;">ATS Score</span>
-            <div style="font-size:2.5rem; font-weight:700; 
-                        color:{% if ats_score >= 90 %}#28a745{% elif ats_score >= 80 %}#fd7e14{% else %}#dc3545{% endif %};">
+            {% set score_color_class = 'text-success' if ats_score >= 90 else ('text-warning' if ats_score >= 80 else 'text-danger') %}
+            <div class="fw-bold {{ score_color_class }}" style="font-size:2.5rem;">
               {{ ats_score }}%
             </div>
             
@@ -316,14 +316,7 @@
           <div class="col-md-6 mb-3 suggestion-card" data-suggestion-id="{{ loop.index }}">
             <div class="card h-100">
               <div class="card-header d-flex justify-content-between align-items-center">
-                {% if suggestion is string %}
-                  {% if suggestion.strip().startswith('{') %}
-                    {% set parsed = suggestion | safe | loads %}
-                    <strong>{{ parsed.area }}</strong>
-                  {% else %}
-                    <strong>Suggestion</strong>
-                  {% endif %}
-                {% elif suggestion.area is defined %}
+                {% if suggestion is mapping and suggestion.area is defined %}
                   <strong>{{ suggestion.area }}</strong>
                 {% else %}
                   <strong>Suggestion</strong>
@@ -331,14 +324,7 @@
                 <span class="badge bg-light text-dark suggestion-status">Open</span>
               </div>
               <div class="card-body">
-                {% if suggestion is string %}
-                  {% if suggestion.strip().startswith('{') %}
-                    {% set parsed = suggestion | safe | loads %}
-                    <p>{{ parsed.suggestion }}</p>
-                  {% else %}
-                    <p>{{ suggestion }}</p>
-                  {% endif %}
-                {% elif suggestion.suggestion is defined %}
+                {% if suggestion is mapping and suggestion.suggestion is defined %}
                   <p>{{ suggestion.suggestion }}</p>
                 {% else %}
                   <p>{{ suggestion }}</p>
@@ -587,165 +573,169 @@ const editResumeBtn = document.getElementById('edit-resume-btn');
 const resumeTextarea = document.getElementById('resume-textarea');
 const resumePre = document.getElementById('tailored-resume-content');
 const resumeInput = document.getElementById('resume-text-input');
-editResumeBtn.addEventListener('click', function() {
-  if (resumeTextarea.style.display === 'none') {
-    // Switching to edit mode
-    resumeTextarea.style.display = 'block';
-    resumePre.style.display = 'none';
-    editResumeBtn.textContent = 'Done';
-    resumeTextarea.value = resumePre.textContent;
-    
-    // Store original text to check if changes were made
-    resumeTextarea.setAttribute('data-original', resumeTextarea.value);
-  } else {
-    // Switching back to view mode
-    resumeTextarea.style.display = 'none';
-    resumePre.style.display = 'block';
-    editResumeBtn.textContent = 'Edit';
-    resumePre.textContent = resumeTextarea.value;
-    resumeInput.value = resumeTextarea.value;
-    
-    // Check if content changed and save the changes to database
-    if (resumeTextarea.value !== resumeTextarea.getAttribute('data-original')) {
-      // Show saving indicator
-      const originalBtnText = editResumeBtn.textContent;
-      editResumeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-      editResumeBtn.disabled = true;
+if (editResumeBtn) {
+  editResumeBtn.addEventListener('click', function() {
+    if (resumeTextarea.style.display === 'none') {
+      // Switching to edit mode
+      resumeTextarea.style.display = 'block';
+      resumePre.style.display = 'none';
+      editResumeBtn.textContent = 'Done';
+      resumeTextarea.value = resumePre.textContent;
       
-      // Get the job ID from the URL
-      const jobId = '{{ job._id }}';
+      // Store original text to check if changes were made
+      resumeTextarea.setAttribute('data-original', resumeTextarea.value);
+    } else {
+      // Switching back to view mode
+      resumeTextarea.style.display = 'none';
+      resumePre.style.display = 'block';
+      editResumeBtn.textContent = 'Edit';
+      resumePre.textContent = resumeTextarea.value;
+      resumeInput.value = resumeTextarea.value;
       
-      // Save the changes via AJAX
-      fetch('{{ url_for("main.save_edited_resume") }}', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-          job_id: jobId,
-          resume_content: resumeTextarea.value,
-          content_type: 'resume'
-        })
-      })
-      .then(response => response.json())
-      .then(data => {
-        editResumeBtn.disabled = false;
-        editResumeBtn.textContent = originalBtnText;
+      // Check if content changed and save the changes to database
+      if (resumeTextarea.value !== resumeTextarea.getAttribute('data-original')) {
+        // Show saving indicator
+        const originalBtnText = editResumeBtn.textContent;
+        editResumeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        editResumeBtn.disabled = true;
         
-        if (data.success) {
-          // Update ATS score if it was returned
-          if (data.ats_score) {
-            const atsScoreElement = document.querySelector('.card-body div[style*="font-size:2.5rem"]');
-            if (atsScoreElement) {
-              atsScoreElement.textContent = data.ats_score;
+        // Get the job ID from the URL
+        const jobId = '{{ job._id }}';
+        
+        // Save the changes via AJAX
+        fetch('{{ url_for("main.save_edited_resume") }}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+          },
+          body: JSON.stringify({
+            job_id: jobId,
+            resume_content: resumeTextarea.value,
+            content_type: 'resume'
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          editResumeBtn.disabled = false;
+          editResumeBtn.textContent = originalBtnText;
+          
+          if (data.success) {
+            // Update ATS score if it was returned
+            if (data.ats_score) {
+              const atsScoreElement = document.querySelector('.card-body div[style*="font-size:2.5rem"]');
+              if (atsScoreElement) {
+                atsScoreElement.textContent = data.ats_score;
+              }
             }
+            
+            // Show success message
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+            alertDiv.innerHTML = `
+              <strong>Success!</strong> Your resume has been updated.
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('#resume').insertBefore(alertDiv, document.querySelector('#resume h4'));
+            
+            // Auto-dismiss after 3 seconds
+            setTimeout(() => {
+              alertDiv.classList.remove('show');
+              setTimeout(() => alertDiv.remove(), 500);
+            }, 3000);
+          } else {
+            // Show error message
+            alert('Error saving changes: ' + data.error);
           }
-          
-          // Show success message
-          const alertDiv = document.createElement('div');
-          alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
-          alertDiv.innerHTML = `
-            <strong>Success!</strong> Your resume has been updated.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          `;
-          document.querySelector('#resume').insertBefore(alertDiv, document.querySelector('#resume h4'));
-          
-          // Auto-dismiss after 3 seconds
-          setTimeout(() => {
-            alertDiv.classList.remove('show');
-            setTimeout(() => alertDiv.remove(), 500);
-          }, 3000);
-        } else {
-          // Show error message
-          alert('Error saving changes: ' + data.error);
-        }
-      })
-      .catch(error => {
-        editResumeBtn.disabled = false;
-        editResumeBtn.textContent = originalBtnText;
-        alert('Error saving changes: ' + error);
-      });
+        })
+        .catch(error => {
+          editResumeBtn.disabled = false;
+          editResumeBtn.textContent = originalBtnText;
+          alert('Error saving changes: ' + error);
+        });
+      }
     }
-  }
-});
+  });
+}
 // Cover letter edit toggle
 const editCoverBtn = document.getElementById('edit-cover-btn');
 const coverTextarea = document.getElementById('cover-textarea');
 const coverPre = document.getElementById('tailored-cover-letter-content');
 const coverInput = document.getElementById('cover-text-input');
-editCoverBtn.addEventListener('click', function() {
-  if (coverTextarea.style.display === 'none') {
-    coverTextarea.style.display = 'block';
-    coverPre.style.display = 'none';
-    editCoverBtn.textContent = 'Done';
-    coverTextarea.value = coverPre.textContent;
-    
-    // Store original text to check if changes were made
-    coverTextarea.setAttribute('data-original', coverTextarea.value);
-  } else {
-    coverTextarea.style.display = 'none';
-    coverPre.style.display = 'block';
-    editCoverBtn.textContent = 'Edit';
-    coverPre.textContent = coverTextarea.value;
-    coverInput.value = coverTextarea.value;
-    
-    // Check if content changed and save the changes to database
-    if (coverTextarea.value !== coverTextarea.getAttribute('data-original')) {
-      // Show saving indicator
-      const originalBtnText = editCoverBtn.textContent;
-      editCoverBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-      editCoverBtn.disabled = true;
+if (editCoverBtn) {
+  editCoverBtn.addEventListener('click', function() {
+    if (coverTextarea.style.display === 'none') {
+      coverTextarea.style.display = 'block';
+      coverPre.style.display = 'none';
+      editCoverBtn.textContent = 'Done';
+      coverTextarea.value = coverPre.textContent;
       
-      // Get the job ID from the URL
-      const jobId = '{{ job._id }}';
+      // Store original text to check if changes were made
+      coverTextarea.setAttribute('data-original', coverTextarea.value);
+    } else {
+      coverTextarea.style.display = 'none';
+      coverPre.style.display = 'block';
+      editCoverBtn.textContent = 'Edit';
+      coverPre.textContent = coverTextarea.value;
+      coverInput.value = coverTextarea.value;
       
-      // Save the changes via AJAX
-      fetch('{{ url_for("main.save_edited_resume") }}', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-          job_id: jobId,
-          cover_letter_content: coverTextarea.value,
-          content_type: 'cover_letter'
-        })
-      })
-      .then(response => response.json())
-      .then(data => {
-        editCoverBtn.disabled = false;
-        editCoverBtn.textContent = originalBtnText;
+      // Check if content changed and save the changes to database
+      if (coverTextarea.value !== coverTextarea.getAttribute('data-original')) {
+        // Show saving indicator
+        const originalBtnText = editCoverBtn.textContent;
+        editCoverBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        editCoverBtn.disabled = true;
         
-        if (data.success) {
-          // Show success message
-          const alertDiv = document.createElement('div');
-          alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
-          alertDiv.innerHTML = `
-            <strong>Success!</strong> Your cover letter has been updated.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          `;
-          document.querySelector('#cover').insertBefore(alertDiv, document.querySelector('#cover h4'));
+        // Get the job ID from the URL
+        const jobId = '{{ job._id }}';
+        
+        // Save the changes via AJAX
+        fetch('{{ url_for("main.save_edited_resume") }}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+          },
+          body: JSON.stringify({
+            job_id: jobId,
+            cover_letter_content: coverTextarea.value,
+            content_type: 'cover_letter'
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          editCoverBtn.disabled = false;
+          editCoverBtn.textContent = originalBtnText;
           
-          // Auto-dismiss after 3 seconds
-          setTimeout(() => {
-            alertDiv.classList.remove('show');
-            setTimeout(() => alertDiv.remove(), 500);
-          }, 3000);
-        } else {
-          // Show error message
-          alert('Error saving changes: ' + data.error);
-        }
-      })
-      .catch(error => {
-        editCoverBtn.disabled = false;
-        editCoverBtn.textContent = originalBtnText;
-        alert('Error saving changes: ' + error);
-      });
+          if (data.success) {
+            // Show success message
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+            alertDiv.innerHTML = `
+              <strong>Success!</strong> Your cover letter has been updated.
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('#cover').insertBefore(alertDiv, document.querySelector('#cover h4'));
+            
+            // Auto-dismiss after 3 seconds
+            setTimeout(() => {
+              alertDiv.classList.remove('show');
+              setTimeout(() => alertDiv.remove(), 500);
+            }, 3000);
+          } else {
+            // Show error message
+            alert('Error saving changes: ' + data.error);
+          }
+        })
+        .catch(error => {
+          editCoverBtn.disabled = false;
+          editCoverBtn.textContent = originalBtnText;
+          alert('Error saving changes: ' + error);
+        });
+      }
     }
-  }
-});
+  });
+}
 </script>
 {% elif error %}
   <div class="alert alert-danger mt-4">{{ error }}</div>
@@ -913,300 +903,6 @@ if (document.getElementById('resultTabs')) {
 }
 </script>
 
-<!-- Auto-optimize resume script -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, setting up functionality');
-    
-    // Job details toggle functionality
-    const toggleBtn = document.getElementById('toggleDetailsBtn');
-    const jobDetailsCollapse = document.getElementById('jobDetailsCollapse');
-    
-    if (toggleBtn && jobDetailsCollapse) {
-        // Update button text based on collapse state
-        jobDetailsCollapse.addEventListener('show.bs.collapse', function() {
-            toggleBtn.innerHTML = '<i class="fas fa-minus-circle me-1"></i> Hide Details';
-        });
-        
-        jobDetailsCollapse.addEventListener('hide.bs.collapse', function() {
-            toggleBtn.innerHTML = '<i class="fas fa-plus-circle me-1"></i> Show Details';
-        });
-        
-        // Ensure job details are visible by default
-        if (!jobDetailsCollapse.classList.contains('show')) {
-            jobDetailsCollapse.classList.add('show');
-        }
-    }
-    
-    // Auto-optimize functionality is removed - ATS optimization is now built into the regular tailoring process
-    console.log('ATS optimization is now built into the regular tailoring process');
-    
-    /* 
-    // The following code is commented out as the auto-optimize feature has been removed
-    // and integrated into the main tailoring function
-    const autoOptimizeBtn = document.getElementById('auto-optimize-resume-btn');
-    const resumePre = document.getElementById('tailored-resume-content');
-    const resumeTextarea = document.getElementById('resume-textarea');
-    
-    if (autoOptimizeBtn && (resumePre || resumeTextarea)) {
-        console.log('Auto-optimize elements found');
-        
-        autoOptimizeBtn.addEventListener('click', function() {
-            console.log('Auto-optimize button clicked');
-            
-            // Get current resume content from either pre or textarea
-            const resumeContent = resumePre ? resumePre.textContent : (resumeTextarea ? resumeTextarea.value : '');
-            const jobId = '{{ job._id }}'; // Get job ID from template
-    */
-            
-            if (!resumeContent.trim()) {
-                alert('Please upload and process a resume first.');
-                return;
-            }
-            
-            // Show loading state with 90+ messaging
-            const originalText = autoOptimizeBtn.innerHTML;
-            autoOptimizeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Optimizing to 90+...';
-            autoOptimizeBtn.disabled = true;
-            
-            // Add detailed progress message
-            const progressDiv = document.createElement('div');
-            progressDiv.id = 'optimization-status';
-            progressDiv.className = 'alert alert-info mt-3';
-            progressDiv.innerHTML = `
-                <div class="d-flex align-items-center">
-                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                    <div>
-                        <strong>🎯 Optimizing for 90+ ATS Score...</strong><br>
-                        <small class="text-muted">Iteratively improving your resume (up to 5 attempts for best results)</small>
-                    </div>
-                </div>
-            `;
-            
-            // Insert progress message
-            const suggestionsSection = document.querySelector('#suggestions');
-            if (suggestionsSection) {
-                const rowDiv = document.querySelector('#suggestions .row');
-                suggestionsSection.insertBefore(progressDiv, rowDiv || suggestionsSection.firstChild);
-            } else {
-                autoOptimizeBtn.parentNode.insertBefore(progressDiv, autoOptimizeBtn.nextSibling);
-            }
-            
-            // Show progress indicator if it exists
-            const progressElement = document.getElementById('optimization-progress');
-            if (progressElement) {
-                progressElement.style.display = 'block';
-            }
-            
-            // Create form data
-            const formData = new FormData();
-            formData.append('job_id', jobId);
-            formData.append('resume_content', resumeContent);
-            
-            console.log('Sending request with job_id:', jobId, 'resume length:', resumeContent.length);
-            
-            // Make the request
-            fetch('/auto_optimize_resume', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
-                }
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('Response data:', data);
-                
-                if (data.success) {
-                    // Update the resume content
-                    if (resumePre) {
-                        resumePre.textContent = data.optimized_content;
-                    }
-                    if (resumeTextarea) {
-                        resumeTextarea.value = data.optimized_content;
-                    }
-                    
-                    // Update hidden input field if it exists
-                    const resumeInput = document.getElementById('resume-text-input');
-                    if (resumeInput) {
-                        resumeInput.value = data.optimized_content;
-                    }
-                    
-                    // Update ATS score display if available
-                    if (data.estimated_score) {
-                        const atsScoreElement = document.querySelector('.card-body div[style*="font-size:2.5rem"]');
-                        if (atsScoreElement) {
-                            atsScoreElement.textContent = data.estimated_score + '%';
-                            console.log('Updated ATS score display to:', data.estimated_score + '%');
-                        }
-                        
-                        // Update progress bars if they exist
-                        const progressBar = document.querySelector('.progress-bar');
-                        if (progressBar) {
-                            const score = parseInt(data.estimated_score);
-                            progressBar.style.width = score + '%';
-                            progressBar.textContent = score + '%';
-                            
-                            // Update progress bar color based on 90+ target
-                            progressBar.classList.remove('bg-warning', 'bg-danger', 'bg-info');
-                            if (score >= 90) {
-                                progressBar.classList.add('bg-success');
-                                progressBar.setAttribute('title', '🎯 90+ Target Achieved!');
-                            } else if (score >= 85) {
-                                progressBar.classList.add('bg-warning');
-                                progressBar.setAttribute('title', '⚡ Close to 90+ target');
-                            } else if (score >= 70) {
-                                progressBar.classList.add('bg-info');
-                                progressBar.setAttribute('title', '📈 Good progress toward 90+');
-                            } else {
-                                progressBar.classList.add('bg-danger');
-                                progressBar.setAttribute('title', '🔄 Needs more optimization');
-                            }
-                        }
-                    }
-                    
-                    // Show enhanced success message with detailed feedback
-                    const alertDiv = document.createElement('div');
-                    let alertClass = 'alert-success';
-                    let icon = 'fas fa-check-circle';
-                    
-                    // Determine alert style based on optimization result
-                    if (data.success_level === 'target_achieved') {
-                        alertClass = 'alert-success';
-                        icon = 'fas fa-trophy';
-                    } else if (data.success_level === 'close_to_target') {
-                        alertClass = 'alert-warning';
-                        icon = 'fas fa-star';
-                    } else if (data.success_level === 'improved') {
-                        alertClass = 'alert-info';
-                        icon = 'fas fa-arrow-up';
-                    } else {
-                        alertClass = 'alert-primary';
-                        icon = 'fas fa-cogs';
-                    }
-                    
-                    alertDiv.className = `alert ${alertClass} alert-dismissible fade show mt-3`;
-                    
-                    // Create detailed feedback HTML
-                    let progressDetails = '';
-                    if (data.optimization_attempts && data.attempt_scores) {
-                        progressDetails = `
-                            <div class="small text-muted mt-2">
-                                <strong>Optimization Progress:</strong> ${data.optimization_attempts} attempts
-                                ${data.attempt_scores.length > 0 ? `• Score progression: ${data.attempt_scores.join('% → ')}% → ${data.estimated_score}%` : ''}
-                            </div>
-                        `;
-                    }
-                    
-                    // Create action buttons based on result
-                    let actionButtons = '';
-                    if (data.target_achieved) {
-                        actionButtons = `
-                            <div class="mt-2">
-                                <span class="badge bg-success me-2">🎯 90+ Target Achieved!</span>
-                                <small class="text-success">Your resume is now ATS-optimized for this job!</small>
-                            </div>
-                        `;
-                    } else {
-                        actionButtons = `
-                            <div class="mt-2">
-                                <span class="badge bg-warning me-2">🔄 ${data.estimated_score}% ATS Score</span>
-                                <!-- Auto-optimize button removed - ATS optimization is now built into regular tailor process -->
-                                <!-- The auto-optimize feature has been integrated into the main tailor function -->
-                                <span class="badge bg-secondary me-2">
-                                    <i class="fas fa-info-circle"></i> ATS Optimization Built-in
-                                </span>
-                            </div>
-                        `;
-                    }
-                    
-                    alertDiv.innerHTML = `
-                        <div class="d-flex align-items-start">
-                            <i class="${icon} me-2 mt-1"></i>
-                            <div class="flex-grow-1">
-                                <strong>Optimization Complete!</strong> ${data.message}
-                                ${progressDetails}
-                                ${actionButtons}
-                            </div>
-                        </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    `;
-                    
-                    // Insert the success message
-                    const suggestionsSection = document.querySelector('#suggestions');
-                    if (suggestionsSection) {
-                        const rowDiv = document.querySelector('#suggestions .row');
-                        suggestionsSection.insertBefore(alertDiv, rowDiv || suggestionsSection.firstChild);
-                    } else {
-                        autoOptimizeBtn.parentNode.insertBefore(alertDiv, autoOptimizeBtn.nextSibling);
-                    }
-                    
-                    // Auto-dismiss after 7 seconds (longer for more info)
-                    setTimeout(() => {
-                        if (alertDiv.parentNode) {
-                            alertDiv.remove();
-                        }
-                    }, 7000);
-                    
-                    // Switch to Resume tab if it exists
-                    const resumeTab = document.querySelector('#resume-tab');
-                    if (resumeTab) {
-                        resumeTab.click();
-                    }
-                    
-                    // Update button state based on achievement
-                    if (data.target_achieved) {
-                        autoOptimizeBtn.innerHTML = '<i class="fas fa-trophy text-success me-2"></i>90+ Achieved!';
-                        autoOptimizeBtn.classList.remove('btn-success');
-                        autoOptimizeBtn.classList.add('btn-outline-success');
-                        autoOptimizeBtn.disabled = false; // Allow further optimization if desired
-                    } else {
-                        // Keep button available for re-optimization
-                        autoOptimizeBtn.innerHTML = originalText;
-                        autoOptimizeBtn.disabled = false;
-                    }
-                    
-                } else {
-                    // Show error message
-                    console.error('Optimization failed:', data.error);
-                    alert('Optimization failed: ' + (data.error || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Fetch error:', error);
-                alert('Network error. Please check your connection and try again.');
-            })
-            .finally(() => {
-                // Remove progress status message
-                const statusDiv = document.getElementById('optimization-status');
-                if (statusDiv) {
-                    statusDiv.remove();
-                }
-                
-                // Hide progress indicator
-                if (progressElement) {
-                    progressElement.style.display = 'none';
-                }
-                
-                // Only reset button if not already updated in success handler
-                if (autoOptimizeBtn.innerHTML.includes('fa-spinner')) {
-                    autoOptimizeBtn.innerHTML = originalText;
-                    autoOptimizeBtn.disabled = false;
-                }
-            });
-        });
-    } else {
-        console.error('Auto-optimize elements not found:', {
-            button: !!autoOptimizeBtn,
-            resumePre: !!resumePre,
-            resumeTextarea: !!resumeTextarea
-        });
-    }
-});
-</script>
 
 <!-- Include job description enhancement script -->
 <script src="{{ url_for('static', filename='js/job-description.js') }}"></script>

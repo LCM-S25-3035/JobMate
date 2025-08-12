@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Add Skill - JobMate{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-gear-fill me-2"></i>Add New Skill
+                    </h4>
+                    <p class="mb-0 text-muted">Add a skill with your proficiency level</p>
+                </div>
+                
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('user_profile.create_skill') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.skill_name.label(class="form-label") }}
+                            {{ form.skill_name(class="form-control", placeholder="e.g., Python, Project Management, Adobe Photoshop") }}
+                            {% if form.skill_name.errors %}
+                                <div class="text-danger small">{{ form.skill_name.errors[0] }}</div>
+                            {% endif %}
+                            <div class="form-text">Enter the name of your skill</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.proficiency.label(class="form-label") }}
+                            {{ form.proficiency(class="form-select") }}
+                            {% if form.proficiency.errors %}
+                                <div class="text-danger small">{{ form.proficiency.errors[0] }}</div>
+                            {% endif %}
+                            <div class="form-text">
+                                <small>
+                                    <strong>Beginner:</strong> Basic understanding<br>
+                                    <strong>Intermediate:</strong> Can work independently<br>
+                                    <strong>Advanced:</strong> Can mentor others<br>
+                                    <strong>Expert:</strong> Industry-recognized expertise
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.years_experience.label(class="form-label") }}
+                            {{ form.years_experience(class="form-control", placeholder="e.g., 3") }}
+                            {% if form.years_experience.errors %}
+                                <div class="text-danger small">{{ form.years_experience.errors[0] }}</div>
+                            {% endif %}
+                            <div class="form-text">How many years have you been using this skill? (Optional)</div>
+                        </div>
+                        
+                        <!-- Popular Skills Suggestions -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-lightbulb text-warning me-2"></i>Popular Skills
+                                </h6>
+                                <p class="card-text small text-muted mb-2">
+                                    Click on any skill below to add it quickly:
+                                </p>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button type="button" class="btn btn-outline-primary btn-sm skill-suggestion" data-skill="Python">Python</button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm skill-suggestion" data-skill="JavaScript">JavaScript</button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm skill-suggestion" data-skill="Project Management">Project Management</button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm skill-suggestion" data-skill="SQL">SQL</button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm skill-suggestion" data-skill="Data Analysis">Data Analysis</button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm skill-suggestion" data-skill="Communication">Communication</button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm skill-suggestion" data-skill="Leadership">Leadership</button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm skill-suggestion" data-skill="React">React</button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm skill-suggestion" data-skill="AWS">AWS</button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm skill-suggestion" data-skill="Agile">Agile</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <a href="{{ url_for('user_profile.enhanced_profile') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const skillNameInput = document.querySelector('[name="skill_name"]');
+    const proficiencySelect = document.querySelector('[name="proficiency"]');
+    const yearsInput = document.querySelector('[name="years_experience"]');
+    const skillSuggestions = document.querySelectorAll('.skill-suggestion');
+    
+    // Handle skill suggestions
+    skillSuggestions.forEach(button => {
+        button.addEventListener('click', function() {
+            const skillName = this.dataset.skill;
+            skillNameInput.value = skillName;
+            skillNameInput.focus();
+            
+            // Auto-suggest proficiency based on skill type
+            const technicalSkills = ['Python', 'JavaScript', 'SQL', 'React', 'AWS'];
+            if (technicalSkills.includes(skillName)) {
+                proficiencySelect.value = 'intermediate';
+            }
+        });
+    });
+    
+    // Auto-suggest years based on proficiency
+    proficiencySelect.addEventListener('change', function() {
+        const proficiency = this.value;
+        let suggestedYears = '';
+        
+        switch(proficiency) {
+            case 'beginner':
+                suggestedYears = '1';
+                break;
+            case 'intermediate':
+                suggestedYears = '3';
+                break;
+            case 'advanced':
+                suggestedYears = '5';
+                break;
+            case 'expert':
+                suggestedYears = '8';
+                break;
+        }
+        
+        if (suggestedYears && !yearsInput.value) {
+            yearsInput.value = suggestedYears;
+        }
+    });
+    
+    // Form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const skillName = skillNameInput.value.trim();
+        const proficiency = proficiencySelect.value;
+        
+        if (!skillName) {
+            e.preventDefault();
+            alert('Please enter a skill name.');
+            skillNameInput.focus();
+            return false;
+        }
+        
+        if (!proficiency) {
+            e.preventDefault();
+            alert('Please select a proficiency level.');
+            proficiencySelect.focus();
+            return false;
+        }
+        
+        // Check for reasonable years vs proficiency
+        const years = parseInt(yearsInput.value);
+        if (years && proficiency === 'expert' && years < 3) {
+            if (!confirm('You selected "Expert" proficiency but entered less than 3 years of experience. Are you sure?')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+    
+    // Real-time skill name formatting
+    skillNameInput.addEventListener('input', function() {
+        // Capitalize first letter of each word
+        const words = this.value.split(' ');
+        const formatted = words.map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join(' ');
+        
+        if (formatted !== this.value) {
+            const cursorPos = this.selectionStart;
+            this.value = formatted;
+            this.setSelectionRange(cursorPos, cursorPos);
+        }
+    });
+});
+</script>
+
+<style>
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-1px);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.skill-suggestion {
+    transition: all 0.2s ease;
+}
+
+.skill-suggestion:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.bg-light {
+    background-color: #f8f9fa !important;
+}
+
+.border-top {
+    border-top: 2px solid #e9ecef !important;
+}
+</style>
+{% endblock %}

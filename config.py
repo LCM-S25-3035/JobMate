@@ -54,8 +54,13 @@ class Config:
     
     # File Upload Configuration
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
-    UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
+    UPLOAD_FOLDER = os.path.join(basedir, 'static', 'uploads')
     ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'txt'}
+    
+    # Profile Image Configuration
+    PROFILE_UPLOAD_FOLDER = os.path.join(basedir, 'static', 'uploads', 'profiles')
+    ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+    MAX_PROFILE_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB max for profile images
     
     # AI/ML Configuration
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
@@ -97,7 +102,7 @@ class Config:
 class DevelopmentConfig(Config):
     """Development environment configuration"""
     
-    DEBUG = True
+    DEBUG = False
     TESTING = False
     
     # Development database (local PostgreSQL)

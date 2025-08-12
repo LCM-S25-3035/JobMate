@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}Add Experience - JobMate{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-briefcase-fill me-2"></i>Add Work Experience
+                    </h4>
+                    <p class="mb-0 text-muted">Add your professional work experience to showcase your career journey</p>
+                </div>
+                
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('user_profile.create_experience') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Job Title and Company -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.job_title.label(class="form-label") }}
+                                {{ form.job_title(class="form-control", placeholder="e.g., Software Developer") }}
+                                {% if form.job_title.errors %}
+                                    <div class="text-danger small">{{ form.job_title.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.company.label(class="form-label") }}
+                                {{ form.company(class="form-control", placeholder="e.g., TechCorp Inc.") }}
+                                {% if form.company.errors %}
+                                    <div class="text-danger small">{{ form.company.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Location -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.location.label(class="form-label") }}
+                                {{ form.location(class="form-control", placeholder="e.g., Toronto, ON") }}
+                                {% if form.location.errors %}
+                                    <div class="text-danger small">{{ form.location.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mt-4 pt-2">
+                                    {{ form.current_job(class="form-check-input", id="current_job") }}
+                                    {{ form.current_job.label(class="form-check-label", for="current_job") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Dates -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.start_date.label(class="form-label") }}
+                                {{ form.start_date(class="form-control") }}
+                                {% if form.start_date.errors %}
+                                    <div class="text-danger small">{{ form.start_date.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6" id="end_date_container">
+                                {{ form.end_date.label(class="form-label") }}
+                                {{ form.end_date(class="form-control") }}
+                                {% if form.end_date.errors %}
+                                    <div class="text-danger small">{{ form.end_date.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Job Description -->
+                        <div class="mb-4">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small">{{ form.description.errors[0] }}</div>
+                            {% endif %}
+                            <div class="form-text">
+                                Describe your key responsibilities, achievements, and technologies used. Use bullet points for better readability.
+                            </div>
+                        </div>
+                        
+                        <!-- AI Assistance Section -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-robot text-primary me-2"></i>AI Writing Assistant
+                                </h6>
+                                <p class="card-text small text-muted">
+                                    Get help writing your job description with AI suggestions based on your role and industry.
+                                </p>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="getAIHelp()">
+                                    <i class="bi bi-magic me-1"></i>Get AI Suggestions
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <a href="{{ url_for('user_profile.enhanced_profile') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const currentJobCheckbox = document.getElementById('current_job');
+    const endDateContainer = document.getElementById('end_date_container');
+    const endDateInput = endDateContainer.querySelector('input');
+    
+    function toggleEndDate() {
+        if (currentJobCheckbox.checked) {
+            endDateContainer.style.opacity = '0.5';
+            endDateInput.disabled = true;
+            endDateInput.value = '';
+        } else {
+            endDateContainer.style.opacity = '1';
+            endDateInput.disabled = false;
+        }
+    }
+    
+    currentJobCheckbox.addEventListener('change', toggleEndDate);
+    toggleEndDate(); // Initialize state
+    
+    // Form validation
+    const form = document.querySelector('form');
+    const startDateInput = document.querySelector('[name="start_date"]');
+    
+    form.addEventListener('submit', function(e) {
+        const startDate = new Date(startDateInput.value);
+        const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+        
+        if (endDate && startDate >= endDate) {
+            e.preventDefault();
+            alert('End date must be after start date.');
+            return false;
+        }
+        
+        if (startDate > new Date()) {
+            e.preventDefault();
+            alert('Start date cannot be in the future.');
+            return false;
+        }
+    });
+});
+
+function getAIHelp() {
+    const jobTitle = document.querySelector('[name="job_title"]').value;
+    const company = document.querySelector('[name="company"]').value;
+    
+    if (!jobTitle || !company) {
+        alert('Please fill in the job title and company first.');
+        return;
+    }
+    
+    // Simulate AI assistance - in reality, this would call an API
+    const suggestions = [
+        "• Developed and maintained web applications using modern frameworks",
+        "• Collaborated with cross-functional teams to deliver high-quality software solutions",
+        "• Participated in code reviews and contributed to best practices",
+        "• Troubleshot and resolved technical issues to improve system performance",
+        "• Mentored junior developers and contributed to team knowledge sharing"
+    ];
+    
+    const randomSuggestions = suggestions.sort(() => 0.5 - Math.random()).slice(0, 3);
+    const suggestionText = randomSuggestions.join('\n');
+    
+    const descriptionField = document.querySelector('[name="description"]');
+    const currentText = descriptionField.value;
+    
+    if (confirm('Add these AI suggestions to your description?\n\n' + suggestionText)) {
+        descriptionField.value = currentText + (currentText ? '\n\n' : '') + suggestionText;
+    }
+}
+</script>
+
+<style>
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-1px);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+#end_date_container {
+    transition: opacity 0.3s ease;
+}
+
+.bg-light {
+    background-color: #f8f9fa !important;
+}
+</style>
+{% endblock %}

@@ -6,6 +6,62 @@ Utility functions for JobMate application
 import re
 from typing import Tuple, Optional
 
+
+def calculate_profile_completion(user):
+    """Calculate profile completion percentage"""
+    from flask import current_app
+    
+    completion_items = []
+    total_possible = 0
+    completed = 0
+    
+    # Essential profile fields to check
+    profile_checks = [
+        ('email', 'Email address', getattr(user, 'email', None)),
+        ('first_name', 'First name', getattr(user, 'first_name', None)),
+        ('last_name', 'Last name', getattr(user, 'last_name', None)),
+        ('phone', 'Phone number', getattr(user, 'phone', None)),
+        ('city', 'Location', getattr(user, 'city', None)),
+        ('bio', 'Professional summary', getattr(user, 'bio', None)),
+        ('skills', 'Skills', getattr(user, 'skills', None)),
+        ('experience_level', 'Experience level', getattr(user, 'experience_level', None))
+    ]
+    
+    # Check each field
+    for field_name, display_name, field_value in profile_checks:
+        total_possible += 1
+        
+        is_complete = False
+        if field_value is not None:
+            if isinstance(field_value, str):
+                is_complete = field_value.strip() != ''
+            elif isinstance(field_value, list):
+                is_complete = len(field_value) > 0
+            else:
+                is_complete = True
+        
+        completion_items.append({
+            'field': field_name,
+            'name': display_name,
+            'completed': is_complete,
+            'value': field_value
+        })
+        
+        if is_complete:
+            completed += 1
+    
+    # Calculate percentage
+    completion_percentage = round((completed / total_possible) * 100) if total_possible > 0 else 0
+    
+    return {
+        'percentage': completion_percentage,
+        'completed': completed,
+        'total': total_possible,
+        'items': completion_items,
+        'missing_items': [item for item in completion_items if not item['completed']]
+    }
+
+
 def split_answer_and_code(raw_text: str) -> Tuple[str, Optional[str], Optional[str]]:
     """
     Separa el texto de la 'expected answer' del posible bloque de código.

@@ -144,6 +144,10 @@ def create_app(config_class=None):
     from app.main import bp as main_bp
     app.register_blueprint(main_bp)
     
+    # Profile module - enhanced user profiles
+    from app.profile import bp as profile_bp
+    app.register_blueprint(profile_bp, url_prefix='/user-profile')
+    
     # Question Generator module
     from app.question import question_bp
     app.register_blueprint(question_bp, url_prefix='/question')

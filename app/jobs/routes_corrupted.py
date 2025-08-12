@@ -2505,87 +2505,321 @@ def remove_duplicate_section_headers(resume_text):
 
 
 def master_resume_formatter(resume_text):
-    """Parse and properly format the resume while preserving actual content"""
+    """MASTER resume formatter - the ONLY function that should format resumes
+    REQUIRED ORDER: Contact Info (no heading), SUMMARY, SKILLS, EXPERIENCE, EDUCATION
     
-    if not resume_text or resume_text.strip() == "(Not provided)":
-        # Return the original resume structure
-        final_resume = []
-        
-        # Contact Information 
-        final_resume.append("MUGILMITHRAN KATHIRAVAN")
-        final_resume.append("mugilmithran01@gmail.com | +1 (416) 879-2858 | Mississauga, ON")
-        final_resume.append("")
-        
-        # SUMMARY section
-        final_resume.append("SUMMARY")
-        final_resume.append("Experienced professional with expertise in running, chess, databases. Proven track record in driven, massive, building with strong problem-solving abilities.")
-        final_resume.append("")
-        
-        # EXPERIENCE section
-        final_resume.append("EXPERIENCE")
-        final_resume.append("• Validated and meticulously labeled over 20,000+ multilingual data samples, ensuring >98% accuracy for training large-scale NLP machine learning models.")
-        final_resume.append("• Identified and corrected 1,200+ data inconsistencies and annotation errors, significantly reducing false positive rates by 22% across critical sprints.")
-        final_resume.append("• Provided Tier 1 technical support to 10+ clients daily, consistently achieving a Customer Satisfaction (CSAT) score of 95%+ by resolving technical issues efficiently.")
-        final_resume.append("• Supported Quality Assurance (QA) teams by analyzing customer ticket trends, documenting 50+ reproducible technical issues, and contributing to a 5% reduction in re-escalation rates.")
-        final_resume.append("• Partnered with cross-functional teams to pilot and evaluate 3+ new support tools, providing critical usability feedback that improved interface bug resolution by 15%.")
-        final_resume.append("• Executed daily reconciliation and validation of 500+ high-volume financial entries, ensuring zero audit flags and maintaining 100% data integrity for institutional fund Net Asset Value (NAV) calculations.")
-        final_resume.append("• Conducted detailed data integrity reviews and documented 20+ change requests across complex fund data sources, improving reconciliation turnaround by 10%.")
-        final_resume.append("")
-        
-        # INTRO section  
-        final_resume.append("INTRO")
-        final_resume.append("https://www.linkedin.com/in/mugilmithrankathiravan/")
-        final_resume.append("")
-        
-        # SKILLS section
-        final_resume.append("SKILLS")
-        final_resume.append("Programming Languages")
-        final_resume.append("Python, SQL")
-        final_resume.append("")
-        final_resume.append("Tools & Technologies")
-        final_resume.append("Airflow, Git, Jupyter, Google Colab, VS Code, Power BI, Confluence, Jira, Agile Development, GitHub Projects")
-        final_resume.append("")
-        final_resume.append("Cloud & Infrastructure")
-        final_resume.append("AWS (basic)")
-        final_resume.append("")
-        final_resume.append("Databases & Storage")
-        final_resume.append("SQL")
-        final_resume.append("")
-        final_resume.append("Domain Knowledge")
-        final_resume.append("Data Quality, Data Aggregation, Data Compliance (PII), Experimentation, Query Optimization, Agile Methodologies, Real-time Data Analysis")
-        final_resume.append("")
-        final_resume.append("Additional Skills")
-        final_resume.append("protect, corporate, write, experiencing, bigquery")
-        final_resume.append("")
-        
-        # EDUCATION section
-        final_resume.append("EDUCATION")
-        final_resume.append("Post-Graduate Diploma, Big Data Analytics | Lambton College, Mississauga, ON | Dec 2025")
-        
-        return '\n'.join(final_resume)
+    This is the single source of truth for resume formatting.
+    Any changes to resume order MUST be made here only.
+    """
     
-    # Parse the actual resume text and preserve the structure
+    # Debug logging
+    from flask import current_app
+    import re
+    if current_app:
+        current_app.logger.info("🔧 MASTER FORMATTER: Starting format process")
+    
     lines = resume_text.split('\n')
-    cleaned_lines = []
     
-    for line in lines:
-        # Remove any "(Not provided)" text
-        if "(Not provided)" in line:
-            line = line.replace("(Not provided)", "").strip()
+    # Separate content into sections while removing unwanted headings
+    contact_info = []
+    summary_content = []
+    skills_content = []
+    experience_content = []
+    education_content = []
+    
+    current_section = 'contact'
+    
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
         
-        # Skip empty lines that result from removing "(Not provided)"
-        if line.strip():
-            cleaned_lines.append(line)
-        elif cleaned_lines and cleaned_lines[-1]:  # Keep intentional empty lines for spacing
-            cleaned_lines.append('')
+        # Skip completely empty lines at the start
+        if not line and current_section == 'contact' and not contact_info:
+            i += 1
+            continue
+        
+        # Remove unwanted headings entirely
+        if line.upper() in ['INTRO', '**INTRO**', 'CONTACT INFORMATION', '**CONTACT INFORMATION**', 'CONTACT', 'PERSONAL INFORMATION']:
+            i += 1
+            continue
+        
+        # Clean up markdown formatting from headings
+        if line.startswith('**') and line.endswith('**') and len(line.split()) <= 3:
+            line = line.replace('**', '').strip()
+        
+        # Identify section transitions
+        if line.upper() in ['PROFESSIONAL SUMMARY', 'SUMMARY', 'CAREER SUMMARY', 'OBJECTIVE']:
+            current_section = 'summary'
+            summary_content.append('SUMMARY')
+        elif line.upper() in ['SKILLS', 'TECHNICAL SKILLS', 'CORE SKILLS', 'KEY SKILLS', 'FRAMEWORKS & LIBRARIES', 'CLOUD & INFRASTRUCTURE', 'PROGRAMMING LANGUAGES', 'TOOLS & TECHNOLOGIES', 'DATABASES & STORAGE', 'DOMAIN KNOWLEDGE', 'SOFT SKILLS']:
+            # ANY skills-related heading should put us in skills section
+            if current_section != 'skills':
+                current_section = 'skills'
+                skills_content.append('SKILLS')  # Use unified header
+            # Don't add the individual skill category headers as separate lines
+        elif line.upper() in ['EXPERIENCE', 'WORK EXPERIENCE', 'PROFESSIONAL EXPERIENCE', 'EMPLOYMENT HISTORY']:
+            current_section = 'experience'
+            experience_content.append('EXPERIENCE')
+        elif line.upper() in ['EDUCATION', 'EDUCATIONAL BACKGROUND', 'ACADEMIC BACKGROUND']:
+            current_section = 'education'
+            education_content.append('EDUCATION')
+        else:
+            # Add content to current section
+            if line:  # Only add non-empty lines
+                if current_section == 'contact':
+                    if is_contact_line(line):
+                        contact_info.append(line)
+                elif current_section == 'summary':
+                    summary_content.append(line)
+                elif current_section == 'skills':
+                    # Collect ALL skills content regardless of category
+                    skills_content.append(line)
+                elif current_section == 'experience':
+                    experience_content.append(line)
+                elif current_section == 'education':
+                    education_content.append(line)
+        
+        i += 1
     
-    # Join the cleaned lines
-    result = '\n'.join(cleaned_lines)
+    # FALLBACK: If missing critical sections, build from user profile data
+    if current_app and hasattr(current_app, 'test_request_context'):
+        from flask_login import current_user
+        try:
+            # Fill missing sections with user profile data
+            if not summary_content or len(summary_content) <= 1:
+                if hasattr(current_user, 'bio') and current_user.bio:
+                    summary_content = ['SUMMARY', current_user.bio]
+                    current_app.logger.info("🔧 MASTER FORMATTER: Added bio as summary")
+            
+            if not skills_content or len(skills_content) <= 1:
+                if hasattr(current_user, 'skills') and current_user.skills:
+                    skills_content = ['SKILLS', current_user.skills]
+                    current_app.logger.info("🔧 MASTER FORMATTER: Added user skills")
+            
+            # If still no experience content, add a placeholder
+            if not experience_content or len(experience_content) <= 1:
+                if hasattr(current_user, 'experience_level') and current_user.experience_level:
+                    experience_content = [
+                        'EXPERIENCE',
+                        f'• {current_user.experience_level.replace("_", " ").title()} level professional with expertise in data analysis and programming',
+                        '• Strong problem-solving abilities and attention to detail',
+                        '• Experience with data manipulation, analysis, and visualization'
+                    ]
+                    current_app.logger.info("🔧 MASTER FORMATTER: Added fallback experience")
+            
+            # Add basic education if missing
+            if not education_content or len(education_content) <= 1:
+                education_content = [
+                    'EDUCATION',
+                    'Post-Graduate Diploma, Big Data Analytics | Lambton College, Mississauga, ON | Dec 2025'
+                ]
+                current_app.logger.info("🔧 MASTER FORMATTER: Added fallback education")
+                
+        except Exception as e:
+            current_app.logger.warning(f"🔧 MASTER FORMATTER: Could not access user data: {e}")
     
-    # Remove any duplicate section headers
-    result = remove_duplicate_section_headers(result)
+    # MASTER FORMAT ORDER - NEVER CHANGE THIS
+    final_resume = []
     
-    return result.strip()
+    # 1. Contact Information (no heading - just the info)
+    if contact_info:
+        final_resume.extend(contact_info)
+        final_resume.append('')  # Empty line after contact
+    
+    # 2. SUMMARY (changed from Professional Summary)
+    if summary_content:
+        final_resume.extend(summary_content)
+        final_resume.append('')  # Empty line after summary
+    
+    # 3. SKILLS (MUST come right after summary and be COMPRESSED)
+    if skills_content and len(skills_content) > 1:  # More than just the header
+        # Add SKILLS header only if not already present
+        if skills_content[0].upper() != 'SKILLS':
+            final_resume.append('SKILLS')  # Single unified header
+            skills_content_to_process = skills_content
+        else:
+            # Header already exists, use it
+            final_resume.append(skills_content[0])
+            skills_content_to_process = skills_content[1:]
+        
+        # Process and compress all skills content
+        all_skills_text = ' '.join(skills_content_to_process)
+        
+        # Clean up the skills text - remove category headers
+        all_skills_text = re.sub(r'\b(Programming Languages?|Frameworks? & Libraries|Tools? & Technologies|Cloud & Infrastructure|Databases? & Storage|Domain Knowledge|Soft Skills?)\b:?', '', all_skills_text, flags=re.IGNORECASE)
+        
+        # Split by common separators and clean
+        skills_items = []
+        for item in re.split(r'[,;]|\s{2,}', all_skills_text):
+            item = item.strip()
+            if item and len(item) > 1 and item not in skills_items and not item.upper() in ['SKILLS', 'TECHNICAL SKILLS']:
+                skills_items.append(item)
+        
+        # Create categorized skills in compressed format
+        skill_categories = {
+            'Programming Languages': [],
+            'Frameworks & Libraries': [],
+            'Tools & Technologies': [],
+            'Databases & Storage': [],
+            'Domain Knowledge': [],
+            'Soft Skills': []
+        }
+        
+        # Categorization logic
+        for skill in skills_items:
+            skill_lower = skill.lower()
+            categorized = False
+            
+            # Programming Languages
+            if any(lang in skill_lower for lang in ['python', 'sql', 'shell', 'java', 'javascript', 'c++', 'c#', 'html', 'css', 'r', 'matlab', 'scripting']):
+                skill_categories['Programming Languages'].append(skill)
+                categorized = True
+            # Frameworks & Libraries  
+            elif any(fw in skill_lower for fw in ['django', 'flask', 'react', 'angular', 'vue', 'spring', 'tensorflow', 'pytorch', 'pandas', 'numpy', 'scikit']):
+                skill_categories['Frameworks & Libraries'].append(skill)
+                categorized = True
+            # Tools & Technologies
+            elif any(tool in skill_lower for tool in ['jira', 'confluence', 'excel', 'power bi', 'tableau', 'workiva', 'sap', 'git', 'docker', 'kubernetes', 'databricks', 'microsoft']):
+                skill_categories['Tools & Technologies'].append(skill)
+                categorized = True
+            # Databases
+            elif any(db in skill_lower for db in ['sql', 'mysql', 'postgresql', 'mongodb', 'redis', 'oracle', 'database']):
+                skill_categories['Databases & Storage'].append(skill)
+                categorized = True
+            # Domain Knowledge
+            elif any(domain in skill_lower for domain in ['machine learning', 'ai', 'artificial intelligence', 'data', 'analytics', 'agile', 'methodology', 'quality', 'governance', 'improvement']):
+                skill_categories['Domain Knowledge'].append(skill)
+                categorized = True
+            # Soft Skills
+            elif any(soft in skill_lower for soft in ['communication', 'collaboration', 'problem', 'management', 'improvement', 'deadline', 'stakeholder', 'cross-functional']):
+                skill_categories['Soft Skills'].append(skill)
+                categorized = True
+            
+            # If not categorized, add to Tools & Technologies as default
+            if not categorized and skill not in ['', ' ']:
+                skill_categories['Tools & Technologies'].append(skill)
+        
+        # Add compressed skills format
+        for category, skills in skill_categories.items():
+            if skills:  # Only add categories that have skills
+                final_resume.append(f"{category}: {', '.join(skills)}")
+        
+        final_resume.append('')  # Empty line after skills
+    
+    # 4. EXPERIENCE (comes after skills)
+    if experience_content:
+        final_resume.extend(experience_content)
+        final_resume.append('')  # Empty line after experience
+    
+    # 5. EDUCATION (last section)
+    if education_content:
+        final_resume.extend(education_content)
+            final_resume.append('SKILLS')  # Single unified header
+            skills_content_to_process = skills_content
+        else:
+            # Header already exists, use it
+            final_resume.append(skills_content[0])
+            skills_content_to_process = skills_content[1:]
+        
+        # Process and compress all skills content
+        all_skills_text = ' '.join(skills_content_to_process)
+        
+        # Clean up the skills text - remove category headers
+        all_skills_text = re.sub(r'\b(Programming Languages?|Frameworks? & Libraries|Tools? & Technologies|Cloud & Infrastructure|Databases? & Storage|Domain Knowledge|Soft Skills?)\b:?', '', all_skills_text, flags=re.IGNORECASE)
+        
+        # Split by common separators and clean
+        skills_items = []
+        for item in re.split(r'[,;]|\s{2,}', all_skills_text):
+            item = item.strip()
+            if item and len(item) > 1 and item not in skills_items and not item.upper() in ['SKILLS', 'TECHNICAL SKILLS']:
+                skills_items.append(item)
+        
+        # Create categorized skills in compressed format
+        skill_categories = {
+            'Programming Languages': [],
+            'Frameworks & Libraries': [],
+            'Tools & Technologies': [],
+            'Databases & Storage': [],
+            'Domain Knowledge': [],
+            'Soft Skills': []
+        }
+        
+        # Categorization logic
+        for skill in skills_items:
+            skill_lower = skill.lower()
+            categorized = False
+            
+            # Programming Languages
+            if any(lang in skill_lower for lang in ['python', 'sql', 'shell', 'java', 'javascript', 'c++', 'c#', 'html', 'css', 'r', 'matlab', 'scripting']):
+                skill_categories['Programming Languages'].append(skill)
+                categorized = True
+            # Frameworks & Libraries  
+            elif any(fw in skill_lower for fw in ['django', 'flask', 'react', 'angular', 'vue', 'spring', 'tensorflow', 'pytorch', 'pandas', 'numpy', 'scikit']):
+                skill_categories['Frameworks & Libraries'].append(skill)
+                categorized = True
+            # Tools & Technologies
+            elif any(tool in skill_lower for tool in ['jira', 'confluence', 'excel', 'power bi', 'tableau', 'workiva', 'sap', 'git', 'docker', 'kubernetes', 'databricks', 'microsoft']):
+                skill_categories['Tools & Technologies'].append(skill)
+                categorized = True
+            # Databases
+            elif any(db in skill_lower for db in ['sql', 'mysql', 'postgresql', 'mongodb', 'redis', 'oracle', 'database']):
+                skill_categories['Databases & Storage'].append(skill)
+                categorized = True
+            # Domain Knowledge
+            elif any(domain in skill_lower for domain in ['machine learning', 'ai', 'artificial intelligence', 'data', 'analytics', 'agile', 'methodology', 'quality', 'governance', 'improvement']):
+                skill_categories['Domain Knowledge'].append(skill)
+                categorized = True
+            # Soft Skills
+            elif any(soft in skill_lower for soft in ['communication', 'collaboration', 'problem', 'management', 'improvement', 'deadline', 'stakeholder', 'cross-functional']):
+                skill_categories['Soft Skills'].append(skill)
+                categorized = True
+            
+            # If not categorized, add to Tools & Technologies as default
+            if not categorized and skill not in ['', ' ']:
+                skill_categories['Tools & Technologies'].append(skill)
+        
+        # Add compressed skills format
+        for category, skills in skill_categories.items():
+            if skills:  # Only add categories that have skills
+                final_resume.append(f"{category}: {', '.join(skills)}")
+        
+        final_resume.append('')  # Empty line after skills
+    
+    # 4. EXPERIENCE (comes after skills)
+    if experience_content:
+        final_resume.extend(experience_content)
+        final_resume.append('')  # Empty line after experience
+    
+    # 5. EDUCATION (last section)
+    if education_content:
+        final_resume.extend(education_content)
+    
+    # Join and clean up extra whitespace
+    final_text = '\n'.join(final_resume)
+    
+    # Apply the unified skills formatting function to ensure consistent format
+    final_text = ensure_compact_skills_format(final_text)
+    
+    # Remove duplicate section headers
+    final_text = remove_duplicate_section_headers(final_text)
+    
+    # Remove multiple consecutive newlines (more than 2)
+    import re
+    final_text = re.sub(r'\n\s*\n\s*\n+', '\n\n', final_text)
+    
+    # Debug logging of final result
+    if current_app:
+        result_lines = final_text.split('\n')
+        result_sections = []
+        for line in result_lines:
+            line_upper = line.strip().upper()
+            if line_upper in ['SUMMARY', 'SKILLS', 'EXPERIENCE', 'EDUCATION']:
+                result_sections.append(line_upper)
+        current_app.logger.info(f"🔧 MASTER FORMATTER: Final section order: {result_sections}")
+    
+    return final_text.strip()
+
+
 # Backward compatibility alias - all functions should use master_resume_formatter
 def enforce_strict_resume_format(resume_text):
     """DEPRECATED: Use master_resume_formatter instead"""

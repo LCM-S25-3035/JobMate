@@ -66,18 +66,6 @@
             
             <div class="collapse show" id="jobDescriptionCard">
               <div class="card-body">
-                <!-- DEBUG INFO -->
-                <div class="alert alert-info mb-3">
-                  <strong>🔍 Debug Info:</strong><br>
-                  Job ID: {{ job._id }}<br>
-                  Available Fields: {{ job.keys()|list }}<br>
-                  Description Field: {{ 'EXISTS' if job.description else 'MISSING' }}<br>
-                  {% if job.description %}
-                    Description Length: {{ job.description|length }} characters<br>
-                    First 100 chars: "{{ job.description[:100] }}..."
-                  {% endif %}
-                </div>
-                
                 <!-- DISPLAY ALL POSSIBLE DESCRIPTION FIELDS -->
                 {% if job.description %}
                   <div class="mb-4">
@@ -219,10 +207,54 @@
         <div class="card mb-3 shadow-sm" style="max-width: 400px;">
           <div class="card-body text-center">
             <span class="badge bg-primary mb-2" style="font-size:1.1rem;">ATS Score</span>
-            <div style="font-size:2.5rem; font-weight:700; color:#1a4a7c;">{{ ats_score }}</div>
-            <div class="text-muted" style="font-size:0.95rem;">(Higher is better for job matching)</div>
+            <div style="font-size:2.5rem; font-weight:700; 
+                        color:{% if ats_score >= 90 %}#28a745{% elif ats_score >= 80 %}#fd7e14{% else %}#dc3545{% endif %};">
+              {{ ats_score }}%
+            </div>
+            
+            <!-- Enhanced optimization indicator -->
+            {% if tailored_result.enhancement_details and tailored_result.enhancement_details.enhanced %}
+              <div class="mt-2">
+                <span class="badge bg-success" style="font-size:0.85rem;">
+                  <i class="fas fa-magic"></i> Enhanced Optimization Applied
+                </span>
+                <div class="text-muted mt-1" style="font-size:0.8rem;">
+                  Iterations: {{ tailored_result.enhancement_details.iterations_used }} | 
+                  Keywords: {{ tailored_result.enhancement_details.keywords_matched }}/{{ tailored_result.enhancement_details.total_keywords }}
+                </div>
+              </div>
+            {% endif %}
+            
+            <div class="text-muted mt-2" style="font-size:0.95rem;">
+              {% if ats_score >= 90 %}
+                <i class="fas fa-check-circle text-success"></i> Excellent ATS compatibility
+              {% elif ats_score >= 80 %}
+                <i class="fas fa-exclamation-triangle text-warning"></i> Good ATS compatibility
+              {% else %}
+                <i class="fas fa-times-circle text-danger"></i> Needs improvement
+              {% endif %}
+            </div>
           </div>
         </div>
+        
+        <!-- ATS Optimization Tips -->
+        {% if ats_score < 90 %}
+        <div class="alert alert-info mb-3">
+          <h6><i class="fas fa-lightbulb"></i> ATS Optimization Tips:</h6>
+          <ul class="mb-0 small">
+            {% if ats_score < 70 %}
+              <li>Add more job-relevant keywords to your experience bullets</li>
+              <li>Include specific technical skills mentioned in the job description</li>
+            {% endif %}
+            {% if ats_score < 80 %}
+              <li>Quantify your achievements with numbers and percentages</li>
+              <li>Use action verbs like "developed," "managed," "implemented"</li>
+            {% endif %}
+            <li>Try the "Recalculate ATS Score" button after manual edits</li>
+            <li>The enhanced optimizer automatically applies when score is below 90%</li>
+          </ul>
+        </div>
+        {% endif %}
       {% endif %}
       <h4 class="mt-4">Tailored Resume</h4>
       <div class="d-flex align-items-center mb-2">
@@ -757,13 +789,18 @@ if (document.getElementById('resultTabs')) {
   
   // ATS Score recalculation
   document.getElementById('recalculate-ats-btn')?.addEventListener('click', function() {
-    // Get the current resume text
+    // Get the current resume text and job description
     const currentResumeText = document.getElementById('tailored-resume-content').textContent;
-    const jobId = '{{ job._id }}';
+    const jobDescription = `{{ job.description|replace('\n', '\\n')|replace('"', '\\"')|replace("'", "\\'") }}`;
+    
+    if (!currentResumeText || !jobDescription) {
+      alert('Missing resume text or job description. Please refresh the page and try again.');
+      return;
+    }
     
     // Show a loading indicator on the button
     const originalButtonText = this.innerHTML;
-    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Recalculating...';
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enhancing ATS Score...';
     this.disabled = true;
     
     // Show a loading indicator in the ATS score area
@@ -771,7 +808,7 @@ if (document.getElementById('resultTabs')) {
     const originalScore = atsScoreElement.textContent;
     atsScoreElement.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
     
-    // Send AJAX request to recalculate
+    // Send AJAX request to recalculate and enhance
     fetch('{{ url_for("main.recalculate_ats_score") }}', {
       method: 'POST',
       headers: {
@@ -779,35 +816,77 @@ if (document.getElementById('resultTabs')) {
         'X-CSRFToken': '{{ csrf_token() }}'
       },
       body: JSON.stringify({
-        job_id: jobId,
-        resume_text: currentResumeText
+        resume_text: currentResumeText,
+        job_description: jobDescription
       })
     })
     .then(response => response.json())
     .then(data => {
-      // Update the ATS score on the page
       if (data.success) {
-        // Update the ATS score display
-        atsScoreElement.textContent = data.ats_score;
+        // Update the ATS score display with color coding
+        const newScore = data.ats_score;
+        let scoreColor = '#dc3545'; // Red for low scores
+        if (newScore >= 90) scoreColor = '#28a745'; // Green for 90+
+        else if (newScore >= 80) scoreColor = '#fd7e14'; // Orange for 80+
         
-        // Show success message
+        atsScoreElement.innerHTML = `<span style="color: ${scoreColor};">${newScore}%</span>`;
+        
+        // Update the resume content if it was enhanced
+        if (data.tailored_resume && data.tailored_resume !== currentResumeText) {
+          document.getElementById('tailored-resume-content').textContent = data.tailored_resume;
+          document.getElementById('resume-text-input').value = data.tailored_resume;
+          document.getElementById('resume-textarea').value = data.tailored_resume;
+        }
+        
+        // Show detailed success message
         const alertDiv = document.createElement('div');
         alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+        let successMessage = `<strong>Success!</strong> ATS score enhanced to ${newScore}%`;
+        
+        if (data.iterations_used) {
+          successMessage += ` (${data.iterations_used} iterations)`;
+        }
+        if (data.keywords_matched && data.total_keywords) {
+          successMessage += `. Keywords matched: ${data.keywords_matched}/${data.total_keywords}`;
+        }
+        
         alertDiv.innerHTML = `
-          <strong>Success!</strong> ATS score updated to ${data.ats_score}.
+          ${successMessage}
           <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
         document.querySelector('#resume').insertBefore(alertDiv, document.querySelector('#resume h4'));
         
-        // Auto-dismiss after 5 seconds
+        // Update status indicator
+        const statusIndicator = document.querySelector('.text-muted.mt-2');
+        if (statusIndicator) {
+          if (newScore >= 90) {
+            statusIndicator.innerHTML = '<i class="fas fa-check-circle text-success"></i> Excellent ATS compatibility';
+          } else if (newScore >= 80) {
+            statusIndicator.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i> Good ATS compatibility';
+          } else {
+            statusIndicator.innerHTML = '<i class="fas fa-times-circle text-danger"></i> Needs improvement';
+          }
+        }
+        
+        // Auto-dismiss after 8 seconds
         setTimeout(() => {
           alertDiv.classList.remove('show');
           setTimeout(() => alertDiv.remove(), 500);
-        }, 5000);
+        }, 8000);
+        
       } else {
         // Show error
         atsScoreElement.textContent = originalScore;
-        alert('Error recalculating ATS score: ' + data.error);
+        const errorMsg = data.error || 'Unknown error occurred';
+        
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-warning alert-dismissible fade show mt-3';
+        alertDiv.innerHTML = `
+          <strong>Warning:</strong> ${errorMsg}
+          ${data.ats_score ? `Current score: ${data.ats_score}%` : ''}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('#resume').insertBefore(alertDiv, document.querySelector('#resume h4'));
       }
       
       // Reset button
@@ -825,7 +904,7 @@ if (document.getElementById('resultTabs')) {
       const alertDiv = document.createElement('div');
       alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
       alertDiv.innerHTML = `
-        <strong>Error!</strong> Failed to recalculate ATS score. Please try again.
+        <strong>Error!</strong> Failed to enhance ATS score. Please try again.
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       `;
       document.querySelector('#resume').insertBefore(alertDiv, document.querySelector('#resume h4'));

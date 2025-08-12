@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Social Links - JobMate{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-share me-2"></i>Edit Social Links
+                    </h4>
+                    <p class="mb-0 text-muted">Update your social media and portfolio links</p>
+                </div>
+                
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('user_profile.update_social_links') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Professional Networks -->
+                        <div class="mb-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-briefcase me-1"></i>Professional Networks
+                            </h6>
+                            
+                            <div class="mb-3">
+                                {{ form.linkedin_url.label(class="form-label") }}
+                                <div class="input-group">
+                                    <span class="input-group-text bg-primary text-white">
+                                        <i class="bi bi-linkedin"></i>
+                                    </span>
+                                    {{ form.linkedin_url(class="form-control") }}
+                                </div>
+                                {% if form.linkedin_url.errors %}
+                                    <div class="text-danger small">{{ form.linkedin_url.errors[0] }}</div>
+                                {% endif %}
+                                <div class="form-text">Your LinkedIn profile helps recruiters learn about your professional background</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Development & Code -->
+                        <div class="mb-4">
+                            <h6 class="text-dark border-bottom pb-2 mb-3">
+                                <i class="bi bi-code-slash me-1"></i>Development & Code
+                            </h6>
+                            
+                            <div class="mb-3">
+                                {{ form.github_url.label(class="form-label") }}
+                                <div class="input-group">
+                                    <span class="input-group-text bg-dark text-white">
+                                        <i class="bi bi-github"></i>
+                                    </span>
+                                    {{ form.github_url(class="form-control") }}
+                                </div>
+                                {% if form.github_url.errors %}
+                                    <div class="text-danger small">{{ form.github_url.errors[0] }}</div>
+                                {% endif %}
+                                <div class="form-text">Showcase your coding projects and contributions</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Portfolio & Personal -->
+                        <div class="mb-4">
+                            <h6 class="text-success border-bottom pb-2 mb-3">
+                                <i class="bi bi-globe me-1"></i>Portfolio & Personal
+                            </h6>
+                            
+                            <div class="mb-3">
+                                {{ form.portfolio_url.label(class="form-label") }}
+                                <div class="input-group">
+                                    <span class="input-group-text bg-success text-white">
+                                        <i class="bi bi-globe"></i>
+                                    </span>
+                                    {{ form.portfolio_url(class="form-control") }}
+                                </div>
+                                {% if form.portfolio_url.errors %}
+                                    <div class="text-danger small">{{ form.portfolio_url.errors[0] }}</div>
+                                {% endif %}
+                                <div class="form-text">Your personal website or online portfolio</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.twitter_url.label(class="form-label") }}
+                                <div class="input-group">
+                                    <span class="input-group-text bg-info text-white">
+                                        <i class="bi bi-twitter"></i>
+                                    </span>
+                                    {{ form.twitter_url(class="form-control") }}
+                                </div>
+                                {% if form.twitter_url.errors %}
+                                    <div class="text-danger small">{{ form.twitter_url.errors[0] }}</div>
+                                {% endif %}
+                                <div class="form-text">Your Twitter/X profile for professional networking</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Design & Creative -->
+                        <div class="mb-4">
+                            <h6 class="text-warning border-bottom pb-2 mb-3">
+                                <i class="bi bi-palette me-1"></i>Design & Creative
+                            </h6>
+                            
+                            <div class="mb-3">
+                                {{ form.behance_url.label(class="form-label") }}
+                                <div class="input-group">
+                                    <span class="input-group-text bg-primary text-white">
+                                        <i class="bi bi-behance"></i>
+                                    </span>
+                                    {{ form.behance_url(class="form-control") }}
+                                </div>
+                                {% if form.behance_url.errors %}
+                                    <div class="text-danger small">{{ form.behance_url.errors[0] }}</div>
+                                {% endif %}
+                                <div class="form-text">Your Behance portfolio for creative work</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.dribbble_url.label(class="form-label") }}
+                                <div class="input-group">
+                                    <span class="input-group-text bg-warning text-dark">
+                                        <i class="bi bi-dribbble"></i>
+                                    </span>
+                                    {{ form.dribbble_url(class="form-control") }}
+                                </div>
+                                {% if form.dribbble_url.errors %}
+                                    <div class="text-danger small">{{ form.dribbble_url.errors[0] }}</div>
+                                {% endif %}
+                                <div class="form-text">Your Dribbble profile for design work</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Privacy Notice -->
+                        <div class="alert alert-info mb-4">
+                            <div class="d-flex">
+                                <i class="bi bi-info-circle me-2 mt-1"></i>
+                                <div>
+                                    <strong>Privacy Notice:</strong> These links will be visible on your public user_profile. 
+                                    You can control profile visibility in your privacy settings.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <a href="{{ url_for('user_profile.enhanced_profile') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const urlInputs = document.querySelectorAll('input[type="url"]');
+    
+    // URL validation and formatting
+    urlInputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            let url = this.value.trim();
+            if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+                this.value = 'https://' + url;
+            }
+        });
+        
+        // Real-time validation feedback
+        input.addEventListener('input', function() {
+            const url = this.value.trim();
+            if (url) {
+                if (isValidURL(url)) {
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                } else {
+                    this.classList.remove('is-valid');
+                    this.classList.add('is-invalid');
+                }
+            } else {
+                this.classList.remove('is-valid', 'is-invalid');
+            }
+        });
+    });
+    
+    function isValidURL(string) {
+        try {
+            new URL(string);
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+    
+    // Platform-specific suggestions
+    const platformSuggestions = {
+        'linkedin_url': 'https://linkedin.com/in/your-profile',
+        'github_url': 'https://github.com/yourusername',
+        'portfolio_url': 'https://yourname.com',
+        'twitter_url': 'https://twitter.com/yourusername',
+        'behance_url': 'https://behance.net/yourusername',
+        'dribbble_url': 'https://dribbble.com/yourusername'
+    };
+    
+    // Add placeholder examples
+    Object.keys(platformSuggestions).forEach(fieldName => {
+        const input = document.querySelector(`[name="${fieldName}"]`);
+        if (input) {
+            input.setAttribute('placeholder', platformSuggestions[fieldName]);
+        }
+    });
+});
+</script>
+
+<style>
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-1px);
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.input-group-text {
+    min-width: 45px;
+    justify-content: center;
+}
+
+.border-bottom {
+    border-bottom: 2px solid #e9ecef !important;
+}
+
+.form-control.is-valid {
+    border-color: #28a745;
+}
+
+.form-control.is-invalid {
+    border-color: #dc3545;
+}
+
+.alert-info {
+    background-color: #e7f3ff;
+    border-color: #b3d7ff;
+    color: #0c5460;
+}
+
+h6 {
+    font-weight: 600;
+}
+</style>
+{% endblock %}

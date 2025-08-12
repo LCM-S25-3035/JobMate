@@ -4,7 +4,7 @@ Landing page, dashboards, and core application routes
 """
 
 from flask import render_template, redirect, url_for, request, jsonify, current_app, send_file, session, flash
-from flask_login import current_user, login_required
+from flask_login import current_user, login_required, login_user
 from app.main import bp
 from app import db
 from app.models.user import User
@@ -28,11 +28,16 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
 from reportlab.lib.units import inch
 from reportlab.lib.styles import ParagraphStyle
 import re
+
+
+def get_mongo_db():
+    """Get MongoDB database connection"""
+    return current_app.mongo_db
 
 
 # --- MongoDB tailored resume helpers ---
@@ -290,14 +295,8 @@ def recruiter_dashboard():
 @bp.route('/profile')
 @login_required
 def profile():
-    """User profile page where they can complete their details"""
-    
-    profile_data = calculate_profile_completion(current_user)
-    
-    return render_template('main/profile.html',
-                         title='My Profile',
-                         user=current_user,
-                         profile_data=profile_data)
+    """Redirect to enhanced profile page"""
+    return redirect(url_for('user_profile.enhanced_profile'))
 
 @bp.route('/profile/update', methods=['POST'])
 @login_required
@@ -365,35 +364,6 @@ def update_profile():
         db.session.rollback()
         flash('Error updating profile. Please try again.', 'error')
         return redirect(url_for('main.profile'))
-
-
-@bp.route('/debug/profile')
-@login_required
-def debug_profile():
-    """Debug route to check profile completion calculation"""
-    
-    profile_data = calculate_profile_completion(current_user)
-    
-    debug_info = {
-        'user_id': str(current_user.id),
-        'user_email': current_user.email,
-        'completion_percentage': profile_data['percentage'],
-        'completed_items': profile_data['completed'],
-        'total_items': profile_data['total'],
-        'all_items': profile_data['items'],
-        'missing_items': profile_data['missing_items'],
-        'user_attributes': {
-            'first_name': getattr(current_user, 'first_name', 'NOT_SET'),
-            'last_name': getattr(current_user, 'last_name', 'NOT_SET'),
-            'phone': getattr(current_user, 'phone', 'NOT_SET'),
-            'city': getattr(current_user, 'city', 'NOT_SET'),
-            'bio': getattr(current_user, 'bio', 'NOT_SET'),
-            'skills': getattr(current_user, 'skills', 'NOT_SET'),
-            'experience_level': getattr(current_user, 'experience_level', 'NOT_SET')
-        }
-    }
-    
-    return jsonify(debug_info)
 
 
 def normalize_application_date(date_value):
@@ -595,29 +565,6 @@ def applications():
         return redirect(url_for('main.dashboard'))
 
 
-@bp.route('/debug/routes')
-def debug_routes():
-    """Debug route to check which routes are available"""
-    from flask import current_app
-    
-    routes_info = []
-    for rule in current_app.url_map.iter_rules():
-        if rule.endpoint.startswith('main.'):
-            routes_info.append({
-                'endpoint': rule.endpoint,
-                'methods': list(rule.methods),
-                'rule': str(rule)
-            })
-    
-    return jsonify({
-        'available_main_routes': routes_info,
-        'looking_for': [
-            'main.profile',
-            'main.applications'
-        ]
-    })
-
-
 @bp.route('/about')
 def about():
     """About page"""
@@ -782,10 +729,17 @@ def postprocess_tailored_resume_output(ai_result, user_resume_sections=None):
     - Fixes/corrects LinkedIn/contact fields.
     - Deduplicates and merges with user data if needed.
     - Cleans up formatting and section order.
+    - Removes duplicate section headers.
     """
     import re
+    from app.jobs.routes import remove_duplicate_section_headers
+    
     required_sections = ["Summary", "Skills", "Experience", "Education"]
     resume_text = ai_result.get("tailored_resume", "")
+    
+    # First, remove any duplicate section headers
+    resume_text = remove_duplicate_section_headers(resume_text)
+    
     # Parse into sections
     def parse_sections(text):
         section_pattern = re.compile(r"^([A-Za-z &]+):$", re.MULTILINE)
@@ -963,6 +917,16 @@ You are an expert ATS optimization specialist and resume writer with deep expert
    - Highlight transferable skills that match the job requirements
    - Emphasize Ontario tech sector experience if available
 
+5. COVER LETTER REQUIREMENTS:
+   - Create a professional business letter format with proper contact information layout
+   - Place candidate's contact information (name, email, phone, address) at the top left
+   - Include today's date below contact information
+   - Add hiring manager and company information below the date
+   - Use formal business letter structure with clear paragraphs
+   - Reference specific achievements and metrics from the tailored resume
+   - Keep it concise but impactful (3-4 paragraphs)
+   - Include relevant keywords from the job description naturally
+
 ## REQUIRED OUTPUT FORMAT
 Format the tailored resume as plain text in the following structure:
 
@@ -1005,7 +969,7 @@ Provide your response in JSON format with the following structure:
 ```json
 {{
   "tailored_resume": "The complete tailored resume text with appropriate formatting",
-  "cover_letter": "A matching cover letter highlighting key qualifications for this role",
+  "cover_letter": "A professional business format cover letter with proper contact structure - see format requirements below",
   "ats_score": "A number between 0-100 representing the estimated ATS match score",
   "suggestions": [
     {{
@@ -1016,6 +980,44 @@ Provide your response in JSON format with the following structure:
   ]
 }}
 ```
+
+## COVER LETTER FORMAT REQUIREMENTS
+
+The cover letter MUST follow this professional business letter format using ACTUAL information from the resume:
+
+```
+[Extract candidate's full name from resume]
+[Extract candidate's email from resume]
+[Extract candidate's phone from resume]  
+[Extract candidate's address from resume]
+
+[Current date in format: Month Day, Year]
+
+{job.get('company_name', 'Hiring Company')}
+{job.get('location', '')}
+
+Dear Hiring Manager,
+
+[Opening paragraph: Express interest in the specific position "{job.get('title', 'the position')}" at {job.get('company_name', 'your company')}]
+
+[Body paragraph 1: Highlight 2-3 key qualifications from your resume that directly match the job requirements, using specific examples and metrics where possible]
+
+[Body paragraph 2: Demonstrate knowledge of {job.get('company_name', 'the company')} and explain why you want to work there specifically, connecting your experience to their needs]
+
+[Closing paragraph: Express enthusiasm for an interview, mention that your resume is attached, and provide a professional closing]
+
+Sincerely,
+
+[Extract and use candidate's full name from resume]
+```
+
+Important cover letter guidelines:
+- Use the candidate's actual contact information from their resume
+- Reference specific qualifications and achievements from the tailored resume
+- Keep it concise (3-4 paragraphs maximum)
+- Use keywords from the job description naturally
+- Maintain a professional, confident tone
+- Include specific metrics and achievements when possible
 
 For the suggestions, focus on:
 1. Areas where keywords could be better integrated
@@ -1097,10 +1099,59 @@ Be specific and actionable with each suggestion.
             else:
                 error = gemini_response.get('error', 'Unknown error from Gemini API')
 
+            # --- Enhanced ATS Optimization ---
+            # If the current ATS score is below 90%, apply enhanced optimization
+            if tailored_result and ats_score is not None and ats_score < 90:
+                current_app.logger.info(f"Current ATS score {ats_score}% below 90%, applying enhanced optimization")
+                try:
+                    from app.services.resume_tailor import EnhancedResumeTailor
+                    
+                    # Initialize enhanced tailor
+                    enhanced_tailor = EnhancedResumeTailor(
+                        gemini_api_key=current_app.config.get('GEMINI_API_KEY'),
+                        gemini_model=current_app.config.get('GEMINI_MODEL', 'gemini-2.5-flash')
+                    )
+                    
+                    # Use the already tailored resume as input for enhancement
+                    base_resume = tailored_result.get('tailored_resume', resume_text)
+                    job_desc = job.get('description', '') or job.get('summary', '') or str(job)
+                    
+                    # Apply enhanced optimization
+                    enhancement_result = enhanced_tailor.tailor_resume_for_high_ats(
+                        base_resume, 
+                        job_desc, 
+                        target_score=90
+                    )
+                    
+                    if enhancement_result['success'] and enhancement_result['ats_score'] > ats_score:
+                        # Use the enhanced result
+                        tailored_result['tailored_resume'] = enhancement_result['tailored_resume']
+                        tailored_result['ats_score'] = enhancement_result['ats_score']
+                        ats_score = enhancement_result['ats_score']
+                        
+                        current_app.logger.info(f"Enhanced ATS score achieved: {ats_score}%")
+                        
+                        # Add enhancement details to the result
+                        tailored_result['enhancement_details'] = {
+                            'enhanced': True,
+                            'iterations_used': enhancement_result['iterations_used'],
+                            'keywords_matched': enhancement_result['keywords_matched'],
+                            'total_keywords': enhancement_result['total_keywords'],
+                            'optimization_history': enhancement_result.get('optimization_history', [])
+                        }
+                    else:
+                        current_app.logger.warning(f"Enhancement failed or did not improve score")
+                        
+                except Exception as e:
+                    current_app.logger.error(f"Enhanced optimization failed: {str(e)}")
+                    # Continue with original result if enhancement fails
+
             # --- Post-process tailored resume output ---
             if tailored_result:
                 user_sections = extract_resume_sections(resume_text) if resume_text else None
-                tailored_result = postprocess_tailored_resume_output(tailored_result, user_sections)
+                # TEMPORARILY DISABLED: This function adds "(Not provided)" and affects resume display
+                # tailored_result = postprocess_tailored_resume_output(tailored_result, user_sections)
+                
                 # Get updated ATS score and ensure it's numeric
                 ats_score_raw = tailored_result.get('ats_score')
                 if isinstance(ats_score_raw, str):
@@ -1138,10 +1189,14 @@ Be specific and actionable with each suggestion.
 @login_required
 def download_tailored(job_id, doc_type):
     """Download tailored resume or cover letter as a PDF file with improved formatting"""
+    from app.jobs.routes import remove_duplicate_section_headers
+    
     tailored_resume = request.form.get('tailored_resume')
     cover_letter = request.form.get('cover_letter')
     if doc_type == 'resume':
         content = tailored_resume or ''
+        # Apply duplicate removal to ensure clean content
+        content = remove_duplicate_section_headers(content)
         filename = f'tailored_resume_{job_id}.pdf'
     elif doc_type == 'cover_letter':
         content = cover_letter or ''
@@ -1155,188 +1210,344 @@ def download_tailored(job_id, doc_type):
     styles = getSampleStyleSheet()
     story = []
 
-    # Custom styles
-    name_style = ParagraphStyle('Name', parent=styles['Heading1'], fontSize=22, alignment=TA_CENTER, spaceAfter=10, spaceBefore=10)
-    contact_style = ParagraphStyle('Contact', parent=styles['Normal'], fontSize=11, alignment=TA_CENTER, textColor=colors.black, spaceAfter=10)
-    section_style = ParagraphStyle('Section', parent=styles['Heading2'], fontSize=13, textColor=colors.HexColor('#1a4a7c'), spaceBefore=18, spaceAfter=6, leading=16, fontName='Helvetica-Bold')
-    normal_style = ParagraphStyle('Normal', parent=styles['Normal'], fontSize=11, leading=15, spaceAfter=6)
-    bullet_style = ParagraphStyle('Bullet', parent=styles['Normal'], fontSize=11, leftIndent=15, bulletIndent=5, leading=15)
-
-    # --- Render AI-optimized resume or cover letter only ---
-    lines = [l for l in content.splitlines() if l.strip()]
-
-    # --- Remove any '---' separator lines and extract name/contact/location ---
-    name = ''
-    contact = ''
-    location = ''
-    extra_contact = ''
-    rest_lines = []
-    for l in lines:
-        l_strip = l.strip()
-        l_lower = l_strip.lower()
-        if l_strip == '---':
-            continue  # skip separator
-        if l_lower.startswith('name:'):
-            name = l_strip.split(':', 1)[-1].strip()
-        elif l_lower.startswith('contact:'):
-            contact = l_strip.split(':', 1)[-1].strip()
-        elif l_lower.startswith('location:'):
-            location = l_strip.split(':', 1)[-1].strip()
-        elif l_lower.startswith('www') or l_lower.startswith('http'):
-            extra_contact = l_strip
-        else:
-            rest_lines.append(l_strip)
-
-    # --- Render name bold and centered at the top (no header) ---
-    if name:
-        story.append(Paragraph(f'<b>{name}</b>', name_style))
-    # Render contact/location line centered below name (no headers)
-    contact_line = ' | '.join(filter(None, [contact, location, extra_contact]))
-    if contact_line:
-        story.append(Paragraph(contact_line, contact_style))
-    story.append(Spacer(1, 8))
-
-    # --- Section parsing with experience subheader logic, grouped skills, and section reordering ---
-    section_keywords = [
-        'summary', 'professional summary', 'skills', 'projects', 'relevant projects',
-        'experience', 'professional experience', 'education', 'community & interests', 'interests', 'project experience'
-    ]
-    def is_section_header(line):
-        l = line.strip()
-        if l.endswith(':'):
-            return True
-        if l.isupper() and len(l) > 3:
-            return True
-        l_clean = l.lower().rstrip(':').strip()
-        return l_clean in section_keywords
-
-    subtitle_style = ParagraphStyle('Subtitle', parent=styles['Normal'], fontSize=11, leading=15, spaceBefore=8, spaceAfter=4, fontName='Helvetica-Bold')
-
-    # --- Parse all sections into a dict for reordering ---
-    sections = {}
-    current_section = None
-    section_buffer = []
-    for line in rest_lines:
-        l_strip = line.strip()
-        if is_section_header(l_strip):
-            if current_section:
-                sections[current_section] = section_buffer
-                section_buffer = []
-            current_section = l_strip
-        elif current_section:
-            section_buffer.append(line)
-        else:
-            # If not in a section, treat as intro
-            sections.setdefault('intro', []).append(line)
-    if current_section:
-        sections[current_section] = section_buffer
-
-    # --- Section order: SUMMARY, EXPERIENCE, then others as found ---
-    ordered_section_titles = []
-    for key in sections.keys():
-        if key.lower().startswith('summary'):
-            ordered_section_titles.append(key)
-    for key in sections.keys():
-        if key.lower().startswith('experience'):
-            ordered_section_titles.append(key)
-    for key in sections.keys():
-        # Exclude SUMMARY, EXPERIENCE, and LANGUAGE sections
-        if key.lower().startswith('summary') or key.lower().startswith('experience') or key.lower().startswith('language'):
-            continue
-        ordered_section_titles.append(key)
-
-    def flush_section(title, buffer):
-        if not buffer:
-            return
-        story.append(Spacer(1, 10))
-        story.append(Paragraph(f'<b>{title.rstrip(":").upper()}</b>', section_style))
-        # SKILLS section: handle subheadings and skill lists
-        if title.lower().startswith('skills'):
-            current_category = None
-            for line in buffer:
-                line_strip = line.strip()
-                if not line_strip:
-                    continue
+    # Handle cover letter differently from resume
+    if doc_type == 'cover_letter':
+        # Cover Letter specific formatting
+        cover_letter_style = ParagraphStyle('CoverLetter', parent=styles['Normal'], fontSize=12, leading=18, spaceAfter=8, alignment=TA_LEFT)
+        contact_header_style = ParagraphStyle('ContactHeader', parent=styles['Normal'], fontSize=12, leading=14, spaceAfter=6, alignment=TA_LEFT)
+        date_style = ParagraphStyle('Date', parent=styles['Normal'], fontSize=12, leading=14, spaceAfter=12, spaceBefore=12, alignment=TA_LEFT)
+        signature_style = ParagraphStyle('Signature', parent=styles['Normal'], fontSize=12, leading=14, spaceAfter=6, spaceBefore=12, alignment=TA_LEFT)
+        
+        lines = [l for l in content.splitlines() if l.strip()]
+        
+        # Parse cover letter content
+        candidate_name = ""
+        candidate_email = ""
+        candidate_phone = ""
+        candidate_address = ""
+        date_line = ""
+        company_info = []
+        body_paragraphs = []
+        in_body = False
+        
+        for i, line in enumerate(lines):
+            line_strip = line.strip()
+            
+            # Skip empty lines at the beginning
+            if not line_strip and not in_body:
+                continue
                 
-                # Check if this is a skill category heading (ends with a colon)
-                if ':' in line_strip and not line_strip.startswith('-') and not line_strip.startswith('•'):
-                    # This is a category heading like "Programming Languages: Python, Java"
-                    parts = line_strip.split(':', 1)
-                    if len(parts) == 2:
-                        category = parts[0].strip()
-                        skills = parts[1].strip()
-                        
-                        # Add the category as a subheading
-                        story.append(Paragraph(f'<b>{category}</b>', subtitle_style))
-                        
-                        # Add the skills as normal text (not bullets)
-                        if skills:
-                            story.append(Paragraph(skills, normal_style))
+            # Detect candidate contact information (first few lines)
+            if i < 6 and not in_body:
+                if '@' in line_strip and not candidate_email:
+                    candidate_email = line_strip
+                elif line_strip.replace('(', '').replace(')', '').replace('-', '').replace(' ', '').replace('+1', '').isdigit() and not candidate_phone:
+                    candidate_phone = line_strip
+                elif any(word in line_strip.lower() for word in ['street', 'avenue', 'road', 'drive', 'mississauga', 'ontario', 'on', 'canada']) and not candidate_address:
+                    candidate_address = line_strip
+                elif not candidate_name and len(line_strip.split()) <= 4:
+                    # Likely the candidate's name
+                    words = line_strip.split()
+                    if len(words) >= 2 and all(word.replace('.', '').replace('-', '').isalpha() for word in words):
+                        candidate_name = line_strip
+            
+            # Detect date (common formats)
+            elif any(month in line_strip for month in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']) or ('2023' in line_strip or '2024' in line_strip or '2025' in line_strip):
+                date_line = line_strip
+                
+            # Detect company information (after date, before "Dear")
+            elif date_line and not line_strip.lower().startswith('dear') and not in_body:
+                if line_strip and 'sincerely' not in line_strip.lower():
+                    company_info.append(line_strip)
+            
+            # Also collect company info if no date was found yet but we're before "Dear"
+            elif not in_body and not line_strip.lower().startswith('dear') and not any(month in line_strip for month in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']):
+                # This might be company information if it's not contact info
+                if line_strip and 'sincerely' not in line_strip.lower() and len(line_strip) > 3:
+                    # Check if it's not candidate info and not a placeholder
+                    if not ('@' in line_strip or 
+                           line_strip.replace('(', '').replace(')', '').replace('-', '').replace(' ', '').replace('+1', '').isdigit() or
+                           any(word in line_strip.lower() for word in ['street', 'avenue', 'road', 'drive', 'mississauga', 'ontario', 'on', 'canada']) or
+                           line_strip.startswith('[') and line_strip.endswith(']')):  # Skip placeholders
+                        company_info.append(line_strip)
+                    
+            # Start of letter body
+            elif line_strip.lower().startswith('dear'):
+                in_body = True
+                body_paragraphs.append(line_strip)
+                
+            # Letter body content
+            elif in_body:
+                if line_strip.lower() == 'sincerely,':
+                    body_paragraphs.append(line_strip)
+                    # Don't automatically add name - let AI handle it
+                elif line_strip:
+                    body_paragraphs.append(line_strip)
+        
+        # Build the PDF story for cover letter
+        # Candidate contact information (left-aligned at top)
+        if candidate_name:
+            story.append(Paragraph(f'<b>{candidate_name}</b>', contact_header_style))
+        if candidate_email:
+            story.append(Paragraph(candidate_email, contact_header_style))
+        if candidate_phone:
+            story.append(Paragraph(candidate_phone, contact_header_style))
+        if candidate_address:
+            story.append(Paragraph(candidate_address, contact_header_style))
+            
+        # Date
+        if date_line:
+            story.append(Paragraph(date_line, date_style))
+        else:
+            # Add current date if not found
+            from datetime import datetime
+            current_date = datetime.now().strftime("%B %d, %Y")
+            story.append(Paragraph(current_date, date_style))
+            
+        # Company information
+        for company_line in company_info:
+            story.append(Paragraph(company_line, contact_header_style))
+            
+        if company_info:
+            story.append(Spacer(1, 12))
+            
+        # Letter body
+        for paragraph in body_paragraphs:
+            if paragraph.strip():
+                story.append(Paragraph(paragraph, cover_letter_style))
+            else:
+                story.append(Spacer(1, 6))
+        
+        # Complete the cover letter PDF generation
+        story.append(Spacer(1, 16))
+        doc.build(story)
+        buffer.seek(0)
+        return send_file(
+            buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+                
+    else:
+        # Resume formatting (existing code)
+        # Custom styles
+        name_style = ParagraphStyle('Name', parent=styles['Heading1'], fontSize=22, alignment=TA_CENTER, spaceAfter=10, spaceBefore=10)
+        contact_style = ParagraphStyle('Contact', parent=styles['Normal'], fontSize=11, alignment=TA_CENTER, textColor=colors.black, spaceAfter=10)
+        section_style = ParagraphStyle('Section', parent=styles['Heading2'], fontSize=13, textColor=colors.HexColor('#1a4a7c'), spaceBefore=18, spaceAfter=6, leading=16, fontName='Helvetica-Bold')
+        normal_style = ParagraphStyle('Normal', parent=styles['Normal'], fontSize=11, leading=15, spaceAfter=6)
+        bullet_style = ParagraphStyle('Bullet', parent=styles['Normal'], fontSize=11, leftIndent=15, bulletIndent=5, leading=15)
+
+        # --- Render AI-optimized resume or cover letter only ---
+        lines = [l for l in content.splitlines() if l.strip()]
+
+        # --- Remove any '---' separator lines and extract name/contact/location ---
+        name = ''
+        contact = ''
+        location = ''
+        extra_contact = ''
+        rest_lines = []
+        header_processed = False
+        
+        for i, l in enumerate(lines):
+            l_strip = l.strip()
+            l_lower = l_strip.lower()
+            
+            if l_strip == '---':
+                continue  # skip separator
+                
+            # Try to detect name, contact, and location more flexibly
+            if l_lower.startswith('name:'):
+                name = l_strip.split(':', 1)[-1].strip()
+                header_processed = True
+            elif l_lower.startswith('contact:'):
+                contact = l_strip.split(':', 1)[-1].strip()
+                header_processed = True
+            elif l_lower.startswith('location:'):
+                location = l_strip.split(':', 1)[-1].strip()
+                header_processed = True
+            elif l_lower.startswith('www') or l_lower.startswith('http'):
+                if not contact:  # Only use as contact if we don't have one
+                    extra_contact = l_strip
+                else:
+                    rest_lines.append(l_strip)
+                header_processed = True
+            elif not header_processed and i < 10:  # Check first 10 lines for header info
+                # Smart detection for header information
+                if '@' in l_strip and ('gmail' in l_lower or 'email' in l_lower or '.' in l_strip):
+                    # This looks like an email/contact line
+                    contact = l_strip
+                elif any(word in l_lower for word in ['street', 'avenue', 'road', 'city', 'on', 'ontario', 'canada']) and len(l_strip.split()) <= 10:
+                    # This looks like a location
+                    location = l_strip
+                elif not name and len(l_strip.split()) <= 4 and not any(word in l_lower for word in ['summary', 'skills', 'experience', 'education', 'professional']):
+                    # This might be a name (short, not a section header)
+                    # Additional check: if it contains typical name patterns
+                    words = l_strip.split()
+                    if len(words) >= 2 and all(word.replace('.', '').replace('-', '').isalpha() for word in words):
+                        name = l_strip
                     else:
-                        # Just a heading without skills yet
-                        story.append(Paragraph(f'<b>{line_strip}</b>', subtitle_style))
-                elif line_strip.startswith('-') or line_strip.startswith('•'):
-                    # Handle any bullet points that might still exist in the skills section
-                    story.append(Paragraph(line_strip.lstrip('-•').strip(), bullet_style, bulletText='•'))
+                        rest_lines.append(l_strip)
                 else:
-                    # Plain text that isn't a category heading
-                    story.append(Paragraph(line_strip, normal_style))
-        # EXPERIENCE section: bold subheader for lines with ' | '
-        elif title.lower().startswith('experience') or title.lower().startswith('professional experience'):
-            for line in buffer:
-                line_strip = line.strip()
-                if '|' in line_strip and not line_strip.startswith('-'):
-                    story.append(Paragraph(f'<b>{line_strip}</b>', normal_style))
-                elif line_strip.startswith('-') or line_strip.startswith('•'):
-                    story.append(Paragraph(line_strip.lstrip('-•').strip(), bullet_style, bulletText='•'))
-                else:
-                    story.append(Paragraph(line_strip, normal_style))
-        # EDUCATION section: bold institution name
-        elif title.lower().startswith('education'):
-            for line in buffer:
-                line_strip = line.strip()
-                # Try to bold the institution name (after first '|')
-                if '|' in line_strip:
-                    parts = [p.strip() for p in line_strip.split('|')]
-                    if len(parts) >= 2:
-                        # Assume institution is the second part
-                        bolded = f"{parts[0]} | <b>{parts[1]}</b>"
-                        if len(parts) > 2:
-                            bolded += ' | ' + ' | '.join(parts[2:])
-                        story.append(Paragraph(bolded, normal_style))
+                    rest_lines.append(l_strip)
+            else:
+                rest_lines.append(l_strip)
+
+        # --- Render name bold and centered at the top (no header) ---
+        # Clean up any "(Not provided)" text
+        if name and name.strip() != "(Not provided)":
+            story.append(Paragraph(f'<b>{name}</b>', name_style))
+        # Render contact/location line centered below name (no headers)
+        # Clean contact and location data
+        clean_contact = contact if contact and contact.strip() != "(Not provided)" else ""
+        clean_location = location if location and location.strip() != "(Not provided)" else ""
+        
+        contact_line = ' | '.join(filter(None, [clean_contact, clean_location, extra_contact]))
+        if contact_line:
+            story.append(Paragraph(contact_line, contact_style))
+        story.append(Spacer(1, 8))
+
+        # --- Section parsing with experience subheader logic, grouped skills, and section reordering ---
+        section_keywords = [
+            'summary', 'professional summary', 'skills', 'projects', 'relevant projects',
+            'experience', 'professional experience', 'education', 'community & interests', 'interests', 'project experience'
+        ]
+        def is_section_header(line):
+            l = line.strip()
+            if l.endswith(':'):
+                return True
+            if l.isupper() and len(l) > 3:
+                return True
+            l_clean = l.lower().rstrip(':').strip()
+            return l_clean in section_keywords
+
+        subtitle_style = ParagraphStyle('Subtitle', parent=styles['Normal'], fontSize=11, leading=15, spaceBefore=8, spaceAfter=4, fontName='Helvetica-Bold')
+
+        # --- Parse all sections into a dict for reordering ---
+        sections = {}
+        current_section = None
+        section_buffer = []
+        for line in rest_lines:
+            l_strip = line.strip()
+            if is_section_header(l_strip):
+                if current_section:
+                    sections[current_section] = section_buffer
+                    section_buffer = []
+                current_section = l_strip
+            elif current_section:
+                section_buffer.append(line)
+            else:
+                # If not in a section, treat as intro
+                sections.setdefault('intro', []).append(line)
+        if current_section:
+            sections[current_section] = section_buffer
+
+        # --- Section order: SUMMARY, EXPERIENCE, then others as found ---
+        ordered_section_titles = []
+        for key in sections.keys():
+            if key.lower().startswith('summary'):
+                ordered_section_titles.append(key)
+        for key in sections.keys():
+            if key.lower().startswith('experience'):
+                ordered_section_titles.append(key)
+        for key in sections.keys():
+            # Exclude SUMMARY, EXPERIENCE, and LANGUAGE sections
+            if key.lower().startswith('summary') or key.lower().startswith('experience') or key.lower().startswith('language'):
+                continue
+            ordered_section_titles.append(key)
+
+        def flush_section(title, buffer):
+            if not buffer:
+                return
+            story.append(Spacer(1, 10))
+            story.append(Paragraph(f'<b>{title.rstrip(":").upper()}</b>', section_style))
+            # SKILLS section: handle subheadings and skill lists
+            if title.lower().startswith('skills'):
+                current_category = None
+                for line in buffer:
+                    line_strip = line.strip()
+                    if not line_strip:
+                        continue
+                    
+                    # Check if this is a skill category heading (ends with a colon)
+                    if ':' in line_strip and not line_strip.startswith('-') and not line_strip.startswith('•'):
+                        # This is a category heading like "Programming Languages: Python, Java"
+                        parts = line_strip.split(':', 1)
+                        if len(parts) == 2:
+                            category = parts[0].strip()
+                            skills = parts[1].strip()
+                            
+                            # Add the category as a subheading
+                            story.append(Paragraph(f'<b>{category}</b>', subtitle_style))
+                            
+                            # Add the skills as normal text (not bullets)
+                            if skills:
+                                story.append(Paragraph(skills, normal_style))
+                        else:
+                            # Just a heading without skills yet
+                            story.append(Paragraph(f'<b>{line_strip}</b>', subtitle_style))
+                    elif line_strip.startswith('-') or line_strip.startswith('•'):
+                        # Handle any bullet points that might still exist in the skills section
+                        story.append(Paragraph(line_strip.lstrip('-•').strip(), bullet_style, bulletText='•'))
+                    else:
+                        # Plain text that isn't a category heading
+                        story.append(Paragraph(line_strip, normal_style))
+            # EXPERIENCE section: bold subheader for lines with ' | '
+            elif title.lower().startswith('experience') or title.lower().startswith('professional experience'):
+                for line in buffer:
+                    line_strip = line.strip()
+                    if '|' in line_strip and not line_strip.startswith('-'):
+                        story.append(Paragraph(f'<b>{line_strip}</b>', normal_style))
+                    elif line_strip.startswith('-') or line_strip.startswith('•'):
+                        story.append(Paragraph(line_strip.lstrip('-•').strip(), bullet_style, bulletText='•'))
                     else:
                         story.append(Paragraph(line_strip, normal_style))
-                else:
-                    story.append(Paragraph(line_strip, normal_style))
-        # PROJECT EXPERIENCE section: bold project titles (first non-bullet line before bullets)
-        elif title.lower().startswith('project experience') or title.lower().startswith('projects'):
-            in_project = False
-            for idx, line in enumerate(buffer):
-                line_strip = line.strip()
-                if not line_strip:
-                    continue
-                if not (line_strip.startswith('-') or line_strip.startswith('•')):
-                    # Bold project title
-                    story.append(Paragraph(f'<b>{line_strip}</b>', normal_style))
-                    in_project = True
-                else:
-                    story.append(Paragraph(line_strip.lstrip('-•').strip(), bullet_style, bulletText='•'))
-        else:
-            for line in buffer:
-                line_strip = line.strip()
-                if line_strip.startswith('-') or line_strip.startswith('•'):
-                    story.append(Paragraph(line_strip.lstrip('-•').strip(), bullet_style, bulletText='•'))
-                else:
-                    story.append(Paragraph(line_strip, normal_style))
+            # EDUCATION section: bold institution name
+            elif title.lower().startswith('education'):
+                for line in buffer:
+                    line_strip = line.strip()
+                    # Try to bold the institution name (after first '|')
+                    if '|' in line_strip:
+                        parts = [p.strip() for p in line_strip.split('|')]
+                        if len(parts) >= 2:
+                            # Assume institution is the second part
+                            bolded = f"{parts[0]} | <b>{parts[1]}</b>"
+                            if len(parts) > 2:
+                                bolded += ' | ' + ' | '.join(parts[2:])
+                            story.append(Paragraph(bolded, normal_style))
+                        else:
+                            story.append(Paragraph(line_strip, normal_style))
+                    else:
+                        story.append(Paragraph(line_strip, normal_style))
+            # PROJECT EXPERIENCE section: bold project titles (first non-bullet line before bullets)
+            elif title.lower().startswith('project experience') or title.lower().startswith('projects'):
+                in_project = False
+                for idx, line in enumerate(buffer):
+                    line_strip = line.strip()
+                    if not line_strip:
+                        continue
+                    if not (line_strip.startswith('-') or line_strip.startswith('•')):
+                        # Bold project title
+                        story.append(Paragraph(f'<b>{line_strip}</b>', normal_style))
+                        in_project = True
+                    else:
+                        story.append(Paragraph(line_strip.lstrip('-•').strip(), bullet_style, bulletText='•'))
+            else:
+                for line in buffer:
+                    line_strip = line.strip()
+                    if line_strip.startswith('-') or line_strip.startswith('•'):
+                        story.append(Paragraph(line_strip.lstrip('-•').strip(), bullet_style, bulletText='•'))
+                    else:
+                        story.append(Paragraph(line_strip, normal_style))
 
-    # Render sections in the new order
-    for section_title in ordered_section_titles:
-        flush_section(section_title, sections[section_title])
-    # Add extra space at end
-    story.append(Spacer(1, 16))
-    doc.build(story)
-    buffer.seek(0)
-    return send_file(
+        # Render sections in the new order
+        for section_title in ordered_section_titles:
+            flush_section(section_title, sections[section_title])
+        # Add extra space at end
+        story.append(Spacer(1, 16))
+        doc.build(story)
+        buffer.seek(0)
+        return send_file(
         buffer,
         mimetype='application/pdf',
         as_attachment=True,
@@ -1348,12 +1559,16 @@ def download_tailored(job_id, doc_type):
 @login_required
 def download_my_tailored(job_id, doc_type):
     """Download tailored resume or cover letter for a job from the resume section (MongoDB source)"""
+    from app.jobs.routes import remove_duplicate_section_headers
+    
     mongo_db = current_app.mongo_db
     tailored = mongo_db.tailored_resumes.find_one({"user_id": str(current_user.id), "job_id": str(job_id)})
     if not tailored:
         return "No tailored resume found for this job.", 404
     if doc_type == 'resume':
         content = tailored.get('resume_text', '')
+        # Apply duplicate removal to ensure clean content
+        content = remove_duplicate_section_headers(content)
         filename = f'tailored_resume_{job_id}.pdf'
     elif doc_type == 'cover_letter':
         content = tailored.get('cover_letter', '')
@@ -1827,49 +2042,6 @@ Sincerely,
         })
 
 
-# --- DEBUG ROUTES ---
-
-@bp.route('/debug/profile-completion')
-@login_required
-def debug_profile_completion():
-    """Debug route to check profile completion details"""
-    
-    import json
-    
-    # Get current user data
-    user_data = {
-        'user_id': str(current_user.id),
-        'email': current_user.email,
-        'first_name': getattr(current_user, 'first_name', None),
-        'last_name': getattr(current_user, 'last_name', None),
-        'phone': getattr(current_user, 'phone', None),
-        'city': getattr(current_user, 'city', None),
-        'bio': getattr(current_user, 'bio', None),
-        'skills': getattr(current_user, 'skills', None),
-        'experience_level': getattr(current_user, 'experience_level', None),
-    }
-    
-    # Get profile completion calculation
-    profile_data = calculate_profile_completion(current_user)
-    
-    # Check resume status
-    resume_status = "No resume found"
-    try:
-        mongo_db = current_app.mongo_db
-        if mongo_db:
-            resume = mongo_db.resumes.find_one({'user_id': str(current_user.id)})
-            if resume:
-                resume_status = f"Resume found: {resume.get('filename', 'Unknown')}"
-    except Exception:
-        pass
-
-    return jsonify({
-        'user_data': user_data,
-        'profile_completion': profile_data,
-        'resume_status': resume_status
-    })
-
-
 @bp.route('/talent-journey')
 @login_required
 def talent_journey():
@@ -1890,15 +2062,8 @@ def talent_journey():
                 
                 # Format data for template
                 for app in applications:
-                    # DEBUG: Log application details
-                    print(f"🔍 DEBUG - Processing application {app.id}:")
-                    print(f"   User: {app.user.first_name} {app.user.last_name}")
-                    print(f"   Job: {app.job_title}")
-                    print(f"   Raw match_score: {app.match_score} (type: {type(app.match_score)})")
-                    
                     # Get ATS score from match_score field
                     ats_score = app.match_score if app.match_score is not None else None
-                    print(f"   Processed ats_score: {ats_score}")
                     
                     # Format ATS score display
                     if ats_score is not None:
@@ -1964,38 +2129,124 @@ def update_application_status():
         return jsonify({'success': False, 'error': 'Internal server error'})
 
 
-@bp.route('/test-login')
-def test_login():
-    """Test login functionality"""
-    
-    # Find an existing user (first one) or create a test user
-    test_user = User.query.filter_by(email='recruiter@demo.com').first()
-    
-    if not test_user:
-        # Create a test recruiter user
-        test_user = User(
-            email='recruiter@demo.com',
-            password='testpass123',
-            first_name='Test',
-            last_name='Recruiter',
-            user_type='recruiter'
-        )
-        db.session.add(test_user)
-        db.session.commit()
-    
-    # Enable the user and verify them
-    test_user.is_active = True
-    test_user.is_verified = True
-    db.session.commit()
-    
-    # Login the user
-    login_success = login_user(test_user, remember=True)
-    
-    if login_success:
-        flash('Test user logged in successfully!', 'success')
-        return redirect(url_for('main.profile'))
-    else:
-        return f"Login failed for user {test_user.email}"
+@bp.route('/api/update-my-application-status', methods=['POST'])
+@login_required
+def update_my_application_status():
+    """API endpoint for applicants to update their own application status"""
+    try:
+        current_app.logger.info(f"Update application status request from user {current_user.id}")
+        
+        data = request.get_json()
+        if not data:
+            current_app.logger.error("No JSON data received")
+            return jsonify({'success': False, 'error': 'No data received'})
+        
+        application_id = data.get('application_id')
+        new_status = data.get('status')
+        source = data.get('source', 'postgres')  # 'postgres' or 'mongodb'
+        notes = data.get('notes', '')
+        
+        current_app.logger.info(f"Request data: application_id={application_id}, status={new_status}, source={source}")
+        
+        if not application_id or not new_status:
+            current_app.logger.error(f"Missing required fields: application_id={application_id}, status={new_status}")
+            return jsonify({'success': False, 'error': 'Missing application_id or status'})
+        
+        # Handle prefixed IDs from combined applications list
+        actual_app_id = application_id
+        if isinstance(application_id, str):
+            if application_id.startswith('pg_'):
+                actual_app_id = application_id[3:]  # Remove 'pg_' prefix
+                source = 'postgres'
+            elif application_id.startswith('mg_'):
+                actual_app_id = application_id[3:]  # Remove 'mg_' prefix
+                source = 'mongodb'
+            elif len(application_id) == 24:
+                # Looks like a MongoDB ObjectId
+                source = 'mongodb'
+            else:
+                # Try to convert to int to see if it's a PostgreSQL ID
+                try:
+                    int(application_id)
+                    source = 'postgres'
+                except ValueError:
+                    # If it's not an integer, assume it's MongoDB
+                    source = 'mongodb'
+        
+        current_app.logger.info(f"Processed application_id: {actual_app_id}, determined source: {source}")
+        
+        # Validate status
+        valid_statuses = ['applied', 'screening', 'interview_scheduled', 'interviewed', 
+                         'offer_received', 'accepted', 'rejected', 'withdrawn', 'no_response']
+        if new_status not in valid_statuses:
+            current_app.logger.error(f"Invalid status: {new_status}")
+            return jsonify({'success': False, 'error': 'Invalid status'})
+        
+        if source == 'postgres':
+            # Update PostgreSQL application
+            from app.models.application import Application
+            current_app.logger.info(f"Looking up PostgreSQL application with ID: {actual_app_id}")
+            
+            application = Application.query.get(actual_app_id)
+            if not application:
+                current_app.logger.error(f"Application not found: {actual_app_id}")
+                return jsonify({'success': False, 'error': 'Application not found'})
+            
+            if application.user_id != current_user.id:
+                current_app.logger.error(f"Unauthorized access: application user_id={application.user_id}, current_user_id={current_user.id}")
+                return jsonify({'success': False, 'error': 'Unauthorized access to application'})
+            
+            old_status = application.status
+            current_app.logger.info(f"Updating application status from {old_status} to {new_status}")
+            
+            application.update_status(new_status, notes)
+            current_app.logger.info(f"Successfully updated application status")
+            
+            return jsonify({
+                'success': True, 
+                'message': f'Application status updated from {old_status} to {new_status}',
+                'new_status': new_status
+            })
+            
+        else:  # MongoDB application
+            try:
+                mongo_db = get_mongo_db()
+                current_app.logger.info(f"MongoDB connection obtained")
+            except Exception as e:
+                current_app.logger.error(f"MongoDB connection failed: {str(e)}")
+                return jsonify({'success': False, 'error': 'Database connection error'})
+            
+            current_app.logger.info(f"Looking up MongoDB application with ID: {actual_app_id}")
+            
+            # Update MongoDB application
+            result = mongo_db.job_applications.update_one(
+                {
+                    '_id': ObjectId(actual_app_id),
+                    'user_id': str(current_user.id)
+                },
+                {
+                    '$set': {
+                        'status': new_status,
+                        'updated_at': datetime.utcnow()
+                    }
+                }
+            )
+            
+            if result.matched_count == 0:
+                current_app.logger.error(f"MongoDB application not found or unauthorized: {actual_app_id}")
+                return jsonify({'success': False, 'error': 'Application not found or unauthorized'})
+            
+            current_app.logger.info(f"Successfully updated MongoDB application status to {new_status}")
+            
+            return jsonify({
+                'success': True, 
+                'message': f'Application status updated to {new_status}',
+                'new_status': new_status
+            })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error updating my application status: {str(e)}")
+        return jsonify({'success': False, 'error': 'Internal server error'})
 
 
 # --- Interview Questions Integration ---
@@ -2146,10 +2397,6 @@ def generate_questions_from_skills():
         language = data.get('language', 'English')
         num_questions = int(data.get('num_questions', data.get('count', 5)))
         mode = data.get('mode', '')  # Check if this is recruiter mode
-        
-        # Debug logging
-        current_app.logger.info(f"DEBUG: Received parameters - skills: {skills}, level: {level}, question_type: {question_type}, language: {language}, num_questions: {num_questions}")
-        
         if not skills:
             if request.is_json:
                 return jsonify({'error': 'Skills are required', 'success': False}), 400

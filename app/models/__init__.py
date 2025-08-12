@@ -8,6 +8,7 @@ from .resume import Resume
 from .application import Application
 from .job_preference import JobPreference
 from .job_posting import JobPosting
+from .profile import UserExperience, UserEducation, UserCertification, UserSkill, UserSocialLink
 
 # Export all models for easy importing
 __all__ = [
@@ -15,5 +16,10 @@ __all__ = [
     'Resume', 
     'Application',
     'JobPreference',
-    'JobPosting'
+    'JobPosting',
+    'UserExperience',
+    'UserEducation', 
+    'UserCertification',
+    'UserSkill',
+    'UserSocialLink'
 ] 

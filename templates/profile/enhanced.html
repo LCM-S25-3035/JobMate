@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+
+{% block title %}Enhanced Profile - JobMate{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Profile Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-2 text-center">
+                            <div class="profile-picture-container position-relative">
+                                {% if user.profile_picture and user.profile_picture != 'uploads/profiles/default.png' %}
+                                    <img src="{{ url_for('static', filename=user.profile_picture) }}" 
+                                         alt="Profile Picture" 
+                                         class="rounded-circle border border-white"
+                                         style="width: 120px; height: 120px; object-fit: cover;">
+                                    
+                                    <!-- Remove Picture Button -->
+                                    <div class="position-absolute top-0 end-0">
+                                        <div class="dropdown">
+                                            <button class="btn btn-light btn-sm rounded-circle p-1" 
+                                                    type="button" 
+                                                    data-bs-toggle="dropdown" 
+                                                    aria-expanded="false"
+                                                    style="width: 28px; height: 28px; font-size: 12px;">
+                                                <i class="bi bi-three-dots"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ url_for('user_profile.edit_enhanced_profile') }}">
+                                                        <i class="bi bi-pencil me-2"></i>Change Picture
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <form method="POST" action="{{ url_for('user_profile.remove_profile_picture') }}" 
+                                                          class="d-inline" 
+                                                          onsubmit="return confirm('Are you sure you want to remove your profile picture?')">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                        <button type="submit" class="dropdown-item text-danger">
+                                                            <i class="bi bi-trash me-2"></i>Remove Picture
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center position-relative"
+                                         style="width: 120px; height: 120px; font-size: 48px; font-weight: bold;">
+                                        {{ user.first_name[0] if user.first_name else 'U' }}{{ user.last_name[0] if user.last_name else '' }}
+                                        
+                                        <!-- Add Picture Button -->
+                                        <div class="position-absolute top-0 end-0">
+                                            <a href="{{ url_for('user_profile.edit_enhanced_profile') }}" 
+                                               class="btn btn-primary btn-sm rounded-circle p-1"
+                                               style="width: 28px; height: 28px; font-size: 12px;"
+                                               title="Add Profile Picture">
+                                                <i class="bi bi-plus"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h2 class="mb-1">{{ user.full_name }}</h2>
+                            {% if user.bio %}
+                                <p class="mb-2 opacity-90">{{ user.bio[:150] }}{% if user.bio|length > 150 %}...{% endif %}</p>
+                            {% endif %}
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                {% if user.city %}
+                                    <span class="badge bg-light text-primary">
+                                        <i class="bi bi-geo-alt me-1"></i>{{ user.location }}
+                                    </span>
+                                {% endif %}
+                                {% if user.experience_level %}
+                                    <span class="badge bg-light text-primary">
+                                        <i class="bi bi-briefcase me-1"></i>{{ user.experience_level|title }} Level
+                                    </span>
+                                {% endif %}
+                                {% if user.email %}
+                                    <span class="badge bg-light text-primary">
+                                        <i class="bi bi-envelope me-1"></i>{{ user.email }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Social Links -->
+                            {% if social_links or user.linkedin_url or user.github_url or user.portfolio_url %}
+                                <div class="social-links mt-2">
+                                    {% if user.linkedin_url %}
+                                        <a href="{{ user.linkedin_url }}" target="_blank" class="text-white me-3">
+                                            <i class="bi bi-linkedin fs-5"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% if user.github_url %}
+                                        <a href="{{ user.github_url }}" target="_blank" class="text-white me-3">
+                                            <i class="bi bi-github fs-5"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% if user.portfolio_url %}
+                                        <a href="{{ user.portfolio_url }}" target="_blank" class="text-white me-3">
+                                            <i class="bi bi-globe fs-5"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% for social_link in social_links %}
+                                        <a href="{{ social_link.url }}" target="_blank" class="text-white me-3">
+                                            <i class="{{ social_link.get_icon_class() }} fs-5"></i>
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <!-- Profile Completion -->
+                            <div class="profile-completion mb-3">
+                                <div class="position-relative d-inline-block">
+                                    <svg width="80" height="80" class="circular-progress">
+                                        <circle cx="40" cy="40" r="35" stroke="rgba(255,255,255,0.3)" stroke-width="6" fill="none"></circle>
+                                        <circle cx="40" cy="40" r="35" stroke="white" stroke-width="6" fill="none"
+                                                stroke-dasharray="{{ 2 * 3.14159 * 35 }}"
+                                                stroke-dashoffset="{{ 2 * 3.14159 * 35 * (1 - profile_data.percentage / 100) }}"
+                                                stroke-linecap="round"
+                                                transform="rotate(-90 40 40)"></circle>
+                                    </svg>
+                                    <div class="position-absolute top-50 start-50 translate-middle text-center">
+                                        <div class="fw-bold">{{ profile_data.percentage }}%</div>
+                                        <small class="opacity-75">Complete</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="{{ url_for('user_profile.edit_enhanced_profile') }}" class="btn btn-light btn-sm">
+                                <i class="bi bi-pencil me-1"></i>Edit Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Experience Section -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-briefcase-fill text-primary me-2"></i>Work Experience
+                    </h5>
+                    <a href="{{ url_for('user_profile.add_experience') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i>Add Experience
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if experiences %}
+                        {% for experience in experiences %}
+                            <div class="experience-item mb-4 {% if not loop.last %}border-bottom pb-4{% endif %}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="mb-1 fw-bold">{{ experience.job_title }}</h6>
+                                        <p class="mb-1 text-primary">{{ experience.company }}</p>
+                                        {% if experience.location %}
+                                            <small class="text-muted">
+                                                <i class="bi bi-geo-alt me-1"></i>{{ experience.location }}
+                                            </small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-end">
+                                        <small class="text-muted d-block">
+                                            {{ experience.start_date.strftime('%b %Y') }} - 
+                                            {% if experience.is_current %}Present{% else %}{{ experience.end_date.strftime('%b %Y') if experience.end_date else 'Present' }}{% endif %}
+                                        </small>
+                                        <small class="text-muted">{{ experience.get_duration_text() }}</small>
+                                        <div class="mt-1">
+                                            <a href="{{ url_for('user_profile.edit_experience', experience_id=experience.id) }}" 
+                                               class="btn btn-outline-secondary btn-sm me-1">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('user_profile.delete_experience', experience_id=experience.id) }}" 
+                                                  class="d-inline" onsubmit="return confirm('Are you sure you want to delete this experience?')">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% if experience.description %}
+                                    <div class="experience-description">
+                                        <p class="mb-0 text-muted">{{ experience.description }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-briefcase text-muted" style="font-size: 3rem;"></i>
+                            <h6 class="text-muted mt-3">No work experience added yet</h6>
+                            <p class="text-muted">Add your work experience to showcase your professional background</p>
+                            <a href="{{ url_for('user_profile.add_experience') }}" class="btn btn-primary">
+                                <i class="bi bi-plus-lg me-1"></i>Add Your First Experience
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Education Section -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-mortarboard-fill text-success me-2"></i>Education
+                    </h5>
+                    <a href="{{ url_for('user_profile.add_education') }}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i>Add Education
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if educations %}
+                        {% for education in educations %}
+                            <div class="education-item mb-3 {% if not loop.last %}border-bottom pb-3{% endif %}">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1 fw-bold">{{ education.degree }}</h6>
+                                        <p class="mb-1 text-success">{{ education.institution }}</p>
+                                        {% if education.field_of_study %}
+                                            <small class="text-muted d-block">{{ education.field_of_study }}</small>
+                                        {% endif %}
+                                        {% if education.location %}
+                                            <small class="text-muted">
+                                                <i class="bi bi-geo-alt me-1"></i>{{ education.location }}
+                                            </small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-end">
+                                        <small class="text-muted">{{ education.get_year_range_text() }}</small>
+                                        {% if education.gpa %}
+                                            <small class="text-muted d-block">GPA: {{ education.gpa }}</small>
+                                        {% endif %}
+                                        <div class="mt-1">
+                                            <a href="{{ url_for('user_profile.edit_education', education_id=education.id) }}" 
+                                               class="btn btn-outline-secondary btn-sm me-1">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('user_profile.delete_education', education_id=education.id) }}" 
+                                                  class="d-inline" onsubmit="return confirm('Are you sure you want to delete this education entry?')">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% if education.description %}
+                                    <p class="mb-0 text-muted mt-2">{{ education.description }}</p>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-mortarboard text-muted" style="font-size: 2.5rem;"></i>
+                            <h6 class="text-muted mt-2">No education added yet</h6>
+                            <p class="text-muted">Add your educational background</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Skills Section -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear-fill text-warning me-2"></i>Skills
+                    </h5>
+                    <a href="{{ url_for('user_profile.add_skill') }}" class="btn btn-outline-warning btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i>Add Skill
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if skills %}
+                        {% set skill_categories = skills | groupby('category') %}
+                        {% for category, category_skills in skill_categories %}
+                            {% if category %}
+                                <h6 class="text-muted mb-2">{{ category }}</h6>
+                            {% endif %}
+                            <div class="mb-3">
+                                {% for skill in category_skills %}
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div class="flex-grow-1">
+                                            <span class="fw-medium">{{ skill.name }}</span>
+                                            <div class="progress mt-1" style="height: 6px;">
+                                                <div class="progress-bar bg-warning" 
+                                                     style="width: {{ skill.get_proficiency_level() * 25 }}%"></div>
+                                            </div>
+                                            <small class="text-muted">{{ skill.proficiency|title }}</small>
+                                        </div>
+                                        <form method="POST" action="{{ url_for('user_profile.delete_skill', skill_id=skill.id) }}" 
+                                              class="d-inline ms-2" onsubmit="return confirm('Delete this skill?')">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-gear text-muted" style="font-size: 2.5rem;"></i>
+                            <h6 class="text-muted mt-2">No skills added yet</h6>
+                            <p class="text-muted">Showcase your technical and professional skills</p>
+                            <a href="{{ url_for('user_profile.add_skill') }}" class="btn btn-warning">
+                                <i class="bi bi-plus-lg me-1"></i>Add Skills
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Certifications Section -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-award-fill text-info me-2"></i>Certifications
+                    </h5>
+                    <a href="{{ url_for('user_profile.add_certification') }}" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i>Add Certification
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if certifications %}
+                        {% for cert in certifications %}
+                            <div class="certification-item mb-3 {% if not loop.last %}border-bottom pb-3{% endif %}">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1 fw-bold">{{ cert.name }}</h6>
+                                        <p class="mb-1 text-info">{{ cert.issuing_organization }}</p>
+                                        {% if cert.issue_date %}
+                                            <small class="text-muted d-block">
+                                                Issued: {{ cert.issue_date.strftime('%b %Y') }}
+                                                {% if cert.expiry_date %}
+                                                    - Expires: {{ cert.expiry_date.strftime('%b %Y') }}
+                                                    {% if cert.is_expired() %}
+                                                        <span class="badge bg-danger ms-1">Expired</span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </small>
+                                        {% endif %}
+                                        {% if cert.credential_url %}
+                                            <a href="{{ cert.credential_url }}" target="_blank" class="btn btn-outline-info btn-sm mt-2">
+                                                <i class="bi bi-link-45deg me-1"></i>View Credential
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="mt-1">
+                                            <a href="{{ url_for('user_profile.edit_certification', certification_id=cert.id) }}" 
+                                               class="btn btn-outline-secondary btn-sm me-1">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('user_profile.delete_certification', certification_id=cert.id) }}" 
+                                                  class="d-inline" onsubmit="return confirm('Are you sure you want to delete this certification?')">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-award text-muted" style="font-size: 2.5rem;"></i>
+                            <h6 class="text-muted mt-2">No certifications added yet</h6>
+                            <p class="text-muted">Add your professional certifications</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Profile Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear text-secondary me-2"></i>Profile Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('user_profile.edit_enhanced_profile') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-person-gear me-1"></i>Edit Basic Info
+                        </a>
+                        <a href="{{ url_for('user_profile.edit_social_links') }}" class="btn btn-outline-info">
+                            <i class="bi bi-share me-1"></i>Edit Social Links
+                        </a>
+                        <a href="{{ url_for('main.applicant_dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.circular-progress circle {
+    transition: stroke-dashoffset 0.5s ease-in-out;
+}
+
+.profile-picture-container {
+    position: relative;
+}
+
+.profile-picture-container .dropdown-toggle {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.profile-picture-container .dropdown-toggle:hover {
+    background: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: scale(1.05);
+}
+
+.profile-picture-container .dropdown-menu {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 0.5rem;
+}
+
+.profile-picture-container .dropdown-item {
+    padding: 0.5rem 1rem;
+    transition: background-color 0.2s ease;
+}
+
+.profile-picture-container .dropdown-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.profile-picture-container .dropdown-item.text-danger:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.experience-item, .education-item, .certification-item {
+    transition: background-color 0.2s ease;
+}
+
+.experience-item:hover, .education-item:hover, .certification-item:hover {
+    background-color: rgba(0,0,0,0.02);
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+}
+
+.social-links a {
+    transition: opacity 0.2s ease;
+}
+
+.social-links a:hover {
+    opacity: 0.8;
+}
+</style>
+{% endblock %}

@@ -109,19 +109,6 @@
                             <p class="text-muted">Sign in to your JobMate account</p>
                         </div>
                         
-                        <!-- Demo Credentials (for development) -->
-                        {% if config.FLASK_ENV == 'development' %}
-                        <div class="demo-credentials">
-                            <h6 class="fw-semibold mb-2">
-                                <i class="bi bi-info-circle me-2"></i>Demo Credentials
-                            </h6>
-                            <small class="text-muted">
-                                <strong>Applicant:</strong> applicant@demo.com / password123<br>
-                                <strong>Recruiter:</strong> recruiter@demo.com / password123
-                            </small>
-                        </div>
-                        {% endif %}
-                        
                         <!-- Login Form -->
                         <form method="POST" id="loginForm" novalidate>
                             {{ form.hidden_tag() }}

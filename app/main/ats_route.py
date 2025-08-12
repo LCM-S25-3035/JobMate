@@ -15,23 +15,86 @@ from app.ai_agents.gemini_utils import call_gemini_api
 @bp.route('/recalculate_ats_score', methods=['POST'])
 @login_required
 def recalculate_ats_score():
-    """Recalculate ATS score for a job based on current resume text"""
+    """Enhanced ATS score recalculation with optimization"""
     data = request.json
     job_id = data.get('job_id')
-    resume_text = data.get('resume_text')
+    resume_text = data.get('resume_text', '').strip()
+    job_description = data.get('job_description', '').strip()
     
-    if not job_id or not resume_text:
-        return jsonify({'success': False, 'error': 'Missing job ID or resume text'})
+    # Handle both old format (job_id) and new format (direct job_description)
+    if not resume_text:
+        return jsonify({'success': False, 'error': 'Missing resume text'})
     
     try:
-        # Get the job description from MongoDB
-        mongo_db = current_app.mongo_db
-        job = mongo_db.jobs.find_one({"_id": ObjectId(job_id)})
+        # Get job description from either parameter or database
+        if not job_description and job_id:
+            mongo_db = current_app.mongo_db
+            job = mongo_db.jobs.find_one({"_id": ObjectId(job_id)})
+            if job:
+                job_description = job.get('description', '')
+            else:
+                return jsonify({'success': False, 'error': 'Job not found'})
         
-        if not job:
-            return jsonify({'success': False, 'error': 'Job not found'})
+        if not job_description:
+            return jsonify({'success': False, 'error': 'Job description not available'})
         
-        # Calculate ATS score using simplified version of the tailoring logic
+        current_app.logger.info("Starting enhanced ATS optimization")
+        
+        # Try enhanced optimization first
+        try:
+            from app.services.resume_tailor import EnhancedResumeTailor
+            from app.services.ats_analyzer import EnhancedATSAnalyzer
+            
+            # Initialize enhanced tailor
+            enhanced_tailor = EnhancedResumeTailor(
+                gemini_api_key=current_app.config.get('GEMINI_API_KEY'),
+                gemini_model=current_app.config.get('GEMINI_MODEL', 'gemini-2.5-flash')
+            )
+            
+            # Apply enhanced optimization targeting 90%+
+            optimization_result = enhanced_tailor.tailor_resume_for_high_ats(
+                resume_text=resume_text,
+                job_description=job_description,
+                target_score=90
+            )
+            
+            if optimization_result['success']:
+                ats_score = optimization_result['ats_score']
+                optimized_resume = optimization_result['tailored_resume']
+                
+                # Update database if job_id provided
+                if job_id:
+                    mongo_db = current_app.mongo_db
+                    mongo_db.tailored_resumes.update_one(
+                        {"user_id": str(current_user.id), "job_id": str(job_id)},
+                        {"$set": {
+                            "ats_score": ats_score,
+                            "tailored_content": optimized_resume,
+                            "optimization_enhanced": True,
+                            "updated_at": datetime.utcnow()
+                        }}
+                    )
+                
+                return jsonify({
+                    'success': True,
+                    'ats_score': ats_score,
+                    'tailored_resume': optimized_resume,
+                    'iterations_used': optimization_result['iterations_used'],
+                    'keywords_matched': optimization_result['keywords_matched'],
+                    'total_keywords': optimization_result['total_keywords'],
+                    'enhanced': True,
+                    'message': f'ATS score enhanced to {ats_score}% in {optimization_result["iterations_used"]} iterations'
+                })
+            else:
+                # Enhanced optimization failed, fall back to original method
+                current_app.logger.warning("Enhanced optimization failed, using fallback")
+                
+        except ImportError:
+            current_app.logger.warning("Enhanced services not available, using fallback")
+        except Exception as e:
+            current_app.logger.error(f"Enhanced optimization error: {str(e)}")
+        
+        # Fallback to original Gemini-based calculation
         prompt = f"""
         You are an ATS (Applicant Tracking System) score calculator. Given the job description 
         and resume below, calculate a match score from 0-100 based on keyword matches, 
@@ -39,7 +102,7 @@ def recalculate_ats_score():
         
         ## JOB DESCRIPTION
         ```
-        {job.get('description', '')}
+        {job_description}
         ```
         
         ## RESUME
@@ -49,10 +112,10 @@ def recalculate_ats_score():
         
         Calculate and return only a number from 0-100 representing the ATS match score.
         The number should be based on:
-        1. Keyword match percentage
-        2. Skills alignment 
-        3. Experience relevance
-        4. Education requirements match
+        1. Keyword match percentage (40%)
+        2. Skills alignment (30%)
+        3. Experience relevance (20%)
+        4. Education requirements match (10%)
         
         Return ONLY the number, with no additional text or explanation.
         """
@@ -70,24 +133,24 @@ def recalculate_ats_score():
                 if match:
                     ats_score = int(match.group(1))
                     # Ensure score is in valid range
-                    if ats_score < 0:
-                        ats_score = 0
-                    elif ats_score > 100:
-                        ats_score = 100
+                    ats_score = max(0, min(100, ats_score))
                 else:
                     # Default score if unable to parse
                     ats_score = 70
                     current_app.logger.warning(f"Could not parse ATS score from response: {content}")
                 
-                # Update the score in database
-                mongo_db.tailored_resumes.update_one(
-                    {"user_id": str(current_user.id), "job_id": str(job_id)},
-                    {"$set": {"ats_score": ats_score}}
-                )
+                # Update the score in database if job_id provided
+                if job_id:
+                    mongo_db = current_app.mongo_db
+                    mongo_db.tailored_resumes.update_one(
+                        {"user_id": str(current_user.id), "job_id": str(job_id)},
+                        {"$set": {"ats_score": ats_score}}
+                    )
                 
                 return jsonify({
                     'success': True, 
-                    'ats_score': ats_score
+                    'ats_score': ats_score,
+                    'fallback_used': True
                 })
             except Exception as e:
                 current_app.logger.error(f"Error extracting ATS score: {str(e)}")

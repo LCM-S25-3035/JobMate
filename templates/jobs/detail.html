@@ -18,23 +18,20 @@
                             {% if current_user.is_authenticated and current_user.user_type == 'applicant' %}
                             <div class="btn-group" role="group">
                                 {% if not has_applied %}
-                                <a href="#" onclick="tailorResume('{{ job._id }}')" class="btn btn-primary">
-                                    <i class="bi bi-magic"></i> ATS Optimize & Apply
+                                <a href="{{ url_for('main.tailor_resume', job_id=job._id) }}" class="btn btn-primary">
+                                    <i class="bi bi-magic"></i> Tailor Resume & Apply
                                 </a>
+                                <button class="btn btn-outline-primary" onclick="markAsApplied('{{ job._id }}', '{{ job.title|e }}', '{{ job.company|e }}')">
+                                    <i class="bi bi-check2-circle"></i> Mark as Applied
+                                </button>
                                 {% else %}
                                 <button class="btn btn-success" disabled>
                                     <i class="bi bi-check-circle"></i> Applied
                                 </button>
                                 {% endif %}
-                                {% if is_saved %}
-                                <button class="btn btn-warning" onclick="saveJob('{{ job._id }}')">
-                                    <i class="bi bi-bookmark-fill"></i> Saved
-                                </button>
-                                {% else %}
                                 <button class="btn btn-outline-secondary" onclick="saveJob('{{ job._id }}')">
                                     <i class="bi bi-bookmark"></i> Save
                                 </button>
-                                {% endif %}
                             </div>
                             {% endif %}
                         </div>
@@ -44,13 +41,13 @@
                     <div class="row mt-3">
                         <div class="col-md-6">
                             {% if job.location %}
-                            <p class="mb-1 text-dark"><i class="bi bi-geo-alt text-primary"></i> {{ job.location }}</p>
+                            <p class="mb-1"><i class="bi bi-geo-alt text-primary"></i> {{ job.location }}</p>
                             {% endif %}
                             {% if job.job_type %}
-                            <p class="mb-1 text-dark"><i class="bi bi-briefcase text-primary"></i> {{ job.job_type }}</p>
+                            <p class="mb-1"><i class="bi bi-briefcase text-primary"></i> {{ job.job_type }}</p>
                             {% endif %}
                             {% if job.job_level %}
-                            <p class="mb-1 text-dark"><i class="bi bi-trophy text-primary"></i> {{ job.job_level }}</p>
+                            <p class="mb-1"><i class="bi bi-trophy text-primary"></i> {{ job.job_level }}</p>
                             {% endif %}
                         </div>
                         <div class="col-md-6 text-end">
@@ -75,86 +72,25 @@
                     <div class="mt-3">
                         <h6><i class="bi bi-gear-fill me-2"></i>Required Skills:</h6>
                         <div class="d-flex flex-wrap gap-2">
+                            {% set skills_list = [] %}
                             {% if job.skills is string %}
-                                {% set skills_list = job.skills.split(',') %}
-                                {% for skill in skills_list %}
-                                    {% if skill.strip() %}
-                                        <span class="badge bg-secondary text-dark">{{ skill.strip() }}</span>
-                                    {% endif %}
-                                {% endfor %}
-                            {% elif job.skills is iterable %}
-                                {% for skill in job.skills %}
-                                    {% if skill.strip() %}
-                                        <span class="badge bg-secondary text-dark">{{ skill.strip() }}</span>
-                                    {% endif %}
-                                {% endfor %}
+                                {% set skills_list = (job.skills|string).split(',') %}
+                            {% elif job.skills is iterable and job.skills is not string %}
+                                {% set skills_list = job.skills %}
                             {% else %}
-                                <span class="badge bg-secondary text-dark">{{ job.skills }}</span>
+                                {% set skills_list = [job.skills|string] %}
                             {% endif %}
+                            
+                            {% for skill in skills_list %}
+                                {% if skill and skill|string and skill|string|trim %}
+                                    <span class="badge bg-primary">{{ skill|string|trim }}</span>
+                                {% endif %}
+                            {% endfor %}
                         </div>
                     </div>
                     {% endif %}
                 </div>
             </div>
-
-            <!-- FIXED ALERT BANNERS - Show both banners if needed -->
-            
-            <!-- Banner 1: Missing Job Description (ALWAYS show if no manual description) -->
-            {% if current_user.is_authenticated and not has_description %}
-            <div class="fixed-alert-banner no-description-banner mb-4" id="noDescriptionAlert">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-info-circle me-3 fs-4"></i>
-                    <div class="flex-grow-1">
-                        <strong>Missing Job Description</strong><br>
-                        <small>This job doesn't have a detailed description. Add one to enable AI-powered resume tailoring!</small>
-                    </div>
-                    <div class="ms-3">
-                        <button class="btn btn-primary btn-sm me-2" onclick="showQuickAddModal()" type="button">
-                            <i class="fas fa-plus"></i> Add Description
-                        </button>
-                        <button class="btn btn-outline-primary btn-sm" onclick="showQuickAddModal()" type="button">
-                            <i class="fas fa-magic"></i> AI Generate
-                        </button>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-            
-            <!-- Banner 2: No Resume (show if user doesn't have resume) -->
-            {% if current_user.is_authenticated and not user_has_resume %}
-            <div class="fixed-alert-banner no-resume-banner mb-4" id="noResumeAlert">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-exclamation-triangle me-3 fs-4"></i>
-                    <div class="flex-grow-1">
-                        <strong>Resume Required for Tailoring</strong><br>
-                        <small>Upload your resume to enable AI-powered resume tailoring for "{{ job.title }}" at {{ job.company }}.</small>
-                    </div>
-                    <div class="ms-3">
-                        <a href="{{ url_for('main.tailor_resume', job_id=job._id) }}" class="btn btn-warning btn-sm">
-                            <i class="fas fa-upload"></i> Upload Resume
-                        </a>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-            
-            <!-- Banner 3: Enhance Description (only if has description but not manual) -->
-            {% if current_user.is_authenticated and user_has_resume and has_description and not has_manual_description %}
-            <div class="fixed-alert-banner enhance-description-banner mb-4" id="enhanceDescriptionAlert">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-lightbulb me-3"></i>
-                    <div class="flex-grow-1">
-                        <strong>Enhance Job Description</strong><br>
-                        <small>Want to improve this job description for better resume tailoring?</small>
-                    </div>
-                    <div class="ms-3">
-                        <button class="btn btn-info btn-sm" onclick="showQuickAddModal()" type="button">
-                            <i class="fas fa-edit"></i> Enhance Description
-                        </button>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
 
             <!-- Job Description -->
             <div class="card mb-4">
@@ -164,30 +100,31 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <!-- Try enhanced description first, then fallback to multiple fields -->
-                    {% set description_content = job.enhanced_description or job.description or job.job_description or job.summary or job.details or job.company_description %}
+                    <!-- Try multiple fields for job description -->
+                    {% set description_content = job.description or job.job_description or job.summary or job.details or job.company_description %}
                     
                     {% if description_content and description_content|string != 'nan' and description_content|string != '' and description_content|string|length > 10 %}
                         <div class="job-description-content">
                             {% set clean_description = description_content|replace('**', '')|replace('###', '')|replace('***', '') %}
-                            {% set description_lines = clean_description.split('\n') %}
+                            {% set description_lines = clean_description|string|replace('\n', '|||')|replace('\r', '') %}
                             
-                            {% for line in description_lines %}
-                                {% if line.strip() %}
-                                    {% if line.strip().startswith('*') and not line.strip().startswith('**') %}
+                            {% for line_part in description_lines.split('|||') %}
+                                {% set line = line_part.strip() %}
+                                {% if line %}
+                                    {% if line.startswith('*') and not line.startswith('**') %}
                                         <!-- Bullet points -->
                                         <div class="d-flex align-items-start mb-2">
                                             <i class="bi bi-check-circle-fill text-success me-2 mt-1"></i>
-                                            <span>{{ line.strip()[1:].strip() }}</span>
+                                            <span>{{ line[1:].strip() }}</span>
                                         </div>
                                     {% elif 'qualifications' in line.lower() or 'requirements' in line.lower() or 'about the job' in line.lower() or 'responsibilities' in line.lower() %}
                                         <!-- Section headers -->
                                         <h6 class="fw-bold text-primary mt-4 mb-2 border-bottom pb-1">
-                                            {{ line.strip().replace('*', '').replace('#', '').strip() }}
+                                            {{ line.replace('*', '').replace('#', '').strip() }}
                                         </h6>
                                     {% else %}
                                         <!-- Regular paragraphs -->
-                                        <p class="mb-3">{{ line.strip() }}</p>
+                                        <p class="mb-3">{{ line }}</p>
                                     {% endif %}
                                 {% endif %}
                             {% endfor %}
@@ -205,20 +142,8 @@
                             {% endif %}
                         </div>
                         
-                        <!-- Debug info for troubleshooting -->
-                        {% if current_user.is_authenticated and ('Canada' in (job.location or '') or 'Toronto' in (job.location or '')) %}
-                            <details class="mt-3">
-                                <summary class="btn btn-sm btn-outline-info">Debug: Show Available Data</summary>
-                                <div class="mt-2 small text-muted">
-                                    <strong>Available fields:</strong> {{ job.keys()|list }}<br>
-                                    <strong>Source:</strong> {{ job.get('source', 'Unknown') }}<br>
-                                    <strong>Description field:</strong> {{ job.get('description', 'Empty')|string|truncate(100) }}<br>
-                                    <strong>Job description field:</strong> {{ job.get('job_description', 'Empty')|string|truncate(100) }}<br>
-                                    <strong>Summary field:</strong> {{ job.get('summary', 'Empty')|string|truncate(100) }}<br>
-                                    <strong>Details field:</strong> {{ job.get('details', 'Empty')|string|truncate(100) }}
-                                </div>
-                            </details>
-                        {% endif %}
+                                                <!-- Job Description -->
+                        {% if job.description or job.job_description or job.summary or job.details %}
                     {% endif %}
                 </div>
             </div>
@@ -231,27 +156,19 @@
                         <i class="bi bi-list-check me-2"></i>Requirements
                     </h5>
                     <div class="job-requirements">
-                        {% if job.requirements %}
-                            {% if job.requirements is string %}
-                                {% set req_lines = job.requirements.split('\n') %}
-                            {% else %}
-                                {% set req_lines = job.requirements %}
-                            {% endif %}
-                            {% for line in req_lines %}
-                                {% if line.strip() %}
-                                    {% if line.strip().startswith('*') or line.strip().startswith('-') %}
-                                        <div class="d-flex align-items-start mb-2">
-                                            <i class="bi bi-arrow-right-circle text-primary me-2 mt-1"></i>
-                                            <span>{{ line.strip()[1:].strip() }}</span>
-                                        </div>
-                                    {% else %}
-                                        <p class="mb-2">{{ line.strip() }}</p>
-                                    {% endif %}
+                        {% set req_lines = job.requirements|string|split('\n') %}
+                        {% for line in req_lines %}
+                            {% if line.strip() %}
+                                {% if line.strip().startswith('*') or line.strip().startswith('-') %}
+                                    <div class="d-flex align-items-start mb-2">
+                                        <i class="bi bi-arrow-right-circle text-primary me-2 mt-1"></i>
+                                        <span>{{ line.strip()[1:].strip() }}</span>
+                                    </div>
+                                {% else %}
+                                    <p class="mb-2">{{ line.strip() }}</p>
                                 {% endif %}
-                            {% endfor %}
-                        {% else %}
-                            <p class="text-muted">No specific requirements listed.</p>
-                        {% endif %}
+                            {% endif %}
+                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -354,50 +271,11 @@
                                 <i class="bi bi-magic text-success me-2"></i>
                                 <strong>Ready to Apply?</strong>
                             </div>
-                            <p class="mb-3 small">Use our AI-powered ATS optimization to achieve 90+ ATS scores while preserving your resume format!</p>
-                            
-                            <div class="d-flex gap-2 flex-wrap">
-                                {% if has_tailored_resume %}
-                                <button type="button" onclick="tailorResume('{{ job._id }}')" 
-                                       class="btn btn-outline-success" id="tailorBtn">
-                                    <i class="bi bi-check-circle"></i> Resume Tailored
-                                </button>
-                                
-                                <button type="button" onclick="applyToJob('{{ job._id }}')" 
-                                       class="btn btn-success" id="applyBtn">
-                                    <i class="bi bi-send"></i> Apply to Job
-                                </button>
-                                
-                                <a href="/jobs/download-tailored-resume/{{ job._id }}" id="downloadBtn" class="btn btn-outline-info">
-                                    <i class="bi bi-download"></i> Download Resume
-                                </a>
-                                {% else %}
-                                <button type="button" onclick="tailorResume('{{ job._id }}')" 
-                                       class="btn btn-primary" id="tailorBtn">
-                                    <i class="bi bi-magic"></i> ATS Optimize Resume
-                                </button>
-                                
-                                <button type="button" onclick="applyToJob('{{ job._id }}')" 
-                                       class="btn btn-success" id="applyBtn" disabled>
-                                    <i class="bi bi-send"></i> Apply to Job
-                                </button>
-                                
-                                <a href="#" id="downloadBtn" class="btn btn-outline-info d-none">
-                                    <i class="bi bi-download"></i> Download Resume
-                                </a>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="mt-2">
-                                <small class="text-muted">
-                                    <i class="bi bi-info-circle"></i> 
-                                    {% if has_tailored_resume %}
-                                    Your resume has been tailored for this job. You can now apply!
-                                    {% else %}
-                                    First tailor your resume, then apply to the job
-                                    {% endif %}
-                                </small>
-                            </div>
+                            <p class="mb-2 small">Use our AI-powered resume tailoring to optimize your resume for this specific job and improve your ATS score!</p>
+                            <a href="{{ url_for('main.tailor_resume', job_id=job._id) }}" 
+                               class="btn btn-primary">
+                                <i class="bi bi-magic"></i> Tailor Resume & Apply
+                            </a>
                         </div>
                     {% endif %}
                 </div>
@@ -511,90 +389,6 @@
 .job-benefits li {
     margin-bottom: 0.5rem;
 }
-
-/* Fixed Alert Banner Styles - Single banner system */
-.fixed-alert-banner {
-    padding: 1rem 1.25rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    border-left: 4px solid;
-    font-weight: 500;
-    
-    /* CRITICAL: Make banners completely unmovable */
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    position: relative !important;
-}
-
-.no-resume-banner {
-    background-color: #fff3cd;
-    border-left-color: #f0ad4e;
-    color: #856404;
-}
-
-.no-description-banner {
-    background-color: #d1ecf1;
-    border-left-color: #0dcaf0;
-    color: #055160;
-}
-
-.enhance-description-banner {
-    background-color: #e2e3e5;
-    border-left-color: #6c757d;
-    color: #495057;
-}
-
-.fixed-alert-banner .btn {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.no-resume-banner .btn-warning {
-    background-color: #f0ad4e;
-    border-color: #eea236;
-    color: #fff;
-}
-
-.no-description-banner .btn-primary {
-    background-color: #0dcaf0;
-    border-color: #0dcaf0;
-}
-
-.enhance-description-banner .btn-info {
-    background-color: #6c757d;
-    border-color: #6c757d;
-}
-
-@media (max-width: 768px) {
-    .fixed-alert-banner .d-flex {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .fixed-alert-banner .ms-3 {
-        margin-left: 0 !important;
-    }
-}
-
-/* Ultra-protection against any script trying to hide banners */
-.fixed-alert-banner[style*="display: none"] {
-    display: block !important;
-}
-
-.fixed-alert-banner[style*="opacity: 0"] {
-    opacity: 1 !important;
-}
-
-.fixed-alert-banner[style*="visibility: hidden"] {
-    visibility: visible !important;
-}
-
-/* Add pulse animation for highlighting alerts */
-@keyframes pulse {
-    0% { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    50% { box-shadow: 0 8px 15px rgba(0,123,255,0.3); transform: translateY(-2px); }
-    100% { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-}
 </style>
 
 <script>
@@ -634,11 +428,87 @@ function saveJob(jobId) {
     });
 }
 
+// Mark job as applied without tailoring
+function markAsApplied(jobId, jobTitle, companyName) {
+    if (!confirm(`Mark "${jobTitle}" at ${companyName} as applied?`)) {
+        return;
+    }
+    
+    // Disable the button to prevent multiple clicks
+    const markAppliedBtn = document.querySelector(`button[onclick*="${jobId}"]`);
+    if (markAppliedBtn) {
+        markAppliedBtn.disabled = true;
+        markAppliedBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+    }
+    
+    // Get CSRF token if available
+    const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+    
+    const headers = {
+        'Content-Type': 'application/json',
+    };
+    
+    if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken;
+    }
+    
+    fetch(`/jobs/mark-applied/${jobId}`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+            applied_externally: true
+        })
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.text().then(text => {
+            console.log('Raw response:', text);
+            try {
+                const data = JSON.parse(text);
+                return { data, status: response.status, ok: response.ok };
+            } catch (e) {
+                console.error('JSON parse error:', e);
+                throw new Error(`Invalid JSON response: ${text}`);
+            }
+        });
+    })
+    .then(({data, status, ok}) => {
+        console.log('Parsed response data:', data);
+        
+        if (ok && data.success) {
+            showToast(data.message || 'Job marked as applied! Added to your applications tracker.', 'success');
+            // Update the button to show "Applied" state
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            // Re-enable button on failure
+            if (markAppliedBtn) {
+                markAppliedBtn.disabled = false;
+                markAppliedBtn.innerHTML = '<i class="bi bi-check2-circle"></i> Mark as Applied';
+            }
+            const errorMsg = data.error || `HTTP ${status} error`;
+            showToast(errorMsg, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Re-enable button on error
+        if (markAppliedBtn) {
+            markAppliedBtn.disabled = false;
+            markAppliedBtn.innerHTML = '<i class="bi bi-check2-circle"></i> Mark as Applied';
+        }
+        showToast(`Failed to mark as applied: ${error.message}. Please try again.`, 'error');
+    });
+}
+
 // Simple toast notification
 function showToast(message, type) {
+    // Remove any existing toasts first to prevent stacking
+    const existingToasts = document.querySelectorAll('.alert.position-fixed');
+    existingToasts.forEach(toast => toast.remove());
+    
     const toast = document.createElement('div');
     toast.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`;
-    toast.style.cssText = 'top: 20px; right: 20px; z-index: 1050;';
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 1050; max-width: 400px;';
     toast.innerHTML = `
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -646,827 +516,12 @@ function showToast(message, type) {
     
     document.body.appendChild(toast);
     
+    // Auto-remove after 4 seconds
     setTimeout(() => {
-        toast.remove();
-    }, 5000);
-}
-
-// Quick Add Description Modal Functions
-function showQuickAddModal() {
-    const modal = new bootstrap.Modal(document.getElementById('quickAddModal'));
-    modal.show();
-}
-
-function generateAIDescription() {
-    const button = document.getElementById('generateAI');
-    const originalText = button.innerHTML;
-    const textarea = document.getElementById('quickDescription');
-    
-    // Show loading state
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-    button.disabled = true;
-    
-    fetch(`/jobs/api/generate_description_suggestion/{{ job._id }}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                textarea.value = data.suggested_description;
-                updateCharCount();
-                showAlert('AI suggestion generated! You can edit it before saving.', 'success');
-            } else {
-                showAlert('Failed to generate suggestion: ' + data.error, 'error');
-            }
-        })
-        .catch(error => {
-            showAlert('Error generating suggestion. Please try again.', 'error');
-        })
-        .finally(() => {
-            button.innerHTML = originalText;
-            button.disabled = false;
-        });
-}
-
-function saveQuickDescription() {
-    const description = document.getElementById('quickDescription').value.trim();
-    
-    if (description.length < 20) {
-        showAlert('Description must be at least 20 characters long', 'error');
-        return;
-    }
-    
-    const saveButton = document.querySelector('#quickAddModal .btn-success');
-    const originalText = saveButton.innerHTML;
-    saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-    saveButton.disabled = true;
-    
-    fetch(`/jobs/api/quick_add_description/{{ job._id }}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ description: description })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('Description saved successfully!', 'success');
-            setTimeout(() => {
-                location.reload(); // Refresh page to show new description
-            }, 1000);
-        } else {
-            showAlert('Error: ' + data.error, 'error');
-            saveButton.innerHTML = originalText;
-            saveButton.disabled = false;
+        if (toast.parentNode) {
+            toast.remove();
         }
-    })
-    .catch(error => {
-        showAlert('Error saving description. Please try again.', 'error');
-        saveButton.innerHTML = originalText;
-        saveButton.disabled = false;
-    });
-}
-
-function updateCharCount() {
-    const textarea = document.getElementById('quickDescription');
-    const charCount = document.getElementById('charCount');
-    if (textarea && charCount) {
-        charCount.textContent = textarea.value.length;
-        charCount.className = textarea.value.length >= 20 ? 'text-success' : 'text-danger';
-    }
-}
-
-// Initialize character counter when modal is shown
-document.addEventListener('DOMContentLoaded', function() {
-    // ULTIMATE PROTECTION: Make alert banners completely permanent
-    const banners = document.querySelectorAll('.fixed-alert-banner');
-    
-    banners.forEach(function(banner) {
-        // Remove any data attributes that could trigger dismissal
-        banner.removeAttribute('data-bs-dismiss');
-        banner.removeAttribute('data-dismiss');
-        
-        // Lock banner visibility
-        Object.defineProperty(banner.style, 'display', {
-            value: 'block',
-            writable: false,
-            configurable: false
-        });
-        
-        Object.defineProperty(banner.style, 'opacity', {
-            value: '1',
-            writable: false,
-            configurable: false
-        });
-        
-        Object.defineProperty(banner.style, 'visibility', {
-            value: 'visible',
-            writable: false,
-            configurable: false
-        });
-    });
-    
-    // Create mutation observer to watch for any attempts to hide banners
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'attributes') {
-                const target = mutation.target;
-                if (target.classList.contains('fixed-alert-banner')) {
-                    // Force banner to stay visible no matter what
-                    if (target.style.display !== 'block') {
-                        target.style.setProperty('display', 'block', 'important');
-                    }
-                    if (target.style.opacity !== '1') {
-                        target.style.setProperty('opacity', '1', 'important');
-                    }
-                    if (target.style.visibility !== 'visible') {
-                        target.style.setProperty('visibility', 'visible', 'important');
-                    }
-                }
-            }
-        });
-    });
-    
-    // Observe all banner elements
-    banners.forEach(function(banner) {
-        observer.observe(banner, { 
-            attributes: true, 
-            attributeFilter: ['style', 'class']
-        });
-    });
-
-    // Initialize modal character counter
-    const modal = document.getElementById('quickAddModal');
-    if (modal) {
-        modal.addEventListener('shown.bs.modal', function() {
-            const textarea = document.getElementById('quickDescription');
-            if (textarea) {
-                textarea.addEventListener('input', updateCharCount);
-                updateCharCount(); // Initial count
-            }
-        });
-    }
-});
-
-// Tailor Resume Function with ATS Optimization
-function tailorResume(jobId) {
-    // Show loading state
-    const button = document.querySelector('[onclick*="tailorResume"]') || document.getElementById('tailorBtn');
-    if (!button) return;
-    
-    const originalText = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ATS Optimizing...';
-    button.disabled = true;
-    
-    fetch(`/jobs/tailor-resume-ats/${jobId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // ✅ UPDATE THE DISPLAYED RESUME CONTENT
-            updateResumeDisplay(data.tailored_resume, data.ats_score, data.keywords_matched, data.total_keywords);
-            
-            // Show ATS score in success message
-            const atsScore = data.ats_score || 0;
-            const scoreColor = atsScore >= 90 ? 'success' : atsScore >= 70 ? 'warning' : 'danger';
-            const scoreIcon = atsScore >= 90 ? '🎯' : atsScore >= 70 ? '⚡' : '📈';
-            
-            showToast(`${scoreIcon} Resume ATS-optimized! Score: ${atsScore}/100 (${data.keywords_matched}/${data.total_keywords} keywords matched)`, scoreColor);
-            
-            // Enable apply button and show download link
-            const applyBtn = document.getElementById('applyBtn');
-            const downloadBtn = document.getElementById('downloadBtn');
-            
-            if (applyBtn) {
-                applyBtn.disabled = false;
-                applyBtn.classList.remove('btn-success');
-                applyBtn.classList.add('btn-success');
-            }
-            
-            if (downloadBtn) {
-                downloadBtn.href = `/jobs/download-tailored-resume/${jobId}`;
-                downloadBtn.classList.remove('d-none');
-            }
-            
-            // Update button text with ATS score
-            const scoreDisplay = atsScore >= 90 ? `${atsScore}/100 🎯` : `${atsScore}/100`;
-            button.innerHTML = `<i class="bi bi-check-circle"></i> ATS Optimized (${scoreDisplay})`;
-            button.classList.remove('btn-primary');
-            button.classList.add(atsScore >= 90 ? 'btn-success' : 'btn-outline-success');
-            
-            // Add ATS score badge if it doesn't exist
-            let scoreDisplay_element = document.getElementById('atsScoreDisplay');
-            if (!scoreDisplay_element) {
-                const scoreElement = document.createElement('div');
-                scoreElement.id = 'atsScoreDisplay';
-                scoreElement.className = `alert alert-${scoreColor} mt-2`;
-                scoreElement.innerHTML = `
-                    <strong>ATS Optimization Complete!</strong><br>
-                    <small>Score: ${atsScore}/100 | Keywords Matched: ${data.keywords_matched}/${data.total_keywords} | Format: Preserved</small>
-                `;
-                button.parentNode.appendChild(scoreElement);
-            } else {
-                scoreDisplay_element.className = `alert alert-${scoreColor} mt-2`;
-                scoreDisplay_element.innerHTML = `
-                    <strong>ATS Optimization Complete!</strong><br>
-                    <small>Score: ${atsScore}/100 | Keywords Matched: ${data.keywords_matched}/${data.total_keywords} | Format: Preserved</small>
-                `;
-            }
-            
-        } else if (data.no_resume) {
-            // Handle no resume case - the fixed banner already shows
-            showToast('Please upload your resume first. Click the "Upload Resume" button above.', 'warning');
-            
-            // Highlight the alert banner
-            const noResumeAlert = document.getElementById('noResumeAlert');
-            if (noResumeAlert) {
-                noResumeAlert.style.animation = 'pulse 2s ease-in-out';
-                setTimeout(() => {
-                    noResumeAlert.style.animation = '';
-                }, 2000);
-            }
-            
-            // Reset button
-            button.disabled = false;
-            button.innerHTML = originalText;
-            
-        } else if (data.needs_description) {
-            // Handle no description case
-            showToast('This job needs a description for resume tailoring. Please add one first.', 'warning');
-            
-            // Highlight the description alert banner
-            const noDescAlert = document.getElementById('noDescriptionAlert');
-            if (noDescAlert) {
-                noDescAlert.style.animation = 'pulse 2s ease-in-out';
-                setTimeout(() => {
-                    noDescAlert.style.animation = '';
-                }, 2000);
-            }
-            
-            // Reset button
-            button.disabled = false;
-            button.innerHTML = originalText;
-            
-        } else if (data.redirect_to_upload) {
-            // Handle resume upload redirect (not an error - normal workflow)
-            showToast(`Please upload your resume first for "${data.job_title}" at ${data.company}`, 'info');
-            
-            // Show redirect message
-            button.innerHTML = '<i class="fas fa-upload"></i> Redirecting to Upload...';
-            
-            // Redirect after brief delay
-            setTimeout(() => {
-                window.location.href = data.redirect_url || `/tailor/${jobId}`;
-            }, 1500);
-                
-        } else {
-            // Show general error
-            showToast(data.error || 'Failed to tailor resume', 'error');
-            
-            // Reset button
-            button.disabled = false;
-            button.innerHTML = originalText;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Network error. Please try again.', 'error');
-        
-        // Reset button
-        button.disabled = false;
-        button.innerHTML = originalText;
-    });
-}
-
-// Function to update the resume display with optimized content
-function updateResumeDisplay(optimizedResume, atsScore, keywordsMatched, totalKeywords) {
-    // Create or update the resume display area
-    let resumeDisplayArea = document.getElementById('optimizedResumeDisplay');
-    
-    if (!resumeDisplayArea) {
-        // Create new display area
-        resumeDisplayArea = document.createElement('div');
-        resumeDisplayArea.id = 'optimizedResumeDisplay';
-        resumeDisplayArea.className = 'mt-4 mb-4';
-        
-        // Find where to insert it (after ATS score display or button area)
-        const insertAfter = document.getElementById('atsScoreDisplay') || 
-                           document.querySelector('[onclick*="tailorResume"]')?.parentNode;
-        
-        if (insertAfter) {
-            insertAfter.parentNode.insertBefore(resumeDisplayArea, insertAfter.nextSibling);
-        } else {
-            // Fallback: add to end of suggestions tab
-            const suggestionsTab = document.getElementById('suggestions');
-            if (suggestionsTab) {
-                suggestionsTab.appendChild(resumeDisplayArea);
-            }
-        }
-    }
-    
-    // Update the display content
-    const scoreColor = atsScore >= 90 ? 'success' : atsScore >= 70 ? 'warning' : 'danger';
-    resumeDisplayArea.innerHTML = `
-        <div class="card border-${scoreColor}">
-            <div class="card-header bg-${scoreColor} text-white">
-                <h5 class="mb-0">
-                    <i class="fas fa-robot"></i> ATS-Optimized Resume 
-                    <span class="badge bg-light text-dark ms-2">${atsScore}/100</span>
-                </h5>
-                <small>Keywords: ${keywordsMatched}/${totalKeywords} matched | Format: Preserved</small>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-12">
-                        <label class="form-label">
-                            <strong>Your Optimized Resume:</strong>
-                            <span class="text-muted">(This is what gets downloaded)</span>
-                        </label>
-                        <textarea 
-                            class="form-control font-monospace" 
-                            rows="20" 
-                            readonly 
-                            id="optimizedResumeContent"
-                            style="white-space: pre-wrap; font-size: 0.9em; line-height: 1.4;"
-                        >${optimizedResume}</textarea>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <button class="btn btn-outline-primary btn-sm" onclick="copyResumeToClipboard()">
-                        <i class="fas fa-copy"></i> Copy to Clipboard
-                    </button>
-                    <span class="text-muted ms-3">
-                        <i class="fas fa-info-circle"></i> 
-                        Content is optimized for ATS systems while preserving your original format
-                    </span>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Scroll to the display area
-    resumeDisplayArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-// Function to copy resume content to clipboard
-function copyResumeToClipboard() {
-    const resumeContent = document.getElementById('optimizedResumeContent');
-    if (resumeContent) {
-        resumeContent.select();
-        document.execCommand('copy');
-        showToast('Resume copied to clipboard!', 'success');
-    }
-}
-
-// Apply to Job Function
-function applyToJob(jobId) {
-    const button = document.getElementById('applyBtn');
-    const originalText = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Applying...';
-    button.disabled = true;
-    
-    fetch(`/jobs/apply/${jobId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast(data.message, 'success');
-            
-            // Update UI to show applied state
-            setTimeout(() => {
-                location.reload(); // Refresh to show applied state
-            }, 1500);
-        } else {
-            if (data.needs_tailoring) {
-                showToast('Please tailor your resume first before applying.', 'warning');
-            } else {
-                showToast('Error: ' + data.error, 'error');
-            }
-            
-            button.innerHTML = originalText;
-            button.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('An error occurred while submitting your application', 'error');
-        button.innerHTML = originalText;
-        button.disabled = false;
-    });
+    }, 4000);
 }
 </script>
-
-<!-- Quick Add Description Modal -->
-<div class="modal fade" id="quickAddModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-plus-circle me-2"></i>
-                    Add Job Description - {{ job.title }}
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            
-            <div class="modal-body">
-                <!-- AI Generation Section -->
-                <div class="row mb-4">
-                    <div class="col-md-8">
-                        <div class="bg-light p-3 rounded">
-                            <h6><i class="fas fa-robot text-primary"></i> AI Assistant</h6>
-                            <p class="mb-2">Let AI generate a description based on the job details:</p>
-                            <button type="button" class="btn btn-primary btn-sm" id="generateAI" onclick="generateAIDescription()">
-                                <i class="fas fa-magic"></i> Generate Description
-                            </button>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="job-info bg-info bg-opacity-10 p-3 rounded">
-                            <h6>Job Details</h6>
-                            <p class="mb-1"><strong>Title:</strong> {{ job.title }}</p>
-                            <p class="mb-1"><strong>Company:</strong> {{ job.company }}</p>
-                            <p class="mb-0"><strong>Location:</strong> {{ job.location }}</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Description Input -->
-                <div class="form-group">
-                    <label for="quickDescription" class="form-label">
-                        <i class="fas fa-file-alt"></i> Job Description
-                    </label>
-                    <textarea 
-                        id="quickDescription" 
-                        class="form-control" 
-                        rows="12" 
-                        placeholder="Enter or edit the job description here..."
-                    ></textarea>
-                    <div class="form-text">
-                        <span id="charCount">0</span> characters (minimum 20 required)
-                    </div>
-                </div>
-            </div>
-            
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    Cancel
-                </button>
-                <button type="button" class="btn btn-success" onclick="saveQuickDescription()">
-                    <i class="fas fa-save"></i> Save Description
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Fixed Alert Banner Styles -->
-<style>
-.fixed-alert-banner {
-    padding: 1rem 1.25rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    border-left: 4px solid;
-    font-weight: 500;
-    
-    /* CRITICAL: Make banners completely unmovable */
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    position: relative !important;
-    
-    /* Prevent any JavaScript from hiding */
-    pointer-events: none; /* Prevents click events that might hide it */
-}
-
-.fixed-alert-banner * {
-    pointer-events: auto; /* Re-enable clicks on child elements */
-}
-
-.no-resume-banner {
-    background-color: #fff3cd;
-    border-left-color: #f0ad4e;
-    color: #856404;
-}
-
-.no-description-banner {
-    background-color: #d1ecf1;
-    border-left-color: #0dcaf0;
-    color: #055160;
-}
-
-.enhance-description-banner {
-    background-color: #e2e3e5;
-    border-left-color: #6c757d;
-    color: #495057;
-}
-
-.fixed-alert-banner .btn {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.no-resume-banner .btn-warning {
-    background-color: #f0ad4e;
-    border-color: #eea236;
-    color: #fff;
-}
-
-.no-description-banner .btn-primary {
-    background-color: #0dcaf0;
-    border-color: #0dcaf0;
-}
-
-.enhance-description-banner .btn-info {
-    background-color: #6c757d;
-    border-color: #6c757d;
-}
-
-@media (max-width: 768px) {
-    .fixed-alert-banner .d-flex {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .fixed-alert-banner .ms-3 {
-        margin-left: 0 !important;
-    }
-}
-
-/* Ultra-protection against any script trying to hide banners */
-.fixed-alert-banner[style*="display: none"] {
-    display: block !important;
-}
-
-.fixed-alert-banner[style*="opacity: 0"] {
-    opacity: 1 !important;
-}
-
-.fixed-alert-banner[style*="visibility: hidden"] {
-    visibility: visible !important;
-}
-
-/* Add pulse animation for highlighting alerts */
-@keyframes pulse {
-    0% { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    50% { box-shadow: 0 8px 15px rgba(0,123,255,0.3); transform: translateY(-2px); }
-    100% { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-}
-</style>
-
-<script>
-// ULTIMATE PROTECTION: Make alert banners completely permanent
-document.addEventListener('DOMContentLoaded', function() {
-    const banners = document.querySelectorAll('.fixed-alert-banner');
-    
-    banners.forEach(function(banner) {
-        // Remove any data attributes that could trigger dismissal
-        banner.removeAttribute('data-bs-dismiss');
-        banner.removeAttribute('data-dismiss');
-        
-        // Lock banner visibility
-        Object.defineProperty(banner.style, 'display', {
-            value: 'block',
-            writable: false,
-            configurable: false
-        });
-        
-        Object.defineProperty(banner.style, 'opacity', {
-            value: '1',
-            writable: false,
-            configurable: false
-        });
-        
-        Object.defineProperty(banner.style, 'visibility', {
-            value: 'visible',
-            writable: false,
-            configurable: false
-        });
-    });
-    
-    // Create mutation observer to watch for any attempts to hide banners
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'attributes') {
-                const target = mutation.target;
-                if (target.classList.contains('fixed-alert-banner')) {
-                    // Force banner to stay visible no matter what
-                    if (target.style.display !== 'block') {
-                        target.style.setProperty('display', 'block', 'important');
-                    }
-                    if (target.style.opacity !== '1') {
-                        target.style.setProperty('opacity', '1', 'important');
-                    }
-                    if (target.style.visibility !== 'visible') {
-                        target.style.setProperty('visibility', 'visible', 'important');
-                    }
-                }
-            }
-            
-            if (mutation.type === 'childList') {
-                // If banners are removed, add them back
-                mutation.removedNodes.forEach(function(node) {
-                    if (node.nodeType === 1 && node.classList?.contains('fixed-alert-banner')) {
-                        // Banner was removed, add it back
-                        mutation.target.appendChild(node);
-                    }
-                });
-            }
-        });
-    });
-    
-    // Observe all banner elements and their parents
-    banners.forEach(function(banner) {
-        observer.observe(banner, { 
-            attributes: true, 
-            attributeFilter: ['style', 'class'],
-            childList: true,
-            subtree: true 
-        });
-        
-        // Also observe the parent in case banner gets removed
-        if (banner.parentNode) {
-            observer.observe(banner.parentNode, { childList: true });
-        }
-    });
-});
-
-// Override common hiding methods
-if (typeof bootstrap !== 'undefined') {
-    // Prevent Bootstrap alerts from affecting our banners
-    const originalAlertClose = bootstrap.Alert?.prototype?.close;
-    if (originalAlertClose) {
-        bootstrap.Alert.prototype.close = function() {
-            if (this._element?.classList?.contains('fixed-alert-banner')) {
-                return; // Don't close our fixed banners
-            }
-            originalAlertClose.call(this);
-        };
-    }
-}
-
-// Prevent jQuery hide/fadeOut if it exists
-if (typeof $ !== 'undefined') {
-    $(document).ready(function() {
-        $('.fixed-alert-banner').off('click.bs.alert.data-api');
-    });
-}
-
-// Quick Add Modal Functions
-function showQuickAddModal() {
-    const modal = new bootstrap.Modal(document.getElementById('quickAddModal'));
-    modal.show();
-}
-
-function tailorResume(jobId) {
-    // Navigate to tailor page with job ID
-    window.location.href = `/tailor/${jobId}`;
-}
-
-function applyToJob(jobId) {
-    // Apply to job via AJAX
-    if (!confirm('Are you sure you want to apply to this job?')) {
-        return;
-    }
-    
-    const button = event.target;
-    const originalText = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Applying...';
-    button.disabled = true;
-    
-    fetch(`/jobs/apply/${jobId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            button.innerHTML = '<i class="fas fa-check"></i> Applied';
-            button.classList.remove('btn-success');
-            button.classList.add('btn-secondary');
-            button.disabled = true;
-            alert('Successfully applied to job!');
-        } else {
-            alert('Error applying to job: ' + data.error);
-            button.innerHTML = originalText;
-            button.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error applying to job:', error);
-        alert('Error applying to job');
-        button.innerHTML = originalText;
-        button.disabled = false;
-    });
-}
-
-function saveJob(jobId) {
-    // Save job to user's saved jobs list
-    fetch(`/jobs/save/${jobId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update button state or show success message
-            const button = event.target;
-            button.innerHTML = '<i class="fas fa-check"></i> Saved';
-            button.classList.remove('btn-outline-secondary');
-            button.classList.add('btn-success');
-            button.disabled = true;
-        } else {
-            alert('Error saving job: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error saving job:', error);
-        alert('Error saving job');
-    });
-}
-
-function generateAIDescription() {
-    const button = document.getElementById('generateAI');
-    const textarea = document.getElementById('quickDescription');
-    
-    // Show loading state
-    const originalText = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-    button.disabled = true;
-    
-    // Make request to generate AI description using the correct API endpoint
-    fetch(`/jobs/api/generate_description_suggestion/{{ job._id }}`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            textarea.value = data.suggested_description;
-        } else {
-            alert('Error generating description: ' + data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Error generating description:', error);
-        alert('Error generating description');
-    })
-    .finally(() => {
-        // Restore button state
-        button.innerHTML = originalText;
-        button.disabled = false;
-    });
-}
-
-function saveQuickDescription() {
-    const textarea = document.getElementById('quickDescription');
-    const description = textarea.value.trim();
-    
-    if (!description) {
-        alert('Please enter a description');
-        return;
-    }
-    
-    // Save the description using the correct API endpoint
-    fetch(`/jobs/api/quick_add_description/{{ job._id }}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
-        },
-        body: JSON.stringify({ description: description })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Close modal and refresh page to update banner
-            const modal = bootstrap.Modal.getInstance(document.getElementById('quickAddModal'));
-            modal.hide();
-            location.reload();
-        } else {
-            alert('Error saving description: ' + data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Error saving description:', error);
-        alert('Error saving description');
-    });
-}
-</script>
-
 {% endblock %}

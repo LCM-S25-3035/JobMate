@@ -254,6 +254,11 @@
                                            title="AI-powered resume optimization and application">
                                             <i class="bi bi-magic"></i> Tailor Resume & Apply
                                         </a>
+                                        <button class="btn btn-outline-primary btn-sm" 
+                                                onclick="markAsApplied('{{ job._id }}', '{{ job.title|e }}', '{{ job.company|e }}')"
+                                                title="Mark as applied if you applied externally">
+                                            <i class="bi bi-check2-circle"></i> Mark Applied
+                                        </button>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -479,20 +484,102 @@ function getCSRFToken() {
     return metaTag ? metaTag.getAttribute('content') : '';
 }
 
+// Mark job as applied without tailoring
+function markAsApplied(jobId, jobTitle, companyName) {
+    if (!confirm(`Mark "${jobTitle}" at ${companyName} as applied?`)) {
+        return;
+    }
+    
+    // Disable the button to prevent multiple clicks
+    const markAppliedBtn = event.target.closest('button');
+    if (markAppliedBtn) {
+        markAppliedBtn.disabled = true;
+        markAppliedBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+    }
+    
+    // Get CSRF token if available
+    const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+    
+    const headers = {
+        'Content-Type': 'application/json',
+    };
+    
+    if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken;
+    }
+    
+    fetch(`/jobs/mark-applied/${jobId}`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+            applied_externally: true
+        })
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.text().then(text => {
+            console.log('Raw response:', text);
+            try {
+                const data = JSON.parse(text);
+                return { data, status: response.status, ok: response.ok };
+            } catch (e) {
+                console.error('JSON parse error:', e);
+                throw new Error(`Invalid JSON response: ${text}`);
+            }
+        });
+    })
+    .then(({data, status, ok}) => {
+        console.log('Parsed response data:', data);
+        
+        if (ok && data.success) {
+            showAlert(data.message || 'Job marked as applied! Added to your applications tracker.', 'success');
+            // Replace with applied badge
+            if (markAppliedBtn) {
+                markAppliedBtn.outerHTML = '<span class="badge bg-success">Applied</span>';
+            }
+        } else {
+            // Re-enable button on failure
+            if (markAppliedBtn) {
+                markAppliedBtn.disabled = false;
+                markAppliedBtn.innerHTML = '<i class="bi bi-check2-circle"></i> Mark Applied';
+            }
+            const errorMsg = data.error || `HTTP ${status} error`;
+            showAlert(errorMsg, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Re-enable button on error
+        if (markAppliedBtn) {
+            markAppliedBtn.disabled = false;
+            markAppliedBtn.innerHTML = '<i class="bi bi-check2-circle"></i> Mark Applied';
+        }
+        showAlert(`Failed to mark as applied: ${error.message}. Please try again.`, 'error');
+    });
+}
+
 // Simple alert function
 function showAlert(message, type) {
+    // Remove any existing alerts first to prevent stacking
+    const existingAlerts = document.querySelectorAll('.alert.alert-dismissible');
+    existingAlerts.forEach(alert => alert.remove());
+    
     const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show`;
+    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 1050; max-width: 400px;';
     alertDiv.innerHTML = `
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     
-    document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.row'));
+    document.body.appendChild(alertDiv);
     
+    // Auto-remove after 4 seconds
     setTimeout(() => {
-        alertDiv.remove();
-    }, 5000);
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 4000);
 }
 
 // Ghost job indicator tooltips

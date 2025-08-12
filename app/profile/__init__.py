@@ -5,6 +5,6 @@ Handles user profile management and job preferences
 
 from flask import Blueprint
 
-bp = Blueprint('profile', __name__)
+bp = Blueprint('user_profile', __name__)
 
-# from app.profile import routes  # TODO: Implement routes.py 
+from . import routes 

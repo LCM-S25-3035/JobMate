@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Certification - JobMate{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-award-fill me-2"></i>Edit Certification
+                    </h4>
+                    <p class="mb-0 text-muted">Update your certification information</p>
+                </div>
+                
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('user_profile.update_certification', certification_id=certification.id) }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Certification Name and Organization -->
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                {{ form.name.label(class="form-label") }}
+                                {{ form.name(class="form-control", placeholder="e.g., AWS Certified Solutions Architect") }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger small">{{ form.name.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.issuing_organization.label(class="form-label") }}
+                                {{ form.issuing_organization(class="form-control", placeholder="e.g., Amazon Web Services") }}
+                                {% if form.issuing_organization.errors %}
+                                    <div class="text-danger small">{{ form.issuing_organization.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Dates -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.issue_date.label(class="form-label") }}
+                                {{ form.issue_date(class="form-control") }}
+                                {% if form.issue_date.errors %}
+                                    <div class="text-danger small">{{ form.issue_date.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.expiry_date.label(class="form-label") }}
+                                {{ form.expiry_date(class="form-control") }}
+                                {% if form.expiry_date.errors %}
+                                    <div class="text-danger small">{{ form.expiry_date.errors[0] }}</div>
+                                {% endif %}
+                                <div class="form-text">Leave blank if certification doesn't expire</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Credential Details -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.credential_id.label(class="form-label") }}
+                                {{ form.credential_id(class="form-control", placeholder="e.g., AWS-SAA-2023-001234") }}
+                                {% if form.credential_id.errors %}
+                                    <div class="text-danger small">{{ form.credential_id.errors[0] }}</div>
+                                {% endif %}
+                                <div class="form-text">Optional: Certificate ID or License Number</div>
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.credential_url.label(class="form-label") }}
+                                {{ form.credential_url(class="form-control", placeholder="https://...") }}
+                                {% if form.credential_url.errors %}
+                                    <div class="text-danger small">{{ form.credential_url.errors[0] }}</div>
+                                {% endif %}
+                                <div class="form-text">Optional: Link to verify certification</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Description -->
+                        <div class="mb-4">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="4", placeholder="Describe what this certification covers, skills gained, or relevance to your career...") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small">{{ form.description.errors[0] }}</div>
+                            {% endif %}
+                            <div class="form-text">
+                                Optional: Include skills gained, exam topics covered, or career relevance
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <div>
+                                <a href="{{ url_for('user_profile.enhanced_profile') }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i>Cancel
+                                </a>
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-outline-danger me-2" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                    <i class="bi bi-trash me-1"></i>Delete
+                                </button>
+                                {{ form.submit(class="btn btn-primary") }}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Certification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this certification?</p>
+                <p class="text-muted"><strong>{{ certification.name }} from {{ certification.issuing_organization }}</strong></p>
+                <p class="text-danger"><small>This action cannot be undone.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('user_profile.delete_certification', certification_id=certification.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete Certification</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.querySelector('form');
+    const issueDateInput = document.querySelector('[name="issue_date"]');
+    const expiryDateInput = document.querySelector('[name="expiry_date"]');
+    
+    form.addEventListener('submit', function(e) {
+        const issueDate = new Date(issueDateInput.value);
+        const expiryDate = expiryDateInput.value ? new Date(expiryDateInput.value) : null;
+        
+        if (expiryDate && issueDate >= expiryDate) {
+            e.preventDefault();
+            alert('Expiry date must be after issue date.');
+            return false;
+        }
+        
+        if (issueDate > new Date()) {
+            e.preventDefault();
+            alert('Issue date cannot be in the future.');
+            return false;
+        }
+    });
+    
+    // URL validation
+    const urlInput = document.querySelector('[name="credential_url"]');
+    urlInput.addEventListener('blur', function() {
+        const url = this.value;
+        if (url && !url.match(/^https?:\/\/.+/)) {
+            this.setCustomValidity('Please enter a valid URL starting with http:// or https://');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+});
+</script>
+
+<style>
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-1px);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.bg-light {
+    background-color: #f8f9fa !important;
+}
+</style>
+{% endblock %}

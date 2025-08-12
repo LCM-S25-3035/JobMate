@@ -1,0 +1,59 @@
+services:
+  - type: web
+    name: jobmate-app
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT run:app
+    envVars:
+      # Flask Configuration
+      - key: FLASK_APP
+        value: run.py
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      
+      # Gemini AI Configuration
+      - key: GEMINI_API_KEY
+        value: AIzaSyDwfucmKX1DRvWRG_vVDpXDJxioxUf0j-g
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      
+      # Supabase PostgreSQL Configuration
+      - key: DATABASE_URL
+        value: postgresql://postgres:jobmatepostgre@db.asctcjfvkhofftgofavc.supabase.co:5432/postgres
+      
+      # MongoDB Configuration
+      - key: MONGODB_URI
+        value: mongodb+srv://user1:user123@jobmate.oiy0vdf.mongodb.net/?retryWrites=true&w=majority&appName=jobmate
+      - key: MONGODB_DB
+        value: job_automation
+      
+      # SMTP Configuration (Update with your credentials)
+      - key: SMTP_SERVER
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        value: mugilmithran01@gmail.com
+      - key: SMTP_PASSWORD
+        value: your-gmail-app-password
+      - key: SMTP_USE_TLS
+        value: "true"
+      
+      # Application Security
+      - key: WTF_CSRF_ENABLED
+        value: "True"
+      - key: SESSION_COOKIE_SECURE
+        value: "True"
+      - key: SESSION_COOKIE_HTTPONLY
+        value: "True"
+      - key: PERMANENT_SESSION_LIFETIME
+        value: "3600"
+      
+      # Python Path
+      - key: PYTHONPATH
+        value: .
